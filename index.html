@@ -315,6 +315,7 @@ dl.kv dd{margin:0;font-weight:600;word-break:break-word}
         </select>
         <span class="sp"></span>
         <button class="btn" id="btImport">Importar base</button>
+        <button class="btn" id="btRelat" title="Relatório completo dos fornecedores da lista (respeita busca e filtro)">Imprimir relatório</button>
         <button class="btn" id="btExport">Exportar respostas</button>
         <button class="btn pri" id="btNovo">+ Fornecedor</button>
       </div>
@@ -830,8 +831,86 @@ async function verRespostas(f){
   const corpo = data ? `<dl class="kv">${Object.keys(ROTULOS).filter(k=>r[k]).map(k=>`<dt>${ROTULOS[k]}</dt><dd>${esc(r[k])}</dd>`).join('')}
     <dt>Situação</dt><dd>${data.finalizado?'Enviado pelo fornecedor':'Rascunho (ainda não enviou)'} · atualizado em ${new Date(data.atualizado_em).toLocaleString('pt-BR')}</dd></dl>`
     : '<p class="empty">O fornecedor abriu o link mas ainda não salvou nada.</p>';
-  modal(esc(f.razao_social), corpo, [['Fechar','',o=>o.remove()]]);
+  modal(esc(f.razao_social), corpo, [['Imprimir','',()=>imprimirRelatorio([f])], ['Fechar','',o=>o.remove()]]);
 }
+
+/* ---------- Relatório completo para impressão ---------- */
+const SECOES = [
+  ['Empresa', ['razao_social','nome_fantasia','inscricao_estadual','cnae']],
+  ['Endereço', ['cep','endereco','bairro','cidade_uf']],
+  ['Tributação', ['regime_tributario','simples_regime_regular','perfil','tratamento_diferenciado','nfe_ibs_cbs','erp']],
+  ['Responsável pelas informações', ['responsavel_nome','responsavel_cargo','responsavel_email','responsavel_telefone','observacoes']]
+];
+const ROT_REL = { ...ROTULOS, endereco:'Endereço', cidade_uf:'Cidade / UF' };
+const dataBR = d => d ? new Date(d).toLocaleDateString('pt-BR') : '—';
+
+async function imprimirRelatorio(lista){
+  if (!lista.length) return toast('Nenhum fornecedor na lista para imprimir.');
+  const w = window.open('', '_blank');
+  if (!w) return toast('O navegador bloqueou a janela. Libere pop-ups para este site.');
+  w.document.write('<p style="font-family:Arial;padding:20px">Montando relatório…</p>');
+  const resp = {};
+  const ids = lista.map(f=>f.id);
+  for (let i=0;i<ids.length;i+=150){
+    const { data, error } = await sb.from('respostas_fase1').select('*').in('fornecedor_id', ids.slice(i,i+150));
+    if (error){ w.close(); return toast('Erro ao montar relatório: '+error.message); }
+    (data||[]).forEach(r => resp[r.fornecedor_id] = r);
+  }
+  const cont = s => lista.filter(f=>f.status===s).length;
+  const filtro = [$('fStatus').value ? 'Status: '+STATUS[$('fStatus').value] : '', $('fBusca').value.trim() ? 'Busca: '+$('fBusca').value.trim() : ''].filter(Boolean).join(' · ') || 'Todos os fornecedores';
+
+  const blocos = lista.map(f => {
+    const raw = resp[f.id];
+    const r = achatar(raw);
+    if (raw){
+      r.endereco = [r.logradouro, r.numero, r.complemento].filter(Boolean).join(', ');
+      r.cidade_uf = [r.cidade, r.uf].filter(Boolean).join(' / ');
+    }
+    const cad = `<table class="kv"><tr><th>Contato (base)</th><td>${esc(f.contato||'—')}</td><th>E-mail (base)</th><td>${esc(f.email||'—')}</td></tr>
+      <tr><th>Telefone (base)</th><td>${f.telefone?fmtTel(f.telefone):'—'}</td><th>Link enviado em</th><td>${dataBR(f.link_enviado_em)}</td></tr></table>`;
+    const corpo = raw ? SECOES.map(([tit, ks]) => `<h4>${tit}</h4><table class="kv">${
+        ks.filter(k => k!=='simples_regime_regular' || r.regime_tributario==='Simples Nacional')
+          .map(k => `<tr><th>${ROT_REL[k]}</th><td colspan="3">${esc(r[k]||'—')}</td></tr>`).join('')}</table>`).join('')
+      + `<p class="sit">${raw.finalizado?'Enviado pelo fornecedor':'Rascunho: ainda não enviou'} · última atualização ${new Date(raw.atualizado_em).toLocaleString('pt-BR')}</p>`
+      : '<p class="sem">O fornecedor ainda não preencheu o formulário.</p>';
+    return `<section class="forn"><div class="fh"><div><b>${esc(f.razao_social)}</b>${f.nome_fantasia?` <span>· ${esc(f.nome_fantasia)}</span>`:''}<br>
+      <small>CNPJ ${fmtCNPJ(f.cnpj)}</small></div><div class="st st-${f.status}">${STATUS[f.status]}${f.respondido_em?`<br><small>em ${dataBR(f.respondido_em)}</small>`:''}</div></div>
+      ${cad}${corpo}</section>`;
+  }).join('');
+
+  w.document.open();
+  w.document.write(`<!doctype html><html lang="pt-BR"><head><meta charset="utf-8"><title>ELO Reforma · Relatório de fornecedores</title>
+  <style>
+    @page{size:A4 portrait;margin:12mm}
+    body{font-family:Arial,sans-serif;font-size:9.5pt;color:#111;margin:0}
+    .topo{display:flex;justify-content:space-between;align-items:flex-end;border-bottom:3px solid #1f9d55;padding-bottom:6px;margin-bottom:10px}
+    .topo h1{font-size:15pt;margin:0;color:#137038}.topo small{color:#555}
+    .resumo{display:flex;gap:18px;flex-wrap:wrap;background:#edfaf1;border:1px solid #cdeed7;padding:7px 10px;border-radius:6px;margin-bottom:12px}
+    .resumo b{font-size:11pt}
+    .forn{border:1px solid #ccc;border-radius:6px;padding:8px 10px;margin-bottom:10px;break-inside:avoid;page-break-inside:avoid}
+    .fh{display:flex;justify-content:space-between;gap:10px;border-bottom:1px solid #ddd;padding-bottom:5px;margin-bottom:5px}
+    .fh b{font-size:11pt}.fh span{color:#555}.fh small{color:#555}
+    .st{font-weight:bold;text-align:right;white-space:nowrap}
+    .st-respondido{color:#137038}.st-em_preenchimento{color:#b9770a}.st-enviado{color:#0f3f8f}.st-pendente{color:#777}
+    h4{margin:7px 0 2px;font-size:9.5pt;color:#137038;text-transform:uppercase;letter-spacing:.04em}
+    table.kv{width:100%;border-collapse:collapse}
+    table.kv th{text-align:left;font-weight:normal;color:#555;width:26%;padding:2px 6px 2px 0;vertical-align:top}
+    table.kv td{padding:2px 6px 2px 0;font-weight:bold;vertical-align:top;word-break:break-word}
+    .sit{margin:6px 0 0;color:#555;font-size:8.5pt}.sem{margin:6px 0 2px;color:#b9770a;font-weight:bold}
+    .rod{margin-top:8px;color:#777;font-size:8pt;text-align:center}
+    @media screen{body{max-width:900px;margin:20px auto;padding:0 16px}}
+  </style></head><body>
+  <div class="topo"><div><h1>ELO Reforma · Relatório de fornecedores</h1><small>Rede Vilarejo · Compras · Reforma Tributária (IBS/CBS) · ${esc(filtro)}</small></div>
+    <small>Emitido em ${new Date().toLocaleString('pt-BR')}</small></div>
+  ${lista.length>1?`<div class="resumo"><span>Fornecedores: <b>${lista.length}</b></span><span>Respondidos: <b>${cont('respondido')}</b></span>
+    <span>Preenchendo: <b>${cont('em_preenchimento')}</b></span><span>Link enviado: <b>${cont('enviado')}</b></span><span>Pendentes: <b>${cont('pendente')}</b></span></div>`:''}
+  ${blocos}
+  <div class="rod">ELO Sistemas · ELO Reforma</div>
+  <script>window.onload=()=>setTimeout(()=>window.print(),300)<\/script>
+  </body></html>`);
+  w.document.close();
+}
+$('btRelat').onclick = () => imprimirRelatorio(filtrados());
 
 /* ---------- Exportar respostas (CSV para Excel) ---------- */
 $('btExport').onclick = async () => {

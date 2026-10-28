@@ -355,7 +355,7 @@ dl.kv dd{margin:0;font-weight:600;word-break:break-word}
         <div data-s="0"><em>1</em><span>Empresa</span></div>
         <div data-s="1"><em>2</em><span>Endereço</span></div>
         <div data-s="2"><em>3</em><span>Tributação</span></div>
-        <div data-s="3"><em>4</em><span>Responsáveis</span></div>
+        <div data-s="3"><em>4</em><span>Responsável</span></div>
       </div>
       <!-- Passo 1 -->
       <div class="fstep" data-p="0">
@@ -429,21 +429,22 @@ dl.kv dd{margin:0;font-weight:600;word-break:break-word}
 
       <!-- Passo 4 -->
       <div class="fstep hide" data-p="3">
-        <h3>Responsáveis</h3>
+        <h3>Responsável pelas informações</h3>
+        <p class="hint">Quem podemos procurar se houver dúvida sobre as respostas.</p>
         <div class="grid g3">
-          <label class="f span3">Responsável pelo preenchimento *<input class="inp" id="responsavel_nome"></label>
-          <label class="f">Cargo<input class="inp" id="responsavel_cargo"></label>
-          <label class="f">E-mail *<input class="inp" id="responsavel_email" type="email"></label>
-          <label class="f">Telefone / WhatsApp<input class="inp" id="responsavel_telefone" inputmode="tel"></label>
-          <label class="f">Contador / escritório<input class="inp" id="contador_nome"></label>
-          <label class="f">E-mail do contador<input class="inp" id="contador_email" type="email"></label>
-          <label class="f">Telefone do contador<input class="inp" id="contador_telefone" inputmode="tel"></label>
+          <label class="f span2">Nome *<input class="inp" id="responsavel_nome"></label>
+          <label class="f">Cargo<input class="inp" id="responsavel_cargo" placeholder="Ex.: Contador, Fiscal"></label>
+          <label class="f span2">E-mail *<input class="inp" id="responsavel_email" type="email"></label>
+          <label class="f">Telefone<input class="inp" id="responsavel_telefone" inputmode="tel"></label>
           <label class="f span3">Observações<textarea class="inp" id="observacoes" rows="3"></textarea></label>
         </div>
       </div>
 
       <div class="fnav" id="fNav">
-        <button class="btn" id="fVoltar">◀ Voltar</button>
+        <div style="display:flex;gap:8px">
+          <button class="btn" id="fVoltar">◀ Voltar</button>
+          <button class="btn" id="fLimpar" title="Apaga os campos desta etapa">Limpar</button>
+        </div>
         <div style="display:flex;gap:8px">
           <button class="btn" id="fSalvar">Salvar e continuar depois</button>
           <button class="btn pri" id="fAvancar">Avançar ▶</button>
@@ -814,7 +815,7 @@ const ROTULOS = {
   regime_tributario:'Regime tributário', simples_regime_regular:'Simples: IBS/CBS pelo regime regular', perfil:'Perfil',
   tratamento_diferenciado:'Produto com tratamento diferenciado', nfe_ibs_cbs:'NF-e com IBS/CBS', erp:'ERP',
   responsavel_nome:'Responsável', responsavel_cargo:'Cargo', responsavel_email:'E-mail do responsável', responsavel_telefone:'Telefone do responsável',
-  contador_nome:'Contador / escritório', contador_email:'E-mail do contador', contador_telefone:'Telefone do contador', observacoes:'Observações'
+  observacoes:'Observações'
 };
 function achatar(r){
   if (!r) return {};
@@ -857,7 +858,7 @@ $('btExport').onclick = async () => {
 let passo = 0;
 const N_PASSOS = 4;
 const CAMPOS_TXT = ['razao_social','nome_fantasia','inscricao_estadual','cep','logradouro','numero','complemento','bairro','cidade','uf','responsavel_nome','responsavel_email','responsavel_telefone'];
-const EXTRAS_TXT = ['cnae','erp','responsavel_cargo','contador_nome','contador_email','contador_telefone','observacoes'];
+const EXTRAS_TXT = ['cnae','erp','responsavel_cargo','observacoes'];
 const EXTRAS_RADIO = ['simples_regime_regular','perfil','tratamento_diferenciado','nfe_ibs_cbs'];
 
 function radio(n){ const r=document.querySelector(`input[name="${n}"]:checked`); return r?r.value:''; }
@@ -915,7 +916,7 @@ $('cep').addEventListener('input', async e => {
   if (!end.logradouro){ aviso('msg_cep','CEP geral da cidade. Informe a rua e o bairro.','erro'); $('logradouro').focus(); }
   else { aviso('msg_cep','Endereço encontrado. Informe o número.','ok'); $('numero').focus(); }
 });
-['responsavel_telefone','contador_telefone'].forEach(id => $(id).addEventListener('input', e=>e.target.value=fmtTel(e.target.value)));
+['responsavel_telefone'].forEach(id => $(id).addEventListener('input', e=>e.target.value=fmtTel(e.target.value)));
 
 function validar(p){
   const d = coletar(), falta = [];
@@ -931,7 +932,7 @@ function irPara(p){
   passo = p;
   document.querySelectorAll('.fstep').forEach(s => s.classList.toggle('hide', +s.dataset.p!==p));
   document.querySelectorAll('#fSteps div').forEach(s => { const i=+s.dataset.s; s.classList.toggle('on', i===p); s.classList.toggle('ok', i<p); });
-  $('fVoltar').style.visibility = p===0 ? 'hidden' : 'visible';
+  $('fVoltar').classList.toggle('hide', p===0);
   $('fAvancar').textContent = p===N_PASSOS-1 ? 'Enviar respostas' : 'Avançar ▶';
   window.scrollTo(0,0);
 }
@@ -943,7 +944,32 @@ async function salvar(finalizar){
 }
 
 $('fVoltar').onclick = () => irPara(Math.max(0, passo-1));
-$('fSalvar').onclick = async () => { if (await salvar(false)) toast('Salvo. Você pode fechar e continuar depois pelo mesmo link.'); };
+$('fLimpar').onclick = () => {
+  if (!confirm('Limpar os campos desta etapa?')) return;
+  const etapa = document.querySelector(`.fstep[data-p="${passo}"]`);
+  etapa.querySelectorAll('input:not([readonly]):not([type=radio]), textarea').forEach(el => el.value = '');
+  etapa.querySelectorAll('input[type=radio]').forEach(el => el.checked = false);
+  etapa.querySelectorAll('.msg').forEach(el => el.textContent = '');
+  toggleSimples();
+  const primeiro = etapa.querySelector('input:not([readonly]):not([type=radio]), textarea'); if (primeiro) primeiro.focus();
+};
+$('fSalvar').onclick = async () => {
+  $('fSalvar').disabled = true;
+  const ok = await salvar(false);
+  $('fSalvar').disabled = false;
+  if (!ok) return;
+  // troca o formulário por uma tela de confirmação; o formulário fica guardado para "continuar agora"
+  const card = $('fCard');
+  const aviso = document.createElement('div');
+  aviso.className = 'fcard'; aviso.id = 'fSalvo';
+  aviso.innerHTML = `<div class="done"><div class="ic">✓</div><h3>Respostas salvas. Obrigado!</h3>
+    <p style="color:var(--ink-soft);max-width:460px;line-height:1.55;margin:0">O que você preencheu ficou guardado.
+    Para continuar depois, abra <b>o mesmo link que recebeu por e-mail</b>. O formulário volta do ponto onde parou.</p>
+    <p style="color:var(--ink-faint);font-size:13px;margin:4px 0 0">Já pode fechar esta janela.</p>
+    <button class="btn" id="fContinuar" style="margin-top:10px">Continuar preenchendo agora</button></div>`;
+  card.classList.add('hide'); card.after(aviso); window.scrollTo(0,0);
+  aviso.querySelector('#fContinuar').onclick = () => { aviso.remove(); card.classList.remove('hide'); };
+};
 $('fAvancar').onclick = async () => {
   if (!validar(passo)) return;
   if (passo < N_PASSOS-1){ salvar(false); return irPara(passo+1); }

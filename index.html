@@ -250,8 +250,8 @@ tr.clic{cursor:pointer}
 @media(max-width:760px){#vw-f2{height:auto;min-height:100vh;overflow:visible}.f2card{margin:0;border-radius:0}.f2card .tblbox{margin:0}.col-f2x{display:none}}
 
 /* ---------- Logo Vilarejo ---------- */
-.vil-chip{background:#fff;border-radius:10px;padding:5px 10px;display:flex;align-items:center;height:44px}
-.vil-chip img{height:32px;width:auto;display:block}
+.vil-chip{display:flex;align-items:center;height:44px}
+.vil-chip img{height:38px;width:auto;display:block}
 .acct .vil{height:34px;width:auto;max-width:96px;object-fit:contain;flex:0 0 auto}
 .f-vil{display:flex;justify-content:flex-end;padding:14px 24px 0}
 .f-vil img{height:42px;width:auto}
@@ -717,13 +717,18 @@ function wireLogos(){
   const arq = { elo:'logoelo', reforma:'logo_reforma', vilarejo:'logo_vilarejo' };
   document.querySelectorAll('img[data-logo]').forEach(img => {
     const n = arq[img.dataset.logo] || img.dataset.logo;
-    const cands = [n+'.png', 'assets/'+n+'.png', 'images/'+n+'.png', n+'.PNG'];
+    // tolera variações comuns de nome/extensão (o servidor diferencia maiúsculas de minúsculas)
+    const nomes = [...new Set([n, n.toUpperCase(), n.replace(/(^|_)(\w)/g,(m,a,c)=>a+c.toUpperCase()), n.replace(/_/g,'-'), n.replace(/_/g,'')])];
+    const exts = ['png','PNG','png.png','jpg','jpeg','webp','svg'];
+    const cands = [];
+    ['', 'assets/', 'images/', 'img/'].forEach(dir => nomes.forEach(nm => exts.forEach(e => cands.push(dir+nm+'.'+e))));
     let i = 0;
     img.onerror = () => { i++; if (i < cands.length) img.src = cands[i];
-      else img.outerHTML = img.dataset.logo==='vilarejo' ? '<span class="logo-vil-txt">Vilarejo</span>'
+      else { console.warn('Logo não encontrada:', n, '— confira o nome do arquivo na mesma pasta do index.html');
+      img.outerHTML = img.dataset.logo==='vilarejo' ? '<span class="logo-vil-txt">Vilarejo</span>'
         : img.dataset.logo==='reforma'
         ? '<div class="logo-txt" style="color:var(--green-ink);font-size:34px;margin-bottom:26px">ELO Reforma</div>'
-        : `<span class="logo-txt" style="${img.classList.contains('lp-logo')?'display:block;font-size:44px;margin-bottom:44px':''}">elo<sup>®</sup></span>`; };
+        : `<span class="logo-txt" style="${img.classList.contains('lp-logo')?'display:block;font-size:44px;margin-bottom:44px':''}">elo<sup>®</sup></span>`; } };
     img.src = cands[0];
   });
 }

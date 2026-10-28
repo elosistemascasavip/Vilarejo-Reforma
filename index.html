@@ -1,0 +1,960 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Elo Sistemas — ELO Reforma</title>
+<link rel="icon" href="logoelo.png">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<style>
+/* Padrão ELO Sistemas — variação VERDE (ELO Reforma) */
+:root{
+  --nav1:#0b3d24; --nav2:#137038; --nav3:#1f9d55;
+  --green:#1f9d55; --green-ink:#137038; --green-tint:#edfaf1; --green-line:#cdeed7;
+  --blue:#1f6fe0; --blue-ink:#0f3f8f; --blue-tint:#eff4ff; --blue-line:#d8e5fb;
+  --amber:#b9770a; --amber-tint:#fdf6e7; --amber-line:#f3e2bd;
+  --red:#c02626;
+  --ink:#152238; --ink-soft:#384559; --ink-faint:#5d6a7e;
+  --side:#f2f4f8; --side-line:#e3e7ee; --line:#e7eaf0;
+  --card-shadow:0 1px 2px rgba(18,34,62,.05);
+  --r:12px; --rowh:44px;
+  --muted:var(--ink-faint); --ok:var(--green-ink); --warn:var(--amber); --warn-bg:var(--amber-tint);
+}
+*{box-sizing:border-box}
+html,body{margin:0;height:100%}
+body{font-family:Inter,system-ui,-apple-system,Segoe UI,Roboto,sans-serif;color:var(--ink);background:#fff;
+  font-size:14px;-webkit-font-smoothing:antialiased}
+button,input,select,textarea{font-family:inherit;font-size:inherit;color:inherit}
+button{cursor:pointer}
+.hide,.hidden{display:none!important}
+
+/* ---------- Botões e campos ---------- */
+.btn{border:1px solid var(--line);background:#fff;border-radius:9px;padding:9px 14px;font-weight:600;font-size:13.5px;
+  display:inline-flex;align-items:center;gap:7px;white-space:nowrap;color:var(--ink-soft);transition:filter .12s,border-color .12s}
+.btn:hover{border-color:var(--green)}
+.btn.pri{background:var(--green);border-color:var(--green);color:#fff}
+.btn.pri:hover{filter:brightness(1.05)}
+.btn.ghost{border-color:transparent;background:transparent}
+.btn.sm{padding:5px 10px;font-size:12.5px;border-radius:8px}
+.btn:disabled{opacity:.5;cursor:default;filter:none}
+.inp{width:100%;border:1px solid var(--line);border-radius:9px;padding:9px 11px;background:#fff;outline:none;font-size:13.5px}
+.inp:focus{border-color:var(--green);box-shadow:0 0 0 3px rgba(31,157,85,.12)}
+.inp[readonly]{background:var(--side);color:var(--ink-faint)}
+label.f{display:flex;flex-direction:column;gap:5px;font-size:12.5px;font-weight:600;color:var(--ink-soft)}
+.grid{display:grid;gap:12px}
+.g2{grid-template-columns:1fr 1fr}.g3{grid-template-columns:1fr 1fr 1fr}.g4{grid-template-columns:2fr 1fr 1fr 1fr}
+.span2{grid-column:span 2}.span3{grid-column:span 3}
+@media(max-width:720px){.g2,.g3,.g4{grid-template-columns:1fr}.span2,.span3{grid-column:auto}}
+.msg{font-size:12.5px;min-height:16px}
+
+/* ---------- Header ---------- */
+header{background:linear-gradient(100deg,var(--nav1) 0%,var(--nav2) 56%,var(--nav3) 100%);
+  color:#fff;display:flex;align-items:center;padding:0 22px;height:68px;flex:0 0 auto}
+.brand{display:flex;align-items:center;gap:14px;padding-right:20px}
+.logo-elo{height:38px;display:block;filter:brightness(0) invert(1)}
+.logo-txt{font-weight:800;font-size:32px;letter-spacing:-.03em;color:#fff;line-height:1}
+.logo-txt sup{font-size:11px}
+.tagline{border-left:1px solid rgba(255,255,255,.28);padding-left:18px;line-height:1.2}
+.tagline .t1{font-weight:400;font-size:14px;color:#d3f0dd}
+.tagline .t2{font-weight:700;font-size:14px}
+.header-right{margin-left:auto;display:flex;align-items:center;gap:16px}
+.user{display:flex;align-items:center;gap:12px}
+.avatar{width:36px;height:36px;border-radius:9px;background:rgba(255,255,255,.16);
+  display:grid;place-items:center;font-weight:700;font-size:14px;border:1px solid rgba(255,255,255,.2)}
+.who{line-height:1.2;max-width:220px}
+.who b{display:block;font-size:13.5px;font-weight:700;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.who span{display:block;font-size:10.5px;letter-spacing:.08em;text-transform:uppercase;color:#bfe6cc;font-weight:600;margin-top:1px}
+.sair{background:transparent;border:1px solid rgba(255,255,255,.3);color:#fff;border-radius:8px;padding:6px 12px;font-weight:600;font-size:12.5px}
+.sair:hover{background:rgba(255,255,255,.1)}
+
+/* ---------- Layout do painel ---------- */
+#vw-painel{height:100vh;display:flex;flex-direction:column}
+.shell{display:flex;flex:1 1 auto;min-height:0}
+aside{width:236px;flex:0 0 auto;background:var(--side);border-right:1px solid var(--side-line);
+  padding:18px 12px;display:flex;flex-direction:column}
+.nav-scroll{flex:1 1 auto;display:flex;flex-direction:column;gap:3px}
+.nav-title{font-size:10px;letter-spacing:.12em;color:var(--ink-faint);font-weight:700;padding:0 10px 8px}
+.nav-item{display:flex;align-items:center;gap:11px;padding:9px 12px;border-radius:10px;color:var(--ink-soft);
+  font-weight:600;font-size:14px;border:1px solid transparent}
+.nav-item.active{background:var(--green);color:#fff;box-shadow:0 5px 13px rgba(31,157,85,.26)}
+.nav-item.disabled{opacity:.5}
+.nav-item .ico{width:18px;height:18px;flex:0 0 auto}
+.nav-item small{margin-left:auto;font-size:10px;font-weight:700;letter-spacing:.04em}
+.side-foot{padding-top:14px}
+.acct{display:flex;align-items:center;gap:10px;padding:10px;border-radius:11px;background:#fff;border:1px solid var(--side-line)}
+.acct .home{width:32px;height:32px;flex:0 0 auto;border-radius:8px;background:var(--green-tint);border:1px solid var(--green-line);display:grid;place-items:center}
+.acct .nm{line-height:1.2}
+.acct .nm b{font-size:14px}
+.acct .nm span{font-size:11.5px;color:var(--ink-faint)}
+
+main{flex:1 1 auto;min-width:0;display:flex;flex-direction:column;gap:14px;padding:20px 30px 16px;overflow:hidden}
+.crumb{color:var(--ink-faint);font-size:13px;font-weight:500}
+.crumb b{color:var(--ink-soft);font-weight:600}
+.page-head{display:flex;align-items:center;gap:13px}
+.page-ico{width:40px;height:40px;border-radius:10px;flex:0 0 auto;display:grid;place-items:center;
+  background:var(--green-tint);border:1px solid var(--green-line)}
+.page-ico svg{width:20px;height:20px}
+h1{font-size:23px;font-weight:800;letter-spacing:-.02em;margin:0}
+.sub{color:var(--ink-soft);font-size:13.5px;margin:-8px 0 0 53px}
+
+/* ---------- Progresso ---------- */
+.prog{border-radius:16px;padding:15px 20px;background:var(--green-tint);border:1px solid var(--green-line);display:grid;gap:10px}
+.prog-h{display:flex;justify-content:space-between;align-items:baseline;gap:10px;flex-wrap:wrap}
+.prog-h h3{font-size:16px;font-weight:800;letter-spacing:-.015em;margin:0}
+.prog-h .pct{font-size:24px;font-weight:800;color:var(--green-ink);font-variant-numeric:tabular-nums}
+.bar{height:14px;background:#fff;border:1px solid var(--green-line);border-radius:99px;overflow:hidden}
+.bar i{display:block;height:100%;background:linear-gradient(90deg,var(--nav2),var(--nav3));border-radius:99px;transition:width .6s}
+.kpis{display:flex;gap:22px;flex-wrap:wrap;font-size:12.5px;color:var(--ink-soft)}
+.kpis b{color:var(--ink);font-size:14.5px;font-variant-numeric:tabular-nums}
+
+/* ---------- Ferramentas e tabela ---------- */
+.tools{display:flex;gap:8px;flex-wrap:wrap;align-items:center}
+.tools .inp{max-width:300px}
+.tools select.inp{max-width:190px}
+.tools .sp{flex:1}
+.tbl-card{flex:1;min-height:0;border:1px solid var(--line);border-radius:var(--r);box-shadow:var(--card-shadow);display:flex;flex-direction:column;overflow:hidden;background:#fff}
+#tblWrap{flex:1;min-height:0;overflow:hidden}
+table{width:100%;border-collapse:collapse;table-layout:fixed}
+thead th{background:#f7f9fc;text-align:left;font-size:11.5px;text-transform:uppercase;letter-spacing:.05em;color:var(--ink-faint);font-weight:700;padding:0 12px;height:40px;border-bottom:1px solid var(--line)}
+tbody td{height:var(--rowh);padding:0 12px;border-bottom:1px solid var(--line);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+tbody tr:hover{background:#f7f9fc}
+td.mono{font-variant-numeric:tabular-nums}
+.chip{display:inline-block;padding:3px 10px;border-radius:99px;font-size:11.5px;font-weight:700}
+.st-pendente{background:var(--side);color:var(--ink-faint)}
+.st-enviado{background:var(--blue-tint);color:var(--blue-ink)}
+.st-em_preenchimento{background:var(--amber-tint);color:var(--amber)}
+.st-respondido{background:var(--green-tint);color:var(--green-ink)}
+.acts{display:flex;gap:4px}
+.pager{display:flex;align-items:center;justify-content:space-between;gap:10px;padding:8px 14px;border-top:1px solid var(--line);font-size:12.5px;color:var(--ink-faint)}
+.pager .nav{display:flex;align-items:center;gap:8px}
+.empty{padding:40px;text-align:center;color:var(--ink-faint)}
+@media(max-width:1100px){.col-ct{display:none}}
+@media(max-width:1000px){.tagline{display:none}}
+@media(max-width:900px){.col-em{display:none}}
+@media(max-width:760px){aside{display:none}main{padding:14px 12px}.sub{margin-left:0}.col-cnpj{display:none}.who{display:none}}
+
+/* ---------- Modal ---------- */
+.ov{position:fixed;inset:0;background:rgba(15,27,45,.45);display:grid;place-items:center;padding:16px;z-index:90}
+.modal{background:#fff;border-radius:16px;box-shadow:0 20px 50px rgba(12,22,42,.25);width:100%;max-width:640px;max-height:92vh;display:flex;flex-direction:column}
+.modal h3{margin:0;padding:16px 20px;border-bottom:1px solid var(--line);font-size:17px;font-weight:800;display:flex;justify-content:space-between;align-items:center}
+.modal .bd{padding:18px 20px;overflow:auto;display:grid;gap:12px}
+.modal .ft{padding:12px 20px;border-top:1px solid var(--line);display:flex;justify-content:flex-end;gap:8px}
+dl.kv{display:grid;grid-template-columns:210px 1fr;gap:7px 12px;font-size:13px;margin:0}
+dl.kv dt{color:var(--ink-faint)}
+dl.kv dd{margin:0;font-weight:600;word-break:break-word}
+@media(max-width:620px){dl.kv{grid-template-columns:1fr}dl.kv dd{margin-bottom:6px}}
+
+/* ---------- Tela de login (tela cheia, dividida) ---------- */
+.login-page{position:fixed;inset:0;z-index:80;display:grid;grid-template-columns:1fr 1fr;background:#fff}
+.lp-left{background:linear-gradient(150deg,var(--nav1) 0%,var(--nav2) 55%,var(--nav3) 100%);color:#fff;
+  padding:52px 56px;display:flex;flex-direction:column;justify-content:center;position:relative;overflow:hidden}
+.lp-left::after{content:'';position:absolute;right:-120px;bottom:-140px;width:420px;height:420px;
+  border-radius:50%;background:rgba(255,255,255,.06)}
+.lp-logo{height:46px;width:auto;object-fit:contain;margin-bottom:44px;align-self:flex-start;filter:brightness(0) invert(1)}
+.lp-kicker{font-size:11.5px;letter-spacing:.14em;font-weight:700;color:rgba(255,255,255,.75);margin-bottom:14px}
+.lp-title{font-size:40px;line-height:1.12;font-weight:800;letter-spacing:-.02em;margin:0 0 14px}
+.lp-sub{font-size:15px;color:rgba(255,255,255,.82);margin:0 0 40px;max-width:420px}
+.lp-feats{display:flex;flex-direction:column;gap:20px}
+.lp-feat{display:flex;gap:14px;align-items:flex-start;font-size:14px}
+.lp-feat .lp-ic{width:26px;height:26px;border-radius:8px;background:rgba(255,255,255,.14);
+  display:grid;place-items:center;font-size:13px;flex:0 0 auto}
+.lp-feat b{display:block;font-weight:700}
+.lp-feat small{display:block;color:rgba(255,255,255,.7);font-size:12.5px;margin-top:1px}
+.lp-foot{position:absolute;left:56px;bottom:34px;font-size:12px;color:rgba(255,255,255,.58)}
+.lp-right{display:grid;place-items:center;padding:40px}
+.lp-form{width:100%;max-width:376px}
+.lp-brand{height:140px;width:auto;max-width:100%;object-fit:contain;margin-bottom:26px;display:block}
+.lp-form h2{font-size:28px;font-weight:800;letter-spacing:-.02em;margin:0 0 6px}
+.lp-form .lp-s{color:var(--ink-faint);font-size:14px;margin:0 0 26px}
+.lp-form .field{margin-bottom:16px}
+.lp-form .field label{display:block;font-size:12.5px;font-weight:600;color:var(--ink-soft);margin-bottom:5px}
+.lp-form .field input{width:100%;padding:12px 14px;font-size:14.5px;border:1px solid var(--line);border-radius:10px;background:#fff}
+.lp-form .field input:focus{outline:none;border-color:var(--green);box-shadow:0 0 0 3px rgba(31,157,85,.12)}
+.lp-form .lp-btn{width:100%;padding:13px;font-size:15px;margin-top:6px;border:none;border-radius:11px;
+  background:var(--green);color:#fff;font-weight:700}
+.lp-form .lp-btn:hover{background:var(--green-ink)}
+.lp-form .lp-btn:disabled{opacity:.6;cursor:default}
+.lp-versao{display:inline-flex;align-items:center;gap:8px;margin:-10px 0 22px;padding:6px 12px;
+  border-radius:999px;background:var(--green-tint);border:1px solid var(--green-line);color:var(--green-ink);
+  font-size:12.5px;font-weight:600;font-variant-numeric:tabular-nums}
+.lp-versao b{font-weight:800;font-size:13.5px}
+.lp-versao i{width:8px;height:8px;border-radius:50%;background:var(--green);display:inline-block}
+.lp-help{text-align:center;margin-top:14px;font-size:13px;color:var(--ink-faint)}
+.lp-mini{text-align:center;margin-top:26px;font-size:12px;color:var(--ink-faint)}
+.err{color:var(--red);font-size:13px;margin-top:8px;min-height:16px;text-align:center}
+@media(max-width:900px){.login-page{grid-template-columns:1fr}.lp-left{display:none}.lp-right{padding:28px}}
+
+/* ---------- Formulário do fornecedor ---------- */
+#vw-form{min-height:100vh;display:flex;flex-direction:column;background:var(--side)}
+.fbody{flex:1;display:flex;justify-content:center;padding:24px 16px}
+.fcard{background:#fff;border:1px solid var(--line);border-radius:16px;box-shadow:0 4px 18px rgba(18,34,62,.06);width:100%;max-width:780px;display:flex;flex-direction:column;align-self:flex-start}
+.steps{display:flex;border-bottom:1px solid var(--line)}
+.steps div{flex:1;padding:13px 8px;text-align:center;font-size:12.5px;color:var(--ink-faint);font-weight:600;border-bottom:3px solid transparent}
+.steps div.on{color:var(--green-ink);border-color:var(--green);font-weight:800}
+.steps div.ok{color:var(--green-ink)}
+.steps div em{font-style:normal;display:inline-grid;place-items:center;width:21px;height:21px;border-radius:50%;background:var(--side);margin-right:6px;font-size:11px;font-weight:800}
+.steps div.on em,.steps div.ok em{background:var(--green);color:#fff}
+@media(max-width:620px){.steps div span{display:none}}
+.fstep{padding:22px 24px;display:grid;gap:14px}
+.fstep h3{font-size:18px;font-weight:800;letter-spacing:-.015em;margin:0}
+.fstep p.hint{color:var(--ink-soft);font-size:13.5px;line-height:1.5;margin:0}
+.fnav{display:flex;justify-content:space-between;gap:8px;padding:14px 24px;border-top:1px solid var(--line);flex-wrap:wrap}
+.radios{display:flex;flex-wrap:wrap;gap:8px}
+.radios label{border:1px solid var(--line);border-radius:9px;padding:8px 12px;cursor:pointer;font-size:13px;font-weight:600;display:flex;gap:6px;align-items:center;color:var(--ink-soft)}
+.radios label:has(input:checked){border-color:var(--green);background:var(--green-tint);color:var(--green-ink)}
+.radios input{accent-color:var(--green)}
+.q{display:grid;gap:7px}
+.q > span{font-size:13px;font-weight:700;color:var(--ink-soft)}
+.q > span small{display:block;font-weight:400;color:var(--ink-faint);margin-top:2px}
+.done{padding:48px 24px;text-align:center;display:grid;gap:10px;justify-items:center}
+.done h3{margin:0;font-size:20px;font-weight:800}
+.done .ic{width:56px;height:56px;border-radius:50%;background:var(--green-tint);color:var(--green);display:grid;place-items:center;font-size:28px;font-weight:800}
+
+/* ---------- Toast ---------- */
+.toast{position:fixed;left:50%;bottom:28px;transform:translateX(-50%) translateY(12px);
+  background:#152238;color:#fff;padding:13px 20px;border-radius:11px;font-size:14px;font-weight:500;
+  box-shadow:0 12px 30px rgba(12,22,42,.28);z-index:99;opacity:0;transition:opacity .18s,transform .18s;max-width:90vw}
+.toast.show{opacity:1;transform:translateX(-50%) translateY(0)}
+@media(max-width:760px){.inp,.lp-form .field input{font-size:16px}}
+</style>
+</head>
+<body>
+
+<!-- ================= LOGIN (padrão ELO, tela dividida) ================= -->
+<div class="login-page hide" id="vw-login">
+  <div class="lp-left">
+    <img class="lp-logo" data-logo="elo" alt="elo Sistemas">
+    <div class="lp-kicker">◆ REDE VILAREJO · COMPRAS · REFORMA TRIBUTÁRIA</div>
+    <h1 class="lp-title">Dados que conectam<br>melhores decisões.</h1>
+    <p class="lp-sub">Levantamento tributário dos fornecedores para o IBS e a CBS, num só lugar.</p>
+    <div class="lp-feats">
+      <div class="lp-feat"><span class="lp-ic">▦</span><span><b>Base de fornecedores</b><small>importação e link individual</small></span></div>
+      <div class="lp-feat"><span class="lp-ic">◈</span><span><b>Acompanhamento</b><small>quem já respondeu, em tempo real</small></span></div>
+      <div class="lp-feat"><span class="lp-ic">◧</span><span><b>Respostas</b><small>exportação para a consultoria</small></span></div>
+    </div>
+    <div class="lp-foot">ELO Sistemas · ELO Reforma</div>
+  </div>
+  <div class="lp-right">
+    <form class="lp-form" id="fLogin">
+      <img class="lp-brand" data-logo="reforma" alt="ELO Reforma">
+      <div class="lp-versao" id="lpVersao" title="Versão do sistema publicada"></div>
+      <h2>Entrar</h2>
+      <p class="lp-s">Acesso restrito à equipe de Compras.</p>
+      <div class="field"><label for="lgEmail">E-mail</label>
+        <input type="email" id="lgEmail" required autocomplete="username" placeholder="seu@email.com.br"></div>
+      <div class="field"><label for="lgSenha">Senha</label>
+        <input type="password" id="lgSenha" required autocomplete="current-password" placeholder="••••••"></div>
+      <button class="lp-btn" id="lgBtn">Entrar</button>
+      <div class="lp-help">Não tem acesso? Fale com o administrador.</div>
+      <div class="err" id="lgMsg"></div>
+      <div class="lp-mini">ELO Sistemas · ELO Reforma</div>
+    </form>
+  </div>
+</div>
+
+<!-- ================= PAINEL ================= -->
+<section id="vw-painel" class="hide">
+  <header>
+    <div class="brand">
+      <img class="logo-elo" data-logo="elo" alt="elo Sistemas">
+      <div class="tagline"><div class="t1">Dados que conectam</div><div class="t2">melhores decisões</div></div>
+    </div>
+    <div class="header-right">
+      <div class="user">
+        <div class="avatar" id="avatar">?</div>
+        <div class="who"><b id="whoNome">—</b><span id="whoPapel">—</span></div>
+      </div>
+      <button class="sair" id="btSair">Sair</button>
+    </div>
+  </header>
+  <div class="shell">
+    <aside>
+      <div class="nav-scroll">
+        <div class="nav-title">REFORMA TRIBUTÁRIA</div>
+        <div class="nav-item active">
+          <svg class="ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 21h18M5 21V8l7-5 7 5v13M9 21v-6h6v6"/></svg>
+          Fornecedores<small>FASE 1</small></div>
+        <div class="nav-item disabled" title="Segunda fase, ainda a definir">
+          <svg class="ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 7l8-4 8 4-8 4-8-4zM4 7v10l8 4 8-4V7M12 11v10"/></svg>
+          Itens / NCM<small>FASE 2</small></div>
+      </div>
+      <div class="side-foot">
+        <div class="acct">
+          <div class="home"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#137038" stroke-width="2"><path d="M4 11l8-6 8 6v8a1 1 0 01-1 1H5a1 1 0 01-1-1v-8z"/></svg></div>
+          <div class="nm"><b>Rede Vilarejo</b><br><span>Compras · Reforma</span></div>
+        </div>
+      </div>
+    </aside>
+    <main>
+      <div class="crumb">ELO Reforma › <b>Fornecedores · Fase 1</b></div>
+      <div class="page-head">
+        <div class="page-ico"><svg viewBox="0 0 24 24" fill="none" stroke="#137038" stroke-width="2"><path d="M9 11l3 3 8-8"/><path d="M20 12v7a2 2 0 01-2 2H6a2 2 0 01-2-2V5a2 2 0 012-2h9"/></svg></div>
+        <h1>Levantamento tributário de fornecedores</h1>
+      </div>
+      <p class="sub">Cada fornecedor recebe um link próprio e preenche os dados para o IBS/CBS.</p>
+      <div class="prog">
+        <div class="prog-h"><h3>Fornecedores que responderam</h3><span class="pct" id="pgPct">0%</span></div>
+        <div class="bar"><i id="pgBar" style="width:0"></i></div>
+        <div class="kpis">
+          <span>Respondidos: <b id="kResp">0</b> de <b id="kMeta">100</b> (meta)</span>
+          <span>Preenchendo: <b id="kPreen">0</b></span>
+          <span>Links enviados: <b id="kEnv">0</b></span>
+          <span>Fornecedores na base: <b id="kTot">0</b></span>
+        </div>
+      </div>
+      <div class="tools">
+        <input class="inp" id="fBusca" type="search" placeholder="Buscar razão social, fantasia ou CNPJ">
+        <select class="inp" id="fStatus">
+          <option value="">Todos os status</option>
+          <option value="pendente">Pendente</option>
+          <option value="enviado">Link enviado</option>
+          <option value="em_preenchimento">Preenchendo</option>
+          <option value="respondido">Respondido</option>
+        </select>
+        <span class="sp"></span>
+        <button class="btn" id="btImport">Importar base</button>
+        <button class="btn" id="btExport">Exportar respostas</button>
+        <button class="btn pri" id="btNovo">+ Fornecedor</button>
+      </div>
+      <div class="tbl-card">
+        <div id="tblWrap">
+          <table>
+            <thead><tr>
+              <th class="col-cnpj" style="width:182px">CNPJ</th>
+              <th>Razão social</th>
+              <th class="col-ct" style="width:13%">Contato</th>
+              <th class="col-em" style="width:17%">E-mail</th>
+              <th style="width:120px">Status</th>
+              <th style="width:230px">Ações</th>
+            </tr></thead>
+            <tbody id="tBody"></tbody>
+          </table>
+        </div>
+        <div class="pager">
+          <span id="pgInfo"></span>
+          <div class="nav"><button class="btn sm" id="pgPrev">◀</button><span id="pgNum">1 / 1</span><button class="btn sm" id="pgNext">▶</button></div>
+        </div>
+      </div>
+    </main>
+  </div>
+</section>
+
+<!-- ================= FORMULÁRIO DO FORNECEDOR ================= -->
+<section id="vw-form" class="hide">
+  <header>
+    <div class="brand">
+      <img class="logo-elo" data-logo="elo" alt="elo Sistemas">
+      <div class="tagline"><div class="t1">Rede Vilarejo · Reforma Tributária</div><div class="t2">Cadastro de fornecedores · IBS/CBS</div></div>
+    </div>
+  </header>
+  <div class="fbody">
+    <div class="fcard" id="fCard">
+      <div class="steps" id="fSteps">
+        <div data-s="0"><em>1</em><span>Empresa</span></div>
+        <div data-s="1"><em>2</em><span>Endereço</span></div>
+        <div data-s="2"><em>3</em><span>Tributação</span></div>
+        <div data-s="3"><em>4</em><span>Responsáveis</span></div>
+      </div>
+      <!-- Passo 1 -->
+      <div class="fstep" data-p="0">
+        <h3>Dados da empresa</h3>
+        <p class="hint">A Rede Vilarejo está se preparando para a Reforma Tributária (IBS e CBS). Preenchemos o que encontramos na Receita Federal. Confira e corrija o que for preciso.</p>
+        <div class="grid g2">
+          <label class="f">CNPJ<input class="inp" id="cnpj" readonly></label>
+          <label class="f">Inscrição estadual<input class="inp" id="inscricao_estadual" placeholder="Ou ISENTO"></label>
+          <label class="f span2">Razão social *<input class="inp" id="razao_social"></label>
+          <label class="f span2">Nome fantasia<input class="inp" id="nome_fantasia"></label>
+          <label class="f span2">Atividade principal (CNAE)<input class="inp" id="cnae" placeholder="Ex.: 4744-0/05 · Comércio varejista de materiais de construção"></label>
+        </div>
+        <div class="msg" id="msg_cnpj"></div>
+      </div>
+
+      <!-- Passo 2 -->
+      <div class="fstep hide" data-p="1">
+        <h3>Endereço</h3>
+        <p class="hint">Digite o CEP para buscar o endereço. Se não encontrar, preencha manualmente.</p>
+        <div class="grid g4">
+          <label class="f">CEP *<input class="inp" id="cep" inputmode="numeric" maxlength="9" placeholder="00000-000"></label>
+          <label class="f span3">Logradouro *<input class="inp" id="logradouro"></label>
+          <label class="f">Número *<input class="inp" id="numero"></label>
+          <label class="f span3">Complemento<input class="inp" id="complemento"></label>
+          <label class="f span2">Bairro<input class="inp" id="bairro"></label>
+          <label class="f">Cidade *<input class="inp" id="cidade"></label>
+          <label class="f">UF *<input class="inp" id="uf" maxlength="2" style="text-transform:uppercase"></label>
+        </div>
+        <div class="msg" id="msg_cep"></div>
+      </div>
+
+      <!-- Passo 3 -->
+      <div class="fstep hide" data-p="2">
+        <h3>Tributação</h3>
+        <p class="hint">Se tiver dúvida em alguma resposta, marque “Não sei”. Seu contador pode ajudar.</p>
+        <div class="q"><span>Regime tributário atual *</span>
+          <div class="radios" data-name="regime_tributario">
+            <label><input type="radio" name="regime_tributario" value="Simples Nacional">Simples Nacional</label>
+            <label><input type="radio" name="regime_tributario" value="MEI">MEI</label>
+            <label><input type="radio" name="regime_tributario" value="Lucro Presumido">Lucro Presumido</label>
+            <label><input type="radio" name="regime_tributario" value="Lucro Real">Lucro Real</label>
+          </div></div>
+        <div class="q hide" id="qSimples"><span>Pretende optar por recolher IBS/CBS pelo regime regular (fora do Simples)?<small>Quem é do Simples pode escolher pagar IBS/CBS por fora. Assim o cliente aproveita o crédito integral.</small></span>
+          <div class="radios">
+            <label><input type="radio" name="simples_regime_regular" value="Sim">Sim</label>
+            <label><input type="radio" name="simples_regime_regular" value="Não">Não</label>
+            <label><input type="radio" name="simples_regime_regular" value="Ainda não decidiu">Ainda não decidimos</label>
+          </div></div>
+        <div class="q"><span>Qual é o perfil da sua empresa? *</span>
+          <div class="radios">
+            <label><input type="radio" name="perfil" value="Fabricante">Fabricante / indústria</label>
+            <label><input type="radio" name="perfil" value="Importador">Importador</label>
+            <label><input type="radio" name="perfil" value="Distribuidor/Atacadista">Distribuidor / atacadista</label>
+            <label><input type="radio" name="perfil" value="Representante">Representante comercial</label>
+          </div></div>
+        <div class="q"><span>Algum produto que vocês vendem tem tratamento diferenciado de IBS/CBS?<small>Por exemplo: alíquota reduzida, isenção ou regime específico.</small></span>
+          <div class="radios">
+            <label><input type="radio" name="tratamento_diferenciado" value="Sim">Sim</label>
+            <label><input type="radio" name="tratamento_diferenciado" value="Não">Não</label>
+            <label><input type="radio" name="tratamento_diferenciado" value="Não sei">Não sei</label>
+          </div></div>
+        <div class="q"><span>A nota fiscal (NF-e) de vocês já sai com os campos de IBS/CBS? *</span>
+          <div class="radios">
+            <label><input type="radio" name="nfe_ibs_cbs" value="Sim">Sim, já emitimos</label>
+            <label><input type="radio" name="nfe_ibs_cbs" value="Em adaptação">Em adaptação</label>
+            <label><input type="radio" name="nfe_ibs_cbs" value="Não">Ainda não</label>
+            <label><input type="radio" name="nfe_ibs_cbs" value="Não sei">Não sei</label>
+          </div></div>
+        <label class="f">Sistema (ERP) que emite as notas<input class="inp" id="erp" placeholder="Ex.: TOTVS, SAP, Bling…"></label>
+      </div>
+
+      <!-- Passo 4 -->
+      <div class="fstep hide" data-p="3">
+        <h3>Responsáveis</h3>
+        <div class="grid g3">
+          <label class="f span3">Responsável pelo preenchimento *<input class="inp" id="responsavel_nome"></label>
+          <label class="f">Cargo<input class="inp" id="responsavel_cargo"></label>
+          <label class="f">E-mail *<input class="inp" id="responsavel_email" type="email"></label>
+          <label class="f">Telefone / WhatsApp<input class="inp" id="responsavel_telefone" inputmode="tel"></label>
+          <label class="f">Contador / escritório<input class="inp" id="contador_nome"></label>
+          <label class="f">E-mail do contador<input class="inp" id="contador_email" type="email"></label>
+          <label class="f">Telefone do contador<input class="inp" id="contador_telefone" inputmode="tel"></label>
+          <label class="f span3">Observações<textarea class="inp" id="observacoes" rows="3"></textarea></label>
+        </div>
+      </div>
+
+      <div class="fnav" id="fNav">
+        <button class="btn" id="fVoltar">◀ Voltar</button>
+        <div style="display:flex;gap:8px">
+          <button class="btn" id="fSalvar">Salvar e continuar depois</button>
+          <button class="btn pri" id="fAvancar">Avançar ▶</button>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<script>
+/* ============================================================
+   Versão — atualizar a cada publicação.
+   1.0 · 28/10/2026 · Primeira versão: painel da equipe, importação, links, formulário do fornecedor
+                      com busca de CNPJ/CEP. Visual no padrão ELO Sistemas (variação verde)
+   ============================================================ */
+const VERSAO = { num:'1.0', data:'28/10/2026' };
+
+/* ======================= CONFIG ======================= */
+const SB_URL = 'https://sdipbaobqrkcidslqdpk.supabase.co';
+const SB_KEY = 'sb_publishable_5S5eXVJkTeQevnxZW2rjhQ_yf2G4v9s';
+const META = 100;
+const sb = window.supabase.createClient(SB_URL, SB_KEY);
+
+/* ======================= UTIL ======================= */
+const $ = id => document.getElementById(id);
+const dig = v => String(v ?? '').replace(/\D/g, '');
+const esc = s => String(s ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+const fmtCNPJ = c => { c = dig(c).padStart(14,'0'); return `${c.slice(0,2)}.${c.slice(2,5)}.${c.slice(5,8)}/${c.slice(8,12)}-${c.slice(12)}`; };
+const fmtCEP = v => { const c = dig(v).slice(0,8); return c.length > 5 ? c.slice(0,5)+'-'+c.slice(5) : c; };
+const fmtTel = v => { const c = dig(v).slice(0,11); if (c.length <= 2) return c; if (c.length <= 6) return `(${c.slice(0,2)}) ${c.slice(2)}`; if (c.length <= 10) return `(${c.slice(0,2)}) ${c.slice(2,6)}-${c.slice(6)}`; return `(${c.slice(0,2)}) ${c.slice(2,7)}-${c.slice(7)}`; };
+const STATUS = { pendente:'Pendente', enviado:'Link enviado', em_preenchimento:'Preenchendo', respondido:'Respondido' };
+function toast(t){ const d=document.createElement('div'); d.className='toast'; d.textContent=t; document.body.appendChild(d);
+  requestAnimationFrame(()=>d.classList.add('show')); setTimeout(()=>{ d.classList.remove('show'); setTimeout(()=>d.remove(),250); },2600); }
+function aviso(id, t, tipo){ const el=$(id); if(!el) return; el.textContent=t; el.style.color = tipo==='erro'?'var(--warn)':tipo==='ok'?'var(--ok)':'var(--muted)'; }
+function show(v){ ['vw-login','vw-painel','vw-form'].forEach(x => $(x).classList.toggle('hide', x!==v)); }
+async function getJSON(url, ms=6000){ const c=new AbortController(); const t=setTimeout(()=>c.abort(),ms); try{ const r=await fetch(url,{signal:c.signal}); return r.ok? await r.json():null; }catch{ return null; } finally{ clearTimeout(t); } }
+
+function cnpjValido(c){
+  c = dig(c); if (c.length!==14 || /^(\d)\1+$/.test(c)) return false;
+  const dv = n => { let s=0,p=n-7; for(let i=0;i<n;i++){ s+=c[i]*p--; if(p<2)p=9; } const r=s%11; return r<2?0:11-r; };
+  return dv(12)==c[12] && dv(13)==c[13];
+}
+
+/* ---------- APIs públicas: CNPJ e CEP ---------- */
+async function consultaCNPJ(cnpj){
+  const c = dig(cnpj);
+  let d = await getJSON(`https://brasilapi.com.br/api/cnpj/v1/${c}`);
+  if (d && d.razao_social) return {
+    razao_social:d.razao_social, nome_fantasia:d.nome_fantasia, inscricao_estadual:null,
+    cnae: d.cnae_fiscal ? `${String(d.cnae_fiscal).replace(/^(\d{4})(\d)(\d{2})$/,'$1-$2/$3')} · ${d.cnae_fiscal_descricao||''}` : '',
+    regime: d.opcao_pelo_mei ? 'MEI' : d.opcao_pelo_simples ? 'Simples Nacional' : null,
+    cep:d.cep, logradouro:[d.descricao_tipo_de_logradouro,d.logradouro].filter(Boolean).join(' '),
+    numero:d.numero, complemento:d.complemento, bairro:d.bairro, cidade:d.municipio, uf:d.uf,
+    email:d.email, telefone:d.ddd_telefone_1
+  };
+  d = await getJSON(`https://publica.cnpj.ws/cnpj/${c}`);
+  if (d && d.razao_social){
+    const e = d.estabelecimento||{}; const ies = e.inscricoes_estaduais||[];
+    const ie = ies.find(i=>i.ativo) || ies[0];
+    const ap = e.atividade_principal||{};
+    return {
+      razao_social:d.razao_social, nome_fantasia:e.nome_fantasia, inscricao_estadual: ie && ie.inscricao_estadual,
+      cnae: ap.subclasse ? `${ap.subclasse} · ${ap.descricao||''}` : '',
+      regime: d.simples && d.simples.mei==='Sim' ? 'MEI' : d.simples && d.simples.simples==='Sim' ? 'Simples Nacional' : null,
+      cep:e.cep, logradouro:[e.tipo_logradouro,e.logradouro].filter(Boolean).join(' '),
+      numero:e.numero, complemento:e.complemento, bairro:e.bairro,
+      cidade:e.cidade&&e.cidade.nome, uf:e.estado&&e.estado.sigla,
+      email:e.email, telefone: e.ddd1 && e.telefone1 ? e.ddd1+e.telefone1 : null
+    };
+  }
+  return null;
+}
+async function consultaCEP(cep){
+  const c = dig(cep); if (c.length!==8) return null;
+  const v = await getJSON(`https://viacep.com.br/ws/${c}/json/`);
+  if (v && !v.erro) return { logradouro:v.logradouro, bairro:v.bairro, cidade:v.localidade, uf:v.uf };
+  const b = await getJSON(`https://brasilapi.com.br/api/cep/v2/${c}`);
+  if (b && b.city) return { logradouro:b.street, bairro:b.neighborhood, cidade:b.city, uf:b.state };
+  return null;
+}
+/* preenche só se veio valor; não apaga o que já foi digitado */
+function preencher(id, v, sobrescrever=true){ const el=$(id); if(!el || v==null || !String(v).trim()) return; if(!sobrescrever && el.value.trim()) return; el.value = String(v).trim(); }
+
+/* ---------- Logos: logoelo.png (cabeçalho e lado verde) e logo_reforma.png (lado branco do login) ----------
+   Procura na mesma pasta, em assets/ e em images/; se não achar, mostra o texto "elo". */
+function wireLogos(){
+  const arq = { elo:'logoelo', reforma:'logo_reforma' };
+  document.querySelectorAll('img[data-logo]').forEach(img => {
+    const n = arq[img.dataset.logo] || img.dataset.logo;
+    const cands = [n+'.png', 'assets/'+n+'.png', 'images/'+n+'.png', n+'.PNG'];
+    let i = 0;
+    img.onerror = () => { i++; if (i < cands.length) img.src = cands[i];
+      else img.outerHTML = img.dataset.logo==='reforma'
+        ? '<div class="logo-txt" style="color:var(--green-ink);font-size:34px;margin-bottom:26px">ELO Reforma</div>'
+        : `<span class="logo-txt" style="${img.classList.contains('lp-logo')?'display:block;font-size:44px;margin-bottom:44px':''}">elo<sup>®</sup></span>`; };
+    img.src = cands[0];
+  });
+}
+wireLogos();
+$('lpVersao').innerHTML = `<i></i>Versão <b>${VERSAO.num}</b> · ${VERSAO.data}`;
+
+/* ======================= ROTEAMENTO ======================= */
+const TOKEN = new URLSearchParams(location.search).get('t');
+if (TOKEN) iniciarFormulario(); else iniciarPainel();
+
+/* =========================================================
+   PAINEL (equipe)
+   ========================================================= */
+let FORN = [], pagina = 0, porPagina = 10;
+
+async function iniciarPainel(){
+  const { data:{ session } } = await sb.auth.getSession();
+  if (session) return entrarPainel(session.user);
+  show('vw-login');
+}
+
+$('fLogin').addEventListener('submit', async e => {
+  e.preventDefault(); aviso('lgMsg','Entrando…'); $('lgBtn').disabled = true;
+  const { data, error } = await sb.auth.signInWithPassword({ email:$('lgEmail').value.trim(), password:$('lgSenha').value });
+  $('lgBtn').disabled = false;
+  if (error) return aviso('lgMsg','E-mail ou senha incorretos.','erro');
+  entrarPainel(data.user);
+});
+$('btSair').onclick = async () => { await sb.auth.signOut(); location.reload(); };
+
+async function entrarPainel(user){
+  const { data:papel, error } = await sb.rpc('equipe_entrar', { p_nome: null });
+  if (error || !papel){
+    await sb.auth.signOut(); show('vw-login');
+    return aviso('lgMsg','Seu usuário ainda não tem acesso. Peça a um administrador para incluir você na equipe.','erro');
+  }
+  $('whoNome').textContent = user.email;
+  $('whoPapel').textContent = papel==='admin' ? 'Administrador' : 'Comprador';
+  $('avatar').textContent = (user.email||'?')[0].toUpperCase();
+  show('vw-painel');
+  await carregar();
+}
+
+async function carregar(){
+  const { data, error } = await sb.from('fornecedores')
+    .select('id,cnpj,razao_social,nome_fantasia,inscricao_estadual,contato,email,telefone,token,status,link_enviado_em,respondido_em')
+    .order('razao_social');
+  if (error) return toast('Erro ao carregar: '+error.message);
+  FORN = data || [];
+  progresso(); render();
+}
+
+function progresso(){
+  const c = s => FORN.filter(f=>f.status===s).length;
+  const resp = c('respondido');
+  const pct = Math.min(100, Math.round(resp/META*100));
+  $('pgPct').textContent = pct+'%'; $('pgBar').style.width = pct+'%';
+  $('kResp').textContent = resp; $('kMeta').textContent = META;
+  $('kPreen').textContent = c('em_preenchimento');
+  $('kEnv').textContent = FORN.filter(f=>f.status!=='pendente').length;
+  $('kTot').textContent = FORN.length;
+}
+
+function filtrados(){
+  const q = $('fBusca').value.trim().toLowerCase(), qd = dig(q), st = $('fStatus').value;
+  return FORN.filter(f => (!st || f.status===st) &&
+    (!q || (f.razao_social||'').toLowerCase().includes(q) || (f.nome_fantasia||'').toLowerCase().includes(q) || (qd && f.cnpj.includes(qd))));
+}
+
+function calcPorPagina(){
+  const wrap = $('tblWrap'); const head = wrap.querySelector('thead').offsetHeight || 40;
+  const rowh = parseInt(getComputedStyle(document.documentElement).getPropertyValue('--rowh')) || 44;
+  porPagina = Math.max(3, Math.floor((wrap.clientHeight - head) / rowh));
+}
+
+function render(){
+  calcPorPagina();
+  const lista = filtrados();
+  const paginas = Math.max(1, Math.ceil(lista.length/porPagina));
+  if (pagina >= paginas) pagina = paginas-1;
+  const fatia = lista.slice(pagina*porPagina, (pagina+1)*porPagina);
+  $('tBody').innerHTML = fatia.length ? fatia.map(f => `
+    <tr data-id="${f.id}">
+      <td class="col-cnpj mono">${fmtCNPJ(f.cnpj)}</td>
+      <td title="${esc(f.razao_social)}"><b style="font-weight:600">${esc(f.razao_social)}</b>${f.nome_fantasia?`<span style="color:var(--muted)"> · ${esc(f.nome_fantasia)}</span>`:''}</td>
+      <td class="col-ct">${esc(f.contato||'')}</td>
+      <td class="col-em" title="${esc(f.email||'')}">${esc(f.email||'')}</td>
+      <td><span class="chip st-${f.status}">${STATUS[f.status]}</span></td>
+      <td><div class="acts">
+        <button class="btn sm" data-a="copiar" title="Copia a mensagem com o link para colar no e-mail">Copiar convite</button>
+        <button class="btn sm" data-a="ver" title="Ver respostas" ${f.status==='pendente'||f.status==='enviado'?'disabled':''}>Ver</button>
+        <button class="btn sm ghost" data-a="edit" title="Editar">✎</button>
+      </div></td>
+    </tr>`).join('') : `<tr><td colspan="6"><div class="empty">${FORN.length?'Nenhum fornecedor encontrado no filtro.':'Nenhum fornecedor na base. Use “Importar base” ou “+ Fornecedor”.'}</div></td></tr>`;
+  $('pgInfo').textContent = `${lista.length} fornecedor(es)`;
+  $('pgNum').textContent = `${pagina+1} / ${paginas}`;
+  $('pgPrev').disabled = pagina===0; $('pgNext').disabled = pagina>=paginas-1;
+}
+
+$('fBusca').addEventListener('input', ()=>{ pagina=0; render(); });
+$('fStatus').addEventListener('change', ()=>{ pagina=0; render(); });
+$('pgPrev').onclick = ()=>{ pagina--; render(); };
+$('pgNext').onclick = ()=>{ pagina++; render(); };
+let rsz; window.addEventListener('resize', ()=>{ clearTimeout(rsz); rsz=setTimeout(()=>{ if(!$('vw-painel').classList.contains('hide')) render(); },120); });
+document.addEventListener('keydown', e => {
+  if ($('vw-painel').classList.contains('hide') || document.querySelector('.ov') || e.target.matches('input,textarea,select')) return;
+  if (e.key==='ArrowRight' && !$('pgNext').disabled) $('pgNext').click();
+  if (e.key==='ArrowLeft' && !$('pgPrev').disabled) $('pgPrev').click();
+});
+
+const linkDe = f => `${location.origin}${location.pathname}?t=${f.token}`;
+const msgConvite = f => `Olá${f.contato?', '+f.contato.split(' ')[0]:''}! A Rede Vilarejo está levantando informações dos fornecedores para a Reforma Tributária (IBS/CBS). Pedimos, por gentileza, que a ${f.nome_fantasia||f.razao_social} preencha o formulário abaixo (leva poucos minutos):\n\n${linkDe(f)}\n\nObrigado!`;
+
+async function marcarEnviado(f){
+  if (f.status!=='pendente') return;
+  const agora = new Date().toISOString();
+  const { error } = await sb.from('fornecedores').update({ status:'enviado', link_enviado_em:agora, atualizado_em:agora }).eq('id', f.id);
+  if (!error){ f.status='enviado'; f.link_enviado_em=agora; progresso(); render(); }
+}
+
+$('tBody').addEventListener('click', async e => {
+  const b = e.target.closest('button[data-a]'); if(!b) return;
+  const f = FORN.find(x => x.id === b.closest('tr').dataset.id); if(!f) return;
+  const a = b.dataset.a;
+  if (a==='copiar'){
+    const txt = msgConvite(f);
+    try{ await navigator.clipboard.writeText(txt); toast(`Convite copiado. Cole no e-mail${f.email?' para '+f.email:''}.`); }
+    catch{ modal('Copie o convite', `<textarea class="inp" rows="9" readonly onfocus="this.select()">${esc(txt)}</textarea>`, [['Fechar','',o=>o.remove()]]); }
+    marcarEnviado(f);
+  }
+  if (a==='ver') verRespostas(f);
+  if (a==='edit') abrirFornecedor(f);
+});
+
+/* ---------- Modal genérico ---------- */
+function modal(titulo, corpo, botoes=[]){
+  const ov = document.createElement('div'); ov.className='ov';
+  ov.innerHTML = `<div class="modal"><h3>${titulo}<button class="btn sm ghost" data-x>✕</button></h3><div class="bd">${corpo}</div><div class="ft"></div></div>`;
+  const ft = ov.querySelector('.ft');
+  botoes.forEach(([txt, cls, fn]) => { const b=document.createElement('button'); b.className='btn '+(cls||''); b.textContent=txt; b.onclick=()=>fn(ov,b); ft.appendChild(b); });
+  const fechar = ()=>ov.remove();
+  ov.querySelector('[data-x]').onclick = fechar;
+  ov.addEventListener('click', e=>{ if(e.target===ov) fechar(); });
+  document.body.appendChild(ov); return ov;
+}
+
+/* ---------- Novo / editar fornecedor ---------- */
+$('btNovo').onclick = ()=>abrirFornecedor(null);
+function abrirFornecedor(f){
+  const v = k => esc(f?.[k]||'');
+  const ov = modal(f?'Editar fornecedor':'Novo fornecedor', `
+    <div class="grid g2">
+      <label class="f">CNPJ *<input class="inp" id="mCnpj" value="${f?fmtCNPJ(f.cnpj):''}" ${f?'readonly':''} placeholder="Digite e a razão social é buscada"></label>
+      <label class="f">Inscrição estadual<input class="inp" id="mIe" value="${v('inscricao_estadual')}"></label>
+      <label class="f span2">Razão social *<input class="inp" id="mRazao" value="${v('razao_social')}"></label>
+      <label class="f span2">Nome fantasia<input class="inp" id="mFant" value="${v('nome_fantasia')}"></label>
+      <label class="f">Contato<input class="inp" id="mCont" value="${v('contato')}"></label>
+      <label class="f">Telefone / WhatsApp<input class="inp" id="mTel" value="${f?.telefone?fmtTel(f.telefone):''}"></label>
+      <label class="f span2">E-mail<input class="inp" id="mEmail" type="email" value="${v('email')}"></label>
+    </div><div class="msg" id="mMsg"></div>`,
+    [['Cancelar','',o=>o.remove()], ['Salvar','pri', salvar]]);
+  const cn = ov.querySelector('#mCnpj');
+  ov.querySelector('#mTel').addEventListener('input', e=>e.target.value=fmtTel(e.target.value));
+  if (!f) cn.addEventListener('input', async () => {
+    const c = dig(cn.value).slice(0,14); cn.value = c.length===14 ? fmtCNPJ(c) : c;
+    if (c.length<14) return;
+    if (!cnpjValido(c)) return aviso('mMsg','CNPJ inválido.','erro');
+    if (FORN.some(x=>x.cnpj===c)) return aviso('mMsg','Este CNPJ já está na base.','erro');
+    aviso('mMsg','Buscando na Receita…');
+    const d = await consultaCNPJ(c);
+    if (!d) return aviso('mMsg','Não encontrado agora. Preencha manualmente.','erro');
+    const set=(id,val)=>{ const el=ov.querySelector(id); if(val && !el.value.trim()) el.value=val; };
+    set('#mRazao', d.razao_social); set('#mFant', d.nome_fantasia); set('#mIe', d.inscricao_estadual);
+    set('#mEmail', d.email && d.email.toLowerCase()); set('#mTel', d.telefone && fmtTel(d.telefone));
+    aviso('mMsg','Dados encontrados. Confira antes de salvar.','ok');
+  });
+  async function salvar(o, b){
+    const c = dig(o.querySelector('#mCnpj').value);
+    const reg = {
+      razao_social: o.querySelector('#mRazao').value.trim(),
+      nome_fantasia: o.querySelector('#mFant').value.trim()||null,
+      inscricao_estadual: o.querySelector('#mIe').value.trim()||null,
+      contato: o.querySelector('#mCont').value.trim()||null,
+      telefone: dig(o.querySelector('#mTel').value)||null,
+      email: o.querySelector('#mEmail').value.trim()||null,
+      atualizado_em: new Date().toISOString()
+    };
+    if (!f && !cnpjValido(c)) return aviso('mMsg','Informe um CNPJ válido.','erro');
+    if (!reg.razao_social) return aviso('mMsg','Informe a razão social.','erro');
+    b.disabled = true;
+    const r = f ? await sb.from('fornecedores').update(reg).eq('id', f.id)
+                : await sb.from('fornecedores').insert({ ...reg, cnpj:c });
+    b.disabled = false;
+    if (r.error) return aviso('mMsg', r.error.code==='23505'?'Este CNPJ já está na base.':'Erro: '+r.error.message, 'erro');
+    o.remove(); toast('Fornecedor salvo.'); carregar();
+  }
+}
+
+/* ---------- Importar base (CSV / colado do Excel) ---------- */
+function parseCSV(txt){
+  txt = txt.replace(/^\uFEFF/,'').trim(); if(!txt) return [];
+  const first = txt.split(/\r?\n/)[0];
+  const sep = first.includes('\t') ? '\t' : (first.split(';').length >= first.split(',').length ? ';' : ',');
+  const rows=[]; let row=[], cell='', q=false;
+  for (let i=0;i<txt.length;i++){
+    const ch=txt[i];
+    if (q){ if(ch==='"'){ if(txt[i+1]==='"'){cell+='"';i++;} else q=false; } else cell+=ch; }
+    else if (ch==='"') q=true;
+    else if (ch===sep){ row.push(cell); cell=''; }
+    else if (ch==='\n' || ch==='\r'){ if(ch==='\r'&&txt[i+1]==='\n') i++; row.push(cell); rows.push(row); row=[]; cell=''; }
+    else cell+=ch;
+  }
+  row.push(cell); rows.push(row);
+  return rows.filter(r=>r.some(c=>c.trim()));
+}
+const norm = s => s.normalize('NFD').replace(/[\u0300-\u036f]/g,'').toLowerCase().replace(/[^a-z0-9]/g,'');
+const MAPA = { cnpj:'cnpj', razaosocial:'razao_social', razao:'razao_social', nome:'razao_social', fornecedor:'razao_social',
+  nomefantasia:'nome_fantasia', fantasia:'nome_fantasia', inscricaoestadual:'inscricao_estadual', ie:'inscricao_estadual', insc:'inscricao_estadual',
+  contato:'contato', responsavel:'contato', vendedor:'contato', representante:'contato',
+  email:'email', emails:'email', telefone:'telefone', fone:'telefone', celular:'telefone', whatsapp:'telefone', tel:'telefone' };
+
+$('btImport').onclick = () => {
+  let linhas = [];
+  const ov = modal('Importar base de fornecedores', `
+    <p style="color:var(--muted);font-size:13px;line-height:1.5">Envie um arquivo <b>.csv</b> ou cole as linhas copiadas do Excel, com o cabeçalho na primeira linha.<br>
+    Colunas reconhecidas: <b>CNPJ</b>, <b>Razão social</b>, Nome fantasia, Inscrição estadual, Contato, E-mail, Telefone.<br>
+    CNPJ que já está na base tem os dados atualizados, sem perder o link nem o status.</p>
+    <input type="file" class="inp" id="iArq" accept=".csv,.txt">
+    <textarea class="inp" id="iTxt" rows="6" placeholder="…ou cole aqui"></textarea>
+    <div class="msg" id="iMsg"></div>`,
+    [['Cancelar','',o=>o.remove()], ['Importar','pri', importar]]);
+  const analisar = txt => {
+    const rows = parseCSV(txt); linhas = [];
+    if (rows.length<2) return aviso('iMsg','Nenhuma linha encontrada.','erro');
+    const cab = rows[0].map(h => MAPA[norm(h)] || null);
+    if (!cab.includes('cnpj') || !cab.includes('razao_social')) return aviso('iMsg','Faltam as colunas CNPJ e/ou Razão social no cabeçalho.','erro');
+    let inval = 0; const vistos = new Set();
+    rows.slice(1).forEach(r => {
+      const o = {}; cab.forEach((k,i)=>{ if(k && r[i]!=null && String(r[i]).trim() && !o[k]) o[k]=String(r[i]).trim(); });
+      o.cnpj = dig(o.cnpj).padStart(14,'0');
+      if (!cnpjValido(o.cnpj) || !o.razao_social || vistos.has(o.cnpj)){ inval++; return; }
+      vistos.add(o.cnpj);
+      if (o.telefone) o.telefone = dig(o.telefone);
+      linhas.push(o);
+    });
+    aviso('iMsg', `${linhas.length} fornecedor(es) prontos para importar${inval?` · ${inval} linha(s) ignorada(s) (CNPJ inválido, repetido ou sem razão social)`:''}.`, linhas.length?'ok':'erro');
+  };
+  ov.querySelector('#iArq').onchange = async e => {
+    const file = e.target.files[0]; if(!file) return;
+    const buf = await file.arrayBuffer();
+    let txt = new TextDecoder('utf-8').decode(buf);
+    if (txt.includes('\uFFFD')) txt = new TextDecoder('windows-1252').decode(buf);
+    ov.querySelector('#iTxt').value = ''; analisar(txt);
+  };
+  ov.querySelector('#iTxt').oninput = e => analisar(e.target.value);
+  async function importar(o, b){
+    if (!linhas.length) return aviso('iMsg','Nada para importar.','erro');
+    b.disabled = true; let ok = 0;
+    for (let i=0;i<linhas.length;i+=200){
+      const lote = linhas.slice(i,i+200);
+      const { error } = await sb.from('fornecedores').upsert(lote, { onConflict:'cnpj' });
+      if (error){ b.disabled=false; return aviso('iMsg','Erro ao importar: '+error.message,'erro'); }
+      ok += lote.length; aviso('iMsg',`Importando… ${ok}/${linhas.length}`);
+    }
+    o.remove(); toast(`${ok} fornecedor(es) importados.`); carregar();
+  }
+};
+
+/* ---------- Ver respostas ---------- */
+const ROTULOS = {
+  razao_social:'Razão social', nome_fantasia:'Nome fantasia', inscricao_estadual:'Inscrição estadual', cnae:'CNAE principal',
+  cep:'CEP', logradouro:'Logradouro', numero:'Número', complemento:'Complemento', bairro:'Bairro', cidade:'Cidade', uf:'UF',
+  regime_tributario:'Regime tributário', simples_regime_regular:'Simples: IBS/CBS pelo regime regular', perfil:'Perfil',
+  tratamento_diferenciado:'Produto com tratamento diferenciado', nfe_ibs_cbs:'NF-e com IBS/CBS', erp:'ERP',
+  responsavel_nome:'Responsável', responsavel_cargo:'Cargo', responsavel_email:'E-mail do responsável', responsavel_telefone:'Telefone do responsável',
+  contador_nome:'Contador / escritório', contador_email:'E-mail do contador', contador_telefone:'Telefone do contador', observacoes:'Observações'
+};
+function achatar(r){
+  if (!r) return {};
+  const o = { ...r, ...(r.respostas||{}) }; delete o.respostas;
+  if (o.cep) o.cep = fmtCEP(o.cep);
+  return o;
+}
+async function verRespostas(f){
+  const { data, error } = await sb.from('respostas_fase1').select('*').eq('fornecedor_id', f.id).maybeSingle();
+  if (error) return toast('Erro: '+error.message);
+  const r = achatar(data);
+  const corpo = data ? `<dl class="kv">${Object.keys(ROTULOS).filter(k=>r[k]).map(k=>`<dt>${ROTULOS[k]}</dt><dd>${esc(r[k])}</dd>`).join('')}
+    <dt>Situação</dt><dd>${data.finalizado?'Enviado pelo fornecedor':'Rascunho (ainda não enviou)'} · atualizado em ${new Date(data.atualizado_em).toLocaleString('pt-BR')}</dd></dl>`
+    : '<p class="empty">O fornecedor abriu o link mas ainda não salvou nada.</p>';
+  modal(esc(f.razao_social), corpo, [['Fechar','',o=>o.remove()]]);
+}
+
+/* ---------- Exportar respostas (CSV para Excel) ---------- */
+$('btExport').onclick = async () => {
+  const { data, error } = await sb.from('fornecedores').select('cnpj,razao_social,status,respondido_em,respostas_fase1(*)').order('razao_social');
+  if (error) return toast('Erro: '+error.message);
+  const linhas = (data||[]).filter(f=>f.respostas_fase1);
+  if (!linhas.length) return toast('Ainda não há respostas para exportar.');
+  const chaves = Object.keys(ROTULOS);
+  const cab = ['CNPJ','Status','Respondido em', ...chaves.map(k=>ROTULOS[k])];
+  const cel = v => `"${String(v??'').replace(/"/g,'""')}"`;
+  const corpo = linhas.map(f => {
+    const r = achatar(Array.isArray(f.respostas_fase1)?f.respostas_fase1[0]:f.respostas_fase1);
+    return [fmtCNPJ(f.cnpj), STATUS[f.status], f.respondido_em?new Date(f.respondido_em).toLocaleDateString('pt-BR'):'', ...chaves.map(k=>r[k])].map(cel).join(';');
+  });
+  const csv = '\uFEFF' + [cab.map(cel).join(';'), ...corpo].join('\r\n');
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(new Blob([csv],{type:'text/csv;charset=utf-8'}));
+  a.download = `elo-reforma-respostas-${new Date().toISOString().slice(0,10)}.csv`; a.click();
+};
+
+/* =========================================================
+   FORMULÁRIO DO FORNECEDOR (link com token)
+   ========================================================= */
+let passo = 0;
+const N_PASSOS = 4;
+const CAMPOS_TXT = ['razao_social','nome_fantasia','inscricao_estadual','cep','logradouro','numero','complemento','bairro','cidade','uf','responsavel_nome','responsavel_email','responsavel_telefone'];
+const EXTRAS_TXT = ['cnae','erp','responsavel_cargo','contador_nome','contador_email','contador_telefone','observacoes'];
+const EXTRAS_RADIO = ['simples_regime_regular','perfil','tratamento_diferenciado','nfe_ibs_cbs'];
+
+function radio(n){ const r=document.querySelector(`input[name="${n}"]:checked`); return r?r.value:''; }
+function setRadio(n,v){ const r=document.querySelector(`input[name="${n}"][value="${CSS.escape(v||'')}"]`); if(r) r.checked=true; }
+
+function coletar(){
+  const d = {}; CAMPOS_TXT.forEach(k => d[k] = $(k).value.trim());
+  d.uf = d.uf.toUpperCase(); d.regime_tributario = radio('regime_tributario');
+  const extra = {}; EXTRAS_TXT.forEach(k=>extra[k]=$(k).value.trim()); EXTRAS_RADIO.forEach(k=>extra[k]=radio(k));
+  if (d.regime_tributario!=='Simples Nacional') extra.simples_regime_regular = '';
+  d.respostas = extra; return d;
+}
+
+async function iniciarFormulario(){
+  show('vw-form');
+  const { data, error } = await sb.rpc('fase1_abrir', { p_token: TOKEN });
+  if (error || !data){
+    $('fCard').innerHTML = `<div class="done"><div class="ic" style="background:var(--warn-bg);color:var(--warn)">!</div><h3>Link inválido</h3><p style="color:var(--muted)">Confira o link recebido ou fale com o setor de Compras da Rede Vilarejo.</p></div>`;
+    return;
+  }
+  const f = data.fornecedor, r = data.resposta;
+  $('cnpj').value = fmtCNPJ(f.cnpj);
+  if (r){
+    CAMPOS_TXT.forEach(k => { if (r[k]!=null) $(k).value = k==='cep'?fmtCEP(r[k]):r[k]; });
+    setRadio('regime_tributario', r.regime_tributario);
+    const x = r.respostas||{}; EXTRAS_TXT.forEach(k=>{ if(x[k]) $(k).value=x[k]; }); EXTRAS_RADIO.forEach(k=>setRadio(k,x[k]));
+    if (r.finalizado) aviso('msg_cnpj','Vocês já enviaram este formulário. Se precisar, atualize e envie de novo.','ok');
+  } else {
+    preencher('razao_social', f.razao_social); preencher('nome_fantasia', f.nome_fantasia); preencher('inscricao_estadual', f.inscricao_estadual);
+    preencher('responsavel_nome', f.contato); preencher('responsavel_email', f.email); if (f.telefone) preencher('responsavel_telefone', fmtTel(f.telefone));
+    aviso('msg_cnpj','Buscando dados na Receita Federal…');
+    const d = await consultaCNPJ(f.cnpj);
+    if (d){
+      preencher('razao_social', d.razao_social); preencher('nome_fantasia', d.nome_fantasia, false);
+      preencher('inscricao_estadual', d.inscricao_estadual, false); preencher('cnae', d.cnae);
+      if (d.cep) preencher('cep', fmtCEP(d.cep));
+      ['logradouro','numero','complemento','bairro','cidade','uf'].forEach(k=>preencher(k, d[k]));
+      if (d.regime) setRadio('regime_tributario', d.regime);
+      aviso('msg_cnpj','Dados preenchidos pela Receita Federal. Confira e corrija se precisar.','ok');
+    } else aviso('msg_cnpj','');
+  }
+  toggleSimples(); irPara(0);
+}
+
+function toggleSimples(){ $('qSimples').classList.toggle('hide', radio('regime_tributario')!=='Simples Nacional'); }
+document.querySelectorAll('input[name="regime_tributario"]').forEach(r=>r.addEventListener('change', toggleSimples));
+
+$('cep').addEventListener('input', async e => {
+  e.target.value = fmtCEP(e.target.value);
+  if (dig(e.target.value).length!==8) return aviso('msg_cep','');
+  aviso('msg_cep','Buscando endereço…');
+  const end = await consultaCEP(e.target.value);
+  if (!end){ aviso('msg_cep','CEP não encontrado. Digite o endereço manualmente.','erro'); return $('logradouro').focus(); }
+  preencher('logradouro', end.logradouro); preencher('bairro', end.bairro); preencher('cidade', end.cidade); preencher('uf', end.uf);
+  if (!end.logradouro){ aviso('msg_cep','CEP geral da cidade. Informe a rua e o bairro.','erro'); $('logradouro').focus(); }
+  else { aviso('msg_cep','Endereço encontrado. Informe o número.','ok'); $('numero').focus(); }
+});
+['responsavel_telefone','contador_telefone'].forEach(id => $(id).addEventListener('input', e=>e.target.value=fmtTel(e.target.value)));
+
+function validar(p){
+  const d = coletar(), falta = [];
+  if (p===0 && !d.razao_social) falta.push('razão social');
+  if (p===1){ if(dig(d.cep).length!==8) falta.push('CEP'); if(!d.logradouro) falta.push('logradouro'); if(!d.numero) falta.push('número'); if(!d.cidade) falta.push('cidade'); if(!/^[A-Z]{2}$/.test(d.uf)) falta.push('UF'); }
+  if (p===2){ if(!d.regime_tributario) falta.push('regime tributário'); if(!d.respostas.perfil) falta.push('perfil da empresa'); if(!d.respostas.nfe_ibs_cbs) falta.push('NF-e com IBS/CBS'); }
+  if (p===3){ if(!d.responsavel_nome) falta.push('responsável'); if(!/^\S+@\S+\.\S+$/.test(d.responsavel_email)) falta.push('e-mail do responsável'); }
+  if (falta.length){ toast('Preencha: '+falta.join(', ')+'.'); return false; }
+  return true;
+}
+
+function irPara(p){
+  passo = p;
+  document.querySelectorAll('.fstep').forEach(s => s.classList.toggle('hide', +s.dataset.p!==p));
+  document.querySelectorAll('#fSteps div').forEach(s => { const i=+s.dataset.s; s.classList.toggle('on', i===p); s.classList.toggle('ok', i<p); });
+  $('fVoltar').style.visibility = p===0 ? 'hidden' : 'visible';
+  $('fAvancar').textContent = p===N_PASSOS-1 ? 'Enviar respostas' : 'Avançar ▶';
+  window.scrollTo(0,0);
+}
+
+async function salvar(finalizar){
+  const { error } = await sb.rpc('fase1_salvar', { p_token: TOKEN, p_dados: coletar(), p_finalizar: !!finalizar });
+  if (error){ toast('Não foi possível salvar. Tente novamente.'); return false; }
+  return true;
+}
+
+$('fVoltar').onclick = () => irPara(Math.max(0, passo-1));
+$('fSalvar').onclick = async () => { if (await salvar(false)) toast('Salvo. Você pode fechar e continuar depois pelo mesmo link.'); };
+$('fAvancar').onclick = async () => {
+  if (!validar(passo)) return;
+  if (passo < N_PASSOS-1){ salvar(false); return irPara(passo+1); }
+  for (let p=0;p<N_PASSOS;p++) if (!validar(p)) return irPara(p);
+  $('fAvancar').disabled = true;
+  const ok = await salvar(true);
+  $('fAvancar').disabled = false;
+  if (!ok) return;
+  $('fCard').innerHTML = `<div class="done"><div class="ic">✓</div><h3>Respostas enviadas. Obrigado!</h3>
+    <p style="color:var(--muted);max-width:440px;line-height:1.5">Recebemos as informações da ${esc($('razao_social').value)}. Se precisar corrigir algo, é só abrir o mesmo link de novo.</p></div>`;
+};
+</script>
+</body>
+</html>

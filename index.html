@@ -117,7 +117,7 @@ h1{font-size:23px;font-weight:800;letter-spacing:-.02em;margin:0}
 .tbl-card{flex:1;min-height:0;border:1px solid var(--line);border-radius:var(--r);box-shadow:var(--card-shadow);display:flex;flex-direction:column;overflow:hidden;background:#fff}
 #tblWrap,#tbl2Wrap{flex:1;min-height:0;overflow:hidden}
 table{width:100%;border-collapse:collapse;table-layout:fixed}
-thead th{background:#f7f9fc;text-align:left;font-size:11.5px;text-transform:uppercase;letter-spacing:.05em;color:var(--ink-faint);font-weight:700;padding:0 12px;height:40px;border-bottom:1px solid var(--line)}
+thead th{white-space:nowrap;overflow:hidden;text-overflow:ellipsis;background:#f7f9fc;text-align:left;font-size:11.5px;text-transform:uppercase;letter-spacing:.05em;color:var(--ink-faint);font-weight:700;padding:0 12px;height:40px;border-bottom:1px solid var(--line)}
 tbody td{height:var(--rowh);padding:0 12px;border-bottom:1px solid var(--line);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 tbody tr:hover{background:#f7f9fc}
 td.mono{font-variant-numeric:tabular-nums}
@@ -316,11 +316,10 @@ code.cf{background:var(--side);border:1px solid var(--line);border-radius:6px;pa
     </div>
     <div class="header-right">
       <div class="user">
-        <div class="avatar" id="avatar">?</div>
+        <div class="avatar" id="avatar" title="Sair do sistema" style="cursor:pointer">?</div>
         <div class="who"><b id="whoNome">—</b><span id="whoPapel">—</span></div>
       </div>
       <div class="vil-chip"><img data-logo="vilarejo" alt="Rede Vilarejo"></div>
-      <button class="sair" id="btSair">Sair</button>
     </div>
   </header>
   <div class="shell">
@@ -435,8 +434,8 @@ code.cf{background:var(--side);border:1px solid var(--line);border-radius:6px;pa
             <thead><tr>
               <th class="col-cnpj" style="width:182px">CNPJ</th>
               <th>Razão social</th>
-              <th style="width:100px;text-align:right">Itens (un)</th>
-              <th style="width:130px;text-align:right">Completos (un)</th>
+              <th style="width:115px;text-align:right">Itens (un)</th>
+              <th style="width:160px;text-align:right">Completos (un)</th>
               <th style="width:180px">Status</th>
               <th style="width:230px">Ações</th>
             </tr></thead>
@@ -758,7 +757,9 @@ $('fLogin').addEventListener('submit', async e => {
   if (error) return aviso('lgMsg','E-mail ou senha incorretos.','erro');
   entrarPainel(data.user);
 });
-$('btSair').onclick = async () => { await sb.auth.signOut(); location.reload(); };
+/* sair: clique no balão do usuário (padrão ELO) */
+$('avatar').onclick = () => modal('Sair do sistema', `<p style="margin:0">Deseja sair do ELO Reforma?</p>`,
+  [['Cancelar','',o=>o.remove()], ['Sair','pri', async () => { await sb.auth.signOut(); location.reload(); }]]);
 
 async function entrarPainel(user){
   const { data:papel, error } = await sb.rpc('equipe_entrar', { p_nome: null });

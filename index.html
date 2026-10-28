@@ -126,6 +126,13 @@ td.mono{font-variant-numeric:tabular-nums}
 .st-enviado{background:var(--blue-tint);color:var(--blue-ink)}
 .st-em_preenchimento{background:var(--amber-tint);color:var(--amber)}
 .st-respondido{background:var(--green-tint);color:var(--green-ink)}
+.st-aberto{background:#ede9fe;color:#5b21b6}
+.visto{display:block;font-size:10.5px;color:var(--ink-faint);margin-top:1px;line-height:1.1}
+td.stc{line-height:1.15}
+.btn.cp-no{background:#fef2f2;border-color:#fca5a5;color:#b91c1c}
+.btn.cp-no:hover{border-color:#dc2626}
+.btn.cp-ok{background:var(--green-tint);border-color:var(--green-line);color:var(--green-ink)}
+.btn.cp-ok:hover{border-color:var(--green)}
 .acts{display:flex;gap:4px}
 .pager{display:flex;align-items:center;justify-content:space-between;gap:10px;padding:8px 14px;border-top:1px solid var(--line);font-size:12.5px;color:var(--ink-faint)}
 .pager .nav{display:flex;align-items:center;gap:8px}
@@ -223,8 +230,15 @@ dl.kv dd{margin:0;font-weight:600;word-break:break-word}
 .falta{color:var(--amber);font-weight:600}
 .okc{color:var(--green-ink);font-weight:700}
 tr.clic{cursor:pointer}
-#vw-f2{min-height:100vh;display:flex;flex-direction:column;background:var(--side)}
-.f2card{background:#fff;border:1px solid var(--line);border-radius:16px;box-shadow:0 4px 18px rgba(18,34,62,.06);width:100%;max-width:1180px;margin:24px auto;display:flex;flex-direction:column}
+#vw-f2{height:100vh;display:flex;flex-direction:column;background:var(--side);overflow:hidden}
+#vw-f2 > header{flex:0 0 auto}
+.f2card{background:#fff;border:1px solid var(--line);border-radius:16px;box-shadow:0 4px 18px rgba(18,34,62,.06);flex:1;min-height:0;margin:16px 20px;display:flex;flex-direction:column}
+.f2card .tblbox{flex:1;min-height:0;display:flex;flex-direction:column}
+.f2card{position:relative}
+.f2card > .f-vil{position:absolute;top:16px;right:24px;padding:0}
+.f2card > .hd{padding-right:200px!important;padding-top:20px!important}
+@media(max-width:760px){.f2card > .f-vil{position:static;padding:14px 24px 0}.f2card > .hd{padding-right:24px!important}}
+#f2Wrap{flex:1;min-height:0;overflow:hidden}
 .f2card .hd{padding:20px 24px 6px;display:grid;gap:8px}
 .f2card .hd h3{margin:0;font-size:19px;font-weight:800;letter-spacing:-.015em}
 .f2card .hd p{margin:0;color:var(--ink-soft);font-size:13.5px;line-height:1.5}
@@ -233,7 +247,23 @@ tr.clic{cursor:pointer}
 .f2cont b{color:var(--ink);font-variant-numeric:tabular-nums}
 .f2card .tblbox{margin:0 24px;border:1px solid var(--line);border-radius:var(--r);overflow:hidden}
 .f2card .pager{border-top:1px solid var(--line)}
-@media(max-width:760px){.f2card{margin:0;border-radius:0}.f2card .tblbox{margin:0}.col-f2x{display:none}}
+@media(max-width:760px){#vw-f2{height:auto;min-height:100vh;overflow:visible}.f2card{margin:0;border-radius:0}.f2card .tblbox{margin:0}.col-f2x{display:none}}
+
+/* ---------- Logo Vilarejo ---------- */
+.vil-chip{background:#fff;border-radius:10px;padding:5px 10px;display:flex;align-items:center;height:44px}
+.vil-chip img{height:32px;width:auto;display:block}
+.acct .vil{height:34px;width:auto;max-width:96px;object-fit:contain;flex:0 0 auto}
+.f-vil{display:flex;justify-content:flex-end;padding:14px 24px 0}
+.f-vil img{height:42px;width:auto}
+.logo-vil-txt{font-weight:800;color:#0f2a5c;font-size:20px;letter-spacing:-.02em}
+/* ---------- Confirmação de exclusão ---------- */
+.perigo{background:#fef2f2;border:1px solid #fecaca;color:#991b1b;border-radius:10px;padding:10px 12px;font-size:13px;line-height:1.5}
+.perigo b{color:#7f1d1d}
+code.cf{background:var(--side);border:1px solid var(--line);border-radius:6px;padding:1px 6px;font-weight:700;color:var(--ink);user-select:all}
+.btn.del{background:#dc2626;border-color:#dc2626;color:#fff}
+.btn.del:disabled{background:#f3a3a3;border-color:#f3a3a3}
+.btn.del-out{color:#b91c1c;border-color:#fecaca}
+.btn.del-out:hover{border-color:#dc2626}
 
 /* ---------- Toast ---------- */
 .toast{position:fixed;left:50%;bottom:28px;transform:translateX(-50%) translateY(12px);
@@ -289,6 +319,7 @@ tr.clic{cursor:pointer}
         <div class="avatar" id="avatar">?</div>
         <div class="who"><b id="whoNome">—</b><span id="whoPapel">—</span></div>
       </div>
+      <div class="vil-chip"><img data-logo="vilarejo" alt="Rede Vilarejo"></div>
       <button class="sair" id="btSair">Sair</button>
     </div>
   </header>
@@ -305,8 +336,8 @@ tr.clic{cursor:pointer}
       </div>
       <div class="side-foot">
         <div class="acct">
-          <div class="home"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#137038" stroke-width="2"><path d="M4 11l8-6 8 6v8a1 1 0 01-1 1H5a1 1 0 01-1-1v-8z"/></svg></div>
-          <div class="nm"><b>Rede Vilarejo</b><br><span>Compras · Reforma</span></div>
+          <img class="vil" data-logo="vilarejo" alt="Rede Vilarejo">
+          <div class="nm"><b>Compras</b><br><span>Reforma Tributária</span></div>
         </div>
       </div>
     </aside>
@@ -323,6 +354,7 @@ tr.clic{cursor:pointer}
         <div class="bar"><i id="pgBar" style="width:0"></i></div>
         <div class="kpis">
           <span>Respondidos: <b id="kResp">0</b> de <b id="kMeta">100</b> (meta)</span>
+          <span>Abriram o link: <b id="kAbr">0</b></span>
           <span>Preenchendo: <b id="kPreen">0</b></span>
           <span>Links enviados: <b id="kEnv">0</b></span>
           <span>Fornecedores na base: <b id="kTot">0</b></span>
@@ -334,6 +366,7 @@ tr.clic{cursor:pointer}
           <option value="">Todos os status</option>
           <option value="pendente">Pendente</option>
           <option value="enviado">Link enviado</option>
+          <option value="aberto">Link aberto</option>
           <option value="em_preenchimento">Preenchendo</option>
           <option value="respondido">Respondido</option>
         </select>
@@ -351,7 +384,7 @@ tr.clic{cursor:pointer}
               <th>Razão social</th>
               <th class="col-ct" style="width:13%">Contato</th>
               <th class="col-em" style="width:17%">E-mail</th>
-              <th style="width:120px">Status</th>
+              <th style="width:140px">Status</th>
               <th style="width:230px">Ações</th>
             </tr></thead>
             <tbody id="tBody"></tbody>
@@ -376,6 +409,7 @@ tr.clic{cursor:pointer}
         <div class="bar"><i id="p2Bar" style="width:0"></i></div>
         <div class="kpis">
           <span>Enviados: <b id="k2Resp">0</b> de <b id="k2Base">0</b> fornecedores</span>
+          <span>Abriram o link: <b id="k2Abr">0</b></span>
           <span>Preenchendo: <b id="k2Preen">0</b></span>
           <span>Itens carregados: <b id="k2Itens">0</b> un</span>
           <span>Itens completos: <b id="k2Comp">0</b> un</span>
@@ -387,6 +421,7 @@ tr.clic{cursor:pointer}
           <option value="">Todos os status</option>
           <option value="pendente">Pendente</option>
           <option value="enviado">Link enviado</option>
+          <option value="aberto">Link aberto</option>
           <option value="em_preenchimento">Preenchendo</option>
           <option value="respondido">Enviado</option>
         </select>
@@ -428,7 +463,8 @@ tr.clic{cursor:pointer}
     </div>
   </header>
   <div class="f2card" id="f2Card">
-    <div class="hd">
+    <div class="f-vil"><img data-logo="vilarejo" alt="Rede Vilarejo"></div>
+    <div class="hd" style="padding-top:0">
       <h3 id="f2Tit">Itens que vocês fornecem à Rede Vilarejo</h3>
       <p>Informe, para cada item, os dados de IBS/CBS que vão na nota fiscal. A maioria dos materiais de construção tem tributação integral
       (<b>CST 000 · cClassTrib 000001</b>): use o botão <b>Aplicar tributação integral</b> e ajuste só as exceções.
@@ -445,6 +481,7 @@ tr.clic{cursor:pointer}
     </div>
     <div class="f2cont"><span>Itens: <b id="f2cTot">0</b> un</span><span>Completos: <b id="f2cOk">0</b> un</span><span>Faltando: <b id="f2cFalta" class="falta">0</b> un</span></div>
     <div class="tblbox">
+     <div id="f2Wrap">
       <table>
         <thead><tr>
           <th style="width:120px">Código</th>
@@ -457,6 +494,7 @@ tr.clic{cursor:pointer}
         </tr></thead>
         <tbody id="f2Body"></tbody>
       </table>
+     </div>
       <div class="pager">
         <span id="f2Info"></span>
         <div class="nav"><button class="btn sm" id="f2Prev">◀</button><span id="f2Num">1 / 1</span><button class="btn sm" id="f2Next">▶</button></div>
@@ -482,6 +520,7 @@ tr.clic{cursor:pointer}
   </header>
   <div class="fbody">
     <div class="fcard" id="fCard">
+      <div class="f-vil" style="padding-bottom:10px;border-bottom:1px solid var(--line)"><img data-logo="vilarejo" alt="Rede Vilarejo"></div>
       <div class="steps" id="fSteps">
         <div data-s="0"><em>1</em><span>Empresa</span></div>
         <div data-s="1"><em>2</em><span>Endereço</span></div>
@@ -592,8 +631,10 @@ tr.clic{cursor:pointer}
                       com busca de CNPJ/CEP. Visual no padrão ELO Sistemas (variação verde)
    1.1 · 28/10/2026 · Fase 2: tributação IBS/CBS por item (CST, cClassTrib, alíquotas, redução, IS) e FCI;
                       convite só por e-mail; relatório para impressão; botão Limpar no formulário
+   1.2 · 28/10/2026 · Rastreio de abertura do link (status "Link aberto", visto em, nº de acessos);
+                      botão Copiar convite vermelho (não copiado) / verde (copiado); logo Vilarejo; excluir fornecedor
    ============================================================ */
-const VERSAO = { num:'1.1', data:'28/10/2026' };
+const VERSAO = { num:'1.2', data:'28/10/2026' };
 
 /* ======================= CONFIG ======================= */
 const SB_URL = 'https://sdipbaobqrkcidslqdpk.supabase.co';
@@ -608,7 +649,16 @@ const esc = s => String(s ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt
 const fmtCNPJ = c => { c = dig(c).padStart(14,'0'); return `${c.slice(0,2)}.${c.slice(2,5)}.${c.slice(5,8)}/${c.slice(8,12)}-${c.slice(12)}`; };
 const fmtCEP = v => { const c = dig(v).slice(0,8); return c.length > 5 ? c.slice(0,5)+'-'+c.slice(5) : c; };
 const fmtTel = v => { const c = dig(v).slice(0,11); if (c.length <= 2) return c; if (c.length <= 6) return `(${c.slice(0,2)}) ${c.slice(2)}`; if (c.length <= 10) return `(${c.slice(0,2)}) ${c.slice(2,6)}-${c.slice(6)}`; return `(${c.slice(0,2)}) ${c.slice(2,7)}-${c.slice(7)}`; };
-const STATUS = { pendente:'Pendente', enviado:'Link enviado', em_preenchimento:'Preenchendo', respondido:'Respondido' };
+const STATUS = { pendente:'Pendente', enviado:'Link enviado', aberto:'Link aberto', em_preenchimento:'Preenchendo', respondido:'Respondido' };
+const dh = d => d ? new Date(d).toLocaleString('pt-BR',{day:'2-digit',month:'2-digit',hour:'2-digit',minute:'2-digit'}) : '';
+/* status + quando o fornecedor viu o link pela última vez */
+function celStatus(st, rotulo, aberto, ultimo, acessos){
+  const dica = aberto ? `Abriu o link pela 1ª vez em ${new Date(aberto).toLocaleString('pt-BR')} · último acesso ${new Date(ultimo).toLocaleString('pt-BR')} · ${acessos} acesso(s)` : 'O fornecedor ainda não abriu o link';
+  return `<td class="stc" title="${esc(dica)}"><span class="chip st-${st}">${rotulo}</span>${ultimo?`<span class="visto">visto ${dh(ultimo)}</span>`:''}</td>`;
+}
+/* botão copiar: vermelho = ainda não copiado; verde = já copiado/enviado */
+const btCopiar = (acao, enviado, quando) => `<button class="btn sm ${enviado?'cp-ok':'cp-no'}" data-a="${acao}"
+  title="${enviado?(quando?'Convite já copiado em '+new Date(quando).toLocaleString('pt-BR'):'Convite já enviado'):'Convite ainda não copiado'}">${enviado?'✓ ':''}Copiar convite</button>`;
 function toast(t){ const d=document.createElement('div'); d.className='toast'; d.textContent=t; document.body.appendChild(d);
   requestAnimationFrame(()=>d.classList.add('show')); setTimeout(()=>{ d.classList.remove('show'); setTimeout(()=>d.remove(),250); },2600); }
 function aviso(id, t, tipo){ const el=$(id); if(!el) return; el.textContent=t; el.style.color = tipo==='erro'?'var(--warn)':tipo==='ok'?'var(--ok)':'var(--muted)'; }
@@ -664,13 +714,14 @@ function preencher(id, v, sobrescrever=true){ const el=$(id); if(!el || v==null 
 /* ---------- Logos: logoelo.png (cabeçalho e lado verde) e logo_reforma.png (lado branco do login) ----------
    Procura na mesma pasta, em assets/ e em images/; se não achar, mostra o texto "elo". */
 function wireLogos(){
-  const arq = { elo:'logoelo', reforma:'logo_reforma' };
+  const arq = { elo:'logoelo', reforma:'logo_reforma', vilarejo:'logo_vilarejo' };
   document.querySelectorAll('img[data-logo]').forEach(img => {
     const n = arq[img.dataset.logo] || img.dataset.logo;
     const cands = [n+'.png', 'assets/'+n+'.png', 'images/'+n+'.png', n+'.PNG'];
     let i = 0;
     img.onerror = () => { i++; if (i < cands.length) img.src = cands[i];
-      else img.outerHTML = img.dataset.logo==='reforma'
+      else img.outerHTML = img.dataset.logo==='vilarejo' ? '<span class="logo-vil-txt">Vilarejo</span>'
+        : img.dataset.logo==='reforma'
         ? '<div class="logo-txt" style="color:var(--green-ink);font-size:34px;margin-bottom:26px">ELO Reforma</div>'
         : `<span class="logo-txt" style="${img.classList.contains('lp-logo')?'display:block;font-size:44px;margin-bottom:44px':''}">elo<sup>®</sup></span>`; };
     img.src = cands[0];
@@ -687,7 +738,7 @@ const FASE = PARAMS.get('fase');
 /* =========================================================
    PAINEL (equipe)
    ========================================================= */
-let FORN = [], pagina = 0, porPagina = 10, RES2 = {}, pagina2 = 0, PGATIVA = '1';
+let FORN = [], pagina = 0, porPagina = 10, RES2 = {}, pagina2 = 0, PGATIVA = '1', PAPEL = null, USER_EMAIL = '';
 
 async function iniciarPainel(){
   const { data:{ session } } = await sb.auth.getSession();
@@ -712,6 +763,7 @@ async function entrarPainel(user){
   }
   $('whoNome').textContent = user.email;
   $('whoPapel').textContent = papel==='admin' ? 'Administrador' : 'Comprador';
+  PAPEL = papel; USER_EMAIL = user.email;
   $('avatar').textContent = (user.email||'?')[0].toUpperCase();
   show('vw-painel');
   await carregar();
@@ -719,7 +771,7 @@ async function entrarPainel(user){
 
 async function carregar(){
   const { data, error } = await sb.from('fornecedores')
-    .select('id,cnpj,razao_social,nome_fantasia,inscricao_estadual,contato,email,telefone,token,status,link_enviado_em,respondido_em,status_fase2,fase2_link_enviado_em,fase2_respondido_em')
+    .select('id,cnpj,razao_social,nome_fantasia,inscricao_estadual,contato,email,telefone,token,status,link_enviado_em,respondido_em,status_fase2,fase2_link_enviado_em,fase2_respondido_em,aberto_em,ultimo_acesso_em,acessos,fase2_aberto_em,fase2_ultimo_acesso_em,fase2_acessos')
     .order('razao_social');
   if (error) return toast('Erro ao carregar: '+error.message);
   FORN = data || [];
@@ -735,6 +787,7 @@ function progresso(){
   $('pgPct').textContent = pct+'%'; $('pgBar').style.width = pct+'%';
   $('kResp').textContent = resp; $('kMeta').textContent = META;
   $('kPreen').textContent = c('em_preenchimento');
+  $('kAbr').textContent = FORN.filter(f=>f.aberto_em).length;
   $('kEnv').textContent = FORN.filter(f=>f.status!=='pendente').length;
   $('kTot').textContent = FORN.length;
 }
@@ -764,10 +817,10 @@ function render(){
       <td title="${esc(f.razao_social)}"><b style="font-weight:600">${esc(f.razao_social)}</b>${f.nome_fantasia?`<span style="color:var(--muted)"> · ${esc(f.nome_fantasia)}</span>`:''}</td>
       <td class="col-ct">${esc(f.contato||'')}</td>
       <td class="col-em" title="${esc(f.email||'')}">${esc(f.email||'')}</td>
-      <td><span class="chip st-${f.status}">${STATUS[f.status]}</span></td>
+      ${celStatus(f.status, STATUS[f.status], f.aberto_em, f.ultimo_acesso_em, f.acessos)}
       <td><div class="acts">
-        <button class="btn sm" data-a="copiar" title="Copia a mensagem com o link para colar no e-mail">Copiar convite</button>
-        <button class="btn sm" data-a="ver" title="Ver respostas" ${f.status==='pendente'||f.status==='enviado'?'disabled':''}>Ver</button>
+        ${btCopiar('copiar', !!f.link_enviado_em || f.status!=='pendente', f.link_enviado_em)}
+        <button class="btn sm" data-a="ver" title="Ver respostas" ${f.aberto_em?'':'disabled'}>Ver</button>
         <button class="btn sm ghost" data-a="edit" title="Editar">✎</button>
       </div></td>
     </tr>`).join('') : `<tr><td colspan="6"><div class="empty">${FORN.length?'Nenhum fornecedor encontrado no filtro.':'Nenhum fornecedor na base. Use “Importar base” ou “+ Fornecedor”.'}</div></td></tr>`;
@@ -805,10 +858,11 @@ const linkDe = f => `${location.origin}${location.pathname}?t=${f.token}`;
 const msgConvite = f => `Olá${f.contato?', '+f.contato.split(' ')[0]:''}! A Rede Vilarejo está levantando informações dos fornecedores para a Reforma Tributária (IBS/CBS). Pedimos, por gentileza, que a ${f.nome_fantasia||f.razao_social} preencha o formulário abaixo (leva poucos minutos):\n\n${linkDe(f)}\n\nObrigado!`;
 
 async function marcarEnviado(f){
-  if (f.status!=='pendente') return;
+  if (f.link_enviado_em) return;
   const agora = new Date().toISOString();
-  const { error } = await sb.from('fornecedores').update({ status:'enviado', link_enviado_em:agora, atualizado_em:agora }).eq('id', f.id);
-  if (!error){ f.status='enviado'; f.link_enviado_em=agora; progresso(); render(); }
+  const upd = { link_enviado_em:agora, atualizado_em:agora }; if (f.status==='pendente') upd.status = 'enviado';
+  const { error } = await sb.from('fornecedores').update(upd).eq('id', f.id);
+  if (!error){ Object.assign(f, upd); progresso(); render(); }
 }
 
 $('tBody').addEventListener('click', async e => {
@@ -851,7 +905,8 @@ function abrirFornecedor(f){
       <label class="f">Telefone / WhatsApp<input class="inp" id="mTel" value="${f?.telefone?fmtTel(f.telefone):''}"></label>
       <label class="f span2">E-mail<input class="inp" id="mEmail" type="email" value="${v('email')}"></label>
     </div><div class="msg" id="mMsg"></div>`,
-    [['Cancelar','',o=>o.remove()], ['Salvar','pri', salvar]]);
+    [ ...(f && PAPEL==='admin' ? [['Excluir fornecedor','del-out', o => { o.remove(); excluirFornecedor(f); }]] : []),
+      ['Cancelar','',o=>o.remove()], ['Salvar','pri', salvar] ]);
   const cn = ov.querySelector('#mCnpj');
   ov.querySelector('#mTel').addEventListener('input', e=>e.target.value=fmtTel(e.target.value));
   if (!f) cn.addEventListener('input', async () => {
@@ -886,6 +941,41 @@ function abrirFornecedor(f){
     b.disabled = false;
     if (r.error) return aviso('mMsg', r.error.code==='23505'?'Este CNPJ já está na base.':'Erro: '+r.error.message, 'erro');
     o.remove(); toast('Fornecedor salvo.'); carregar();
+  }
+}
+
+/* ---------- Excluir fornecedor (só admin): nome + frase + senha, como no Supabase ---------- */
+function excluirFornecedor(f){
+  const nome = (f.razao_social||'').trim().split(/\s+/)[0].toUpperCase();
+  const frase = `deletar fornecedor ${nome}`;
+  const r = RES2[f.id]?.itens || 0;
+  const ov = modal('Excluir fornecedor', `
+    <div class="perigo">Esta ação <b>não pode ser desfeita</b>. Serão apagados de vez o cadastro de <b>${esc(f.razao_social)}</b>
+      (CNPJ ${fmtCNPJ(f.cnpj)}), as respostas da fase 1${r?` e os <b>${r.toLocaleString('pt-BR')} item(ns)</b> da fase 2`:''}.
+      O link enviado deixa de funcionar.</div>
+    <label class="f"><span>Digite o nome do fornecedor <code class="cf">${esc(nome)}</code> para confirmar</span>
+      <input class="inp" id="dxNome" autocomplete="off"></label>
+    <label class="f"><span>Para confirmar, digite <code class="cf">${esc(frase)}</code></span>
+      <input class="inp" id="dxFrase" autocomplete="off"></label>
+    <label class="f">Sua senha
+      <input class="inp" id="dxSenha" type="password" autocomplete="current-password"></label>
+    <div class="msg" id="dxMsg"></div>`,
+    [['Cancelar','',o=>o.remove()], ['Excluir fornecedor','del', confirmar]]);
+  const bt = ov.querySelector('.ft .btn.del');
+  const confere = () => {
+    bt.disabled = !(ov.querySelector('#dxNome').value.trim().toUpperCase()===nome
+      && ov.querySelector('#dxFrase').value.trim().toLowerCase()===frase.toLowerCase()
+      && ov.querySelector('#dxSenha').value.length>0);
+  };
+  ov.querySelectorAll('input').forEach(i => i.addEventListener('input', confere)); confere();
+  ov.querySelector('#dxNome').focus();
+  async function confirmar(o, b){
+    b.disabled = true; aviso('dxMsg','Conferindo a senha…');
+    const { error:e1 } = await sb.auth.signInWithPassword({ email:USER_EMAIL, password:o.querySelector('#dxSenha').value });
+    if (e1){ aviso('dxMsg','Senha incorreta.','erro'); o.querySelector('#dxSenha').value=''; return confere(); }
+    const { data, error } = await sb.from('fornecedores').delete().eq('id', f.id).select('id');
+    if (error || !data || !data.length){ aviso('dxMsg', error ? 'Erro: '+error.message : 'Sem permissão para excluir (só administrador).','erro'); return confere(); }
+    o.remove(); toast(`${f.razao_social} excluído.`); carregar();
   }
 }
 
@@ -978,9 +1068,12 @@ async function verRespostas(f){
   const { data, error } = await sb.from('respostas_fase1').select('*').eq('fornecedor_id', f.id).maybeSingle();
   if (error) return toast('Erro: '+error.message);
   const r = achatar(data);
-  const corpo = data ? `<dl class="kv">${Object.keys(ROTULOS).filter(k=>r[k]).map(k=>`<dt>${ROTULOS[k]}</dt><dd>${esc(r[k])}</dd>`).join('')}
+  const acesso = `<dl class="kv" style="margin-bottom:6px"><dt>Convite copiado em</dt><dd>${f.link_enviado_em?new Date(f.link_enviado_em).toLocaleString('pt-BR'):'—'}</dd>
+    <dt>Abriu o link pela 1ª vez</dt><dd>${f.aberto_em?new Date(f.aberto_em).toLocaleString('pt-BR'):'Ainda não abriu'}</dd>
+    ${f.aberto_em?`<dt>Último acesso</dt><dd>${new Date(f.ultimo_acesso_em).toLocaleString('pt-BR')} · ${f.acessos} acesso(s)</dd>`:''}</dl>`;
+  const corpo = acesso + (data ? `<dl class="kv">${Object.keys(ROTULOS).filter(k=>r[k]).map(k=>`<dt>${ROTULOS[k]}</dt><dd>${esc(r[k])}</dd>`).join('')}
     <dt>Situação</dt><dd>${data.finalizado?'Enviado pelo fornecedor':'Rascunho (ainda não enviou)'} · atualizado em ${new Date(data.atualizado_em).toLocaleString('pt-BR')}</dd></dl>`
-    : '<p class="empty">O fornecedor abriu o link mas ainda não salvou nada.</p>';
+    : '<p class="empty">O fornecedor abriu o link mas ainda não salvou nada.</p>');
   modal(esc(f.razao_social), corpo, [['Imprimir','',()=>imprimirRelatorio([f])], ['Fechar','',o=>o.remove()]]);
 }
 
@@ -1017,7 +1110,8 @@ async function imprimirRelatorio(lista){
       r.cidade_uf = [r.cidade, r.uf].filter(Boolean).join(' / ');
     }
     const cad = `<table class="kv"><tr><th>Contato (base)</th><td>${esc(f.contato||'—')}</td><th>E-mail (base)</th><td>${esc(f.email||'—')}</td></tr>
-      <tr><th>Telefone (base)</th><td>${f.telefone?fmtTel(f.telefone):'—'}</td><th>Link enviado em</th><td>${dataBR(f.link_enviado_em)}</td></tr></table>`;
+      <tr><th>Telefone (base)</th><td>${f.telefone?fmtTel(f.telefone):'—'}</td><th>Link enviado em</th><td>${dataBR(f.link_enviado_em)}</td></tr>
+      <tr><th>Abriu o link em</th><td>${f.aberto_em?new Date(f.aberto_em).toLocaleString('pt-BR'):'Ainda não abriu'}</td><th>Último acesso</th><td>${f.ultimo_acesso_em?new Date(f.ultimo_acesso_em).toLocaleString('pt-BR')+' · '+f.acessos+' acesso(s)':'—'}</td></tr></table>`;
     const corpo = raw ? SECOES.map(([tit, ks]) => `<h4>${tit}</h4><table class="kv">${
         ks.filter(k => k!=='simples_regime_regular' || r.regime_tributario==='Simples Nacional')
           .map(k => `<tr><th>${ROT_REL[k]}</th><td colspan="3">${esc(r[k]||'—')}</td></tr>`).join('')}</table>`).join('')
@@ -1041,7 +1135,7 @@ async function imprimirRelatorio(lista){
     .fh{display:flex;justify-content:space-between;gap:10px;border-bottom:1px solid #ddd;padding-bottom:5px;margin-bottom:5px}
     .fh b{font-size:11pt}.fh span{color:#555}.fh small{color:#555}
     .st{font-weight:bold;text-align:right;white-space:nowrap}
-    .st-respondido{color:#137038}.st-em_preenchimento{color:#b9770a}.st-enviado{color:#0f3f8f}.st-pendente{color:#777}
+    .st-respondido{color:#137038}.st-em_preenchimento{color:#b9770a}.st-enviado{color:#0f3f8f}.st-aberto{color:#5b21b6}.st-pendente{color:#777}
     h4{margin:7px 0 2px;font-size:9.5pt;color:#137038;text-transform:uppercase;letter-spacing:.04em}
     table.kv{width:100%;border-collapse:collapse}
     table.kv th{text-align:left;font-weight:normal;color:#555;width:26%;padding:2px 6px 2px 0;vertical-align:top}
@@ -1053,7 +1147,7 @@ async function imprimirRelatorio(lista){
   <div class="topo"><div><h1>ELO Reforma · Relatório de fornecedores</h1><small>Rede Vilarejo · Compras · Reforma Tributária (IBS/CBS) · ${esc(filtro)}</small></div>
     <small>Emitido em ${new Date().toLocaleString('pt-BR')}</small></div>
   ${lista.length>1?`<div class="resumo"><span>Fornecedores: <b>${lista.length}</b></span><span>Respondidos: <b>${cont('respondido')}</b></span>
-    <span>Preenchendo: <b>${cont('em_preenchimento')}</b></span><span>Link enviado: <b>${cont('enviado')}</b></span><span>Pendentes: <b>${cont('pendente')}</b></span></div>`:''}
+    <span>Preenchendo: <b>${cont('em_preenchimento')}</b></span><span>Link aberto: <b>${cont('aberto')}</b></span><span>Link enviado: <b>${cont('enviado')}</b></span><span>Pendentes: <b>${cont('pendente')}</b></span></div>`:''}
   ${blocos}
   <div class="rod">ELO Sistemas · ELO Reforma</div>
   <script>window.onload=()=>setTimeout(()=>window.print(),300)<\/script>
@@ -1106,7 +1200,7 @@ const CAMPOS_ITEM = [
   ['zfm','Zona Franca (S/N)']
 ];
 const NUM_ITEM = ['pct_importacao','aliq_ibs_uf','aliq_ibs_mun','aliq_cbs','pct_reducao','aliq_is'];
-const STATUS2 = { pendente:'Pendente', enviado:'Link enviado', em_preenchimento:'Preenchendo', respondido:'Enviado' };
+const STATUS2 = { pendente:'Pendente', enviado:'Link enviado', aberto:'Link aberto', em_preenchimento:'Preenchendo', respondido:'Enviado' };
 const RE_FCI = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 
 const vazio = v => v===null || v===undefined || String(v).trim()==='';
@@ -1191,6 +1285,7 @@ function progresso2(){
   $('p2Pct').textContent = pct+'%'; $('p2Bar').style.width = pct+'%';
   $('k2Resp').textContent = resp; $('k2Base').textContent = base.length;
   $('k2Preen').textContent = base.filter(f => f.status_fase2==='em_preenchimento').length;
+  $('k2Abr').textContent = FORN.filter(f => f.fase2_aberto_em).length;
   let it = 0, ok = 0; Object.values(RES2).forEach(r => { it += r.itens; ok += r.completos; });
   $('k2Itens').textContent = it.toLocaleString('pt-BR'); $('k2Comp').textContent = ok.toLocaleString('pt-BR');
 }
@@ -1212,9 +1307,9 @@ function render2(){
       <td title="${esc(f.razao_social)}"><b style="font-weight:600">${esc(f.razao_social)}</b>${f.nome_fantasia?`<span style="color:var(--muted)"> · ${esc(f.nome_fantasia)}</span>`:''}</td>
       <td class="mono" style="text-align:right">${r.itens.toLocaleString('pt-BR')}</td>
       <td class="mono" style="text-align:right">${r.completos.toLocaleString('pt-BR')}</td>
-      <td><span class="chip st-${f.status_fase2}">${STATUS2[f.status_fase2]}</span></td>
+      ${celStatus(f.status_fase2, STATUS2[f.status_fase2], f.fase2_aberto_em, f.fase2_ultimo_acesso_em, f.fase2_acessos)}
       <td><div class="acts">
-        <button class="btn sm" data-a="convite2" title="Copia a mensagem com o link da fase 2 para colar no e-mail">Copiar convite</button>
+        ${btCopiar('convite2', !!f.fase2_link_enviado_em || f.status_fase2!=='pendente', f.fase2_link_enviado_em)}
         <button class="btn sm" data-a="baixar2" ${r.itens?'':'disabled'} title="Planilha com os itens deste fornecedor">Baixar itens</button>
       </div></td>
     </tr>`; }).join('') : `<tr><td colspan="6"><div class="empty">${FORN.length?'Nenhum fornecedor encontrado no filtro.':'Nenhum fornecedor na base.'}</div></td></tr>`;
@@ -1237,10 +1332,11 @@ $('t2Body').addEventListener('click', async e => {
     const txt = msgConvite2(f);
     try{ await navigator.clipboard.writeText(txt); toast(`Convite da fase 2 copiado. Cole no e-mail${f.email?' para '+f.email:''}.`); }
     catch{ modal('Copie o convite', `<textarea class="inp" rows="10" readonly onfocus="this.select()">${esc(txt)}</textarea>`, [['Fechar','',o=>o.remove()]]); }
-    if (f.status_fase2==='pendente'){
+    if (!f.fase2_link_enviado_em){
       const agora = new Date().toISOString();
-      const { error } = await sb.from('fornecedores').update({ status_fase2:'enviado', fase2_link_enviado_em:agora, atualizado_em:agora }).eq('id', f.id);
-      if (!error){ f.status_fase2='enviado'; progresso2(); render2(); }
+      const upd = { fase2_link_enviado_em:agora, atualizado_em:agora }; if (f.status_fase2==='pendente') upd.status_fase2 = 'enviado';
+      const { error } = await sb.from('fornecedores').update(upd).eq('id', f.id);
+      if (!error){ Object.assign(f, upd); progresso2(); render2(); }
     }
   }
   if (b.dataset.a==='baixar2'){
@@ -1323,8 +1419,7 @@ $('bt2Import').onclick = () => {
 /* =========================================================
    FASE 2 · TELA DO FORNECEDOR (link ?t=…&fase=2)
    ========================================================= */
-let ITENS = [], pagF2 = 0;
-const POR_F2 = 10;
+let ITENS = [], pagF2 = 0, POR_F2 = 10;
 
 async function iniciarFase2(){
   show('vw-f2');
@@ -1349,6 +1444,7 @@ function filtradosF2(){
   });
 }
 function renderF2(){
+  POR_F2 = window.innerWidth > 760 ? linhasQueCabem('f2Wrap') : 10;
   const lista = filtradosF2();
   const paginas = Math.max(1, Math.ceil(lista.length/POR_F2));
   if (pagF2 >= paginas) pagF2 = paginas-1;

@@ -332,6 +332,9 @@ code.cf{background:var(--side);border:1px solid var(--line);border-radius:6px;pa
         <div class="nav-item" data-pg="2">
           <svg class="ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 7l8-4 8 4-8 4-8-4zM4 7v10l8 4 8-4V7M12 11v10"/></svg>
           Itens / NCM<small>FASE 2</small></div>
+        <div class="nav-item" id="navSobre" style="cursor:pointer;margin-top:auto">
+          <svg class="ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="9"/><path d="M12 11v5M12 8h.01"/></svg>
+          Sobre o sistema</div>
       </div>
       <div class="side-foot">
         <div class="acct">
@@ -425,8 +428,8 @@ code.cf{background:var(--side);border:1px solid var(--line);border-radius:6px;pa
           <option value="respondido">Enviado</option>
         </select>
         <span class="sp"></span>
-        <button class="btn" id="bt2Import" title="Planilha do ERP com CNPJ do fornecedor e os itens">Importar itens do ERP</button>
-        <button class="btn pri" id="bt2Export">Exportar itens</button>
+        <button class="btn" id="bt2Import" title="Planilha exportada daqui (editada no Excel) ou do ERP, com CNPJ do fornecedor">Importar planilha</button>
+        <button class="btn pri" id="bt2Export" title="Todos os itens, com todas as colunas, no modelo para importar de volta">Exportar planilha</button>
       </div>
       <div class="tbl-card">
         <div id="tbl2Wrap">
@@ -465,7 +468,7 @@ code.cf{background:var(--side);border:1px solid var(--line);border-radius:6px;pa
     <div class="f-vil"><img data-logo="vilarejo" alt="Rede Vilarejo"></div>
     <div class="hd" style="padding-top:0">
       <h3 id="f2Tit">Itens que vocês fornecem à Rede Vilarejo</h3>
-      <p>Informe, para cada item, os dados de IBS/CBS que vão na nota fiscal. A maioria dos materiais de construção tem tributação integral
+      <p>Informe, para cada item, os dados de cadastro e tributação que vão na nota fiscal (campos com * são obrigatórios). Para IBS/CBS, a maioria dos materiais de construção tem tributação integral
       (<b>CST 000 · cClassTrib 000001</b>): use o botão <b>Aplicar tributação integral</b> e ajuste só as exceções.
       Com muitos itens, baixe a planilha, preencha no Excel e importe de volta. Clique num item para editar.</p>
     </div>
@@ -500,7 +503,7 @@ code.cf{background:var(--side);border:1px solid var(--line);border-radius:6px;pa
       </div>
     </div>
     <div class="fnav" style="margin-top:14px">
-      <span style="color:var(--ink-faint);font-size:12.5px;align-self:center">Campos com * são obrigatórios. FCI é obrigatória para origem 3, 5 ou 8.</span>
+      <span style="color:var(--ink-faint);font-size:12.5px;align-self:center">Campos com * são obrigatórios.</span>
       <div style="display:flex;gap:8px">
         <button class="btn" id="f2Salvar">Salvar e continuar depois</button>
         <button class="btn pri" id="f2Enviar">Enviar itens</button>
@@ -632,8 +635,22 @@ code.cf{background:var(--side);border:1px solid var(--line);border-radius:6px;pa
                       convite só por e-mail; relatório para impressão; botão Limpar no formulário
    1.2 · 28/10/2026 · Rastreio de abertura do link (status "Link aberto", visto em, nº de acessos);
                       botão Copiar convite vermelho (não copiado) / verde (copiado); logo Vilarejo; excluir fornecedor
+   1.3 · 05/11/2026 · Fase 2 com todos os campos do cadastro de produtos do ERP (obrigatórios = campos com *);
+                      campos internos da Vilarejo (Cód. Interno, Departamento, Seção, Categoria); exportar/importar
+                      planilha de ida e volta; CNPJ puxa IE, endereço e telefone; tela "Sobre o sistema"
    ============================================================ */
-const VERSAO = { num:'1.2', data:'28/10/2026' };
+const VERSAO = { num:'1.3', data:'05/11/2026' };
+
+/* Dados da tela "Sobre o sistema" — manter atualizado */
+const SOBRE = {
+  sistema: 'ELO Reforma',
+  cliente: 'Rede Vilarejo · Setor de Compras',
+  desenvolvedor: 'ELO Sistemas de Informação',
+  responsavel: 'Eduardo da Silva Lourenço',
+  banco: { servico:'Supabase (PostgreSQL)', projeto:'Vilarejo Reforma', ref:'sdipbaobqrkcidslqdpk', regiao:'us-east-1 (EUA, Virgínia)',
+           conta:'elosistemascasavip@gmail.com' },
+  github: { conta:'', email:'', repositorio:'' }   // preencher
+};
 
 /* ======================= CONFIG ======================= */
 const SB_URL = 'https://sdipbaobqrkcidslqdpk.supabase.co';
@@ -673,31 +690,40 @@ function cnpjValido(c){
 /* ---------- APIs públicas: CNPJ e CEP ---------- */
 async function consultaCNPJ(cnpj){
   const c = dig(cnpj);
-  let d = await getJSON(`https://brasilapi.com.br/api/cnpj/v1/${c}`);
-  if (d && d.razao_social) return {
-    razao_social:d.razao_social, nome_fantasia:d.nome_fantasia, inscricao_estadual:null,
-    cnae: d.cnae_fiscal ? `${String(d.cnae_fiscal).replace(/^(\d{4})(\d)(\d{2})$/,'$1-$2/$3')} · ${d.cnae_fiscal_descricao||''}` : '',
-    regime: d.opcao_pelo_mei ? 'MEI' : d.opcao_pelo_simples ? 'Simples Nacional' : null,
-    cep:d.cep, logradouro:[d.descricao_tipo_de_logradouro,d.logradouro].filter(Boolean).join(' '),
-    numero:d.numero, complemento:d.complemento, bairro:d.bairro, cidade:d.municipio, uf:d.uf,
-    email:d.email, telefone:d.ddd_telefone_1
-  };
-  d = await getJSON(`https://publica.cnpj.ws/cnpj/${c}`);
+  /* BrasilAPI: rápida e completa, mas não traz a inscrição estadual */
+  const b = await getJSON(`https://brasilapi.com.br/api/cnpj/v1/${c}`);
+  const r1 = b && b.razao_social ? {
+    razao_social:b.razao_social, nome_fantasia:b.nome_fantasia, inscricao_estadual:null,
+    cnae: b.cnae_fiscal ? `${String(b.cnae_fiscal).replace(/^(\d{4})(\d)(\d{2})$/,'$1-$2/$3')} · ${b.cnae_fiscal_descricao||''}` : '',
+    regime: b.opcao_pelo_mei ? 'MEI' : b.opcao_pelo_simples ? 'Simples Nacional' : null,
+    cep:b.cep, logradouro:[b.descricao_tipo_de_logradouro,b.logradouro].filter(Boolean).join(' '),
+    numero:b.numero, complemento:b.complemento, bairro:b.bairro, cidade:b.municipio, uf:b.uf,
+    email:b.email, telefone:b.ddd_telefone_1 || b.ddd_telefone_2
+  } : null;
+  /* CNPJ.ws: traz a inscrição estadual (usada para completar a BrasilAPI ou como fonte única) */
+  const d = await getJSON(`https://publica.cnpj.ws/cnpj/${c}`, 8000);
+  let r2 = null;
   if (d && d.razao_social){
     const e = d.estabelecimento||{}; const ies = e.inscricoes_estaduais||[];
-    const ie = ies.find(i=>i.ativo) || ies[0];
+    const uf = e.estado && e.estado.sigla;
+    const ie = ies.find(i => i.ativo && i.estado && i.estado.sigla===uf) || ies.find(i => i.ativo) || ies[0];
     const ap = e.atividade_principal||{};
-    return {
-      razao_social:d.razao_social, nome_fantasia:e.nome_fantasia, inscricao_estadual: ie && ie.inscricao_estadual,
+    r2 = {
+      razao_social:d.razao_social, nome_fantasia:e.nome_fantasia, inscricao_estadual: ie ? ie.inscricao_estadual : null,
       cnae: ap.subclasse ? `${ap.subclasse} · ${ap.descricao||''}` : '',
       regime: d.simples && d.simples.mei==='Sim' ? 'MEI' : d.simples && d.simples.simples==='Sim' ? 'Simples Nacional' : null,
       cep:e.cep, logradouro:[e.tipo_logradouro,e.logradouro].filter(Boolean).join(' '),
       numero:e.numero, complemento:e.complemento, bairro:e.bairro,
-      cidade:e.cidade&&e.cidade.nome, uf:e.estado&&e.estado.sigla,
+      cidade:e.cidade&&e.cidade.nome, uf,
       email:e.email, telefone: e.ddd1 && e.telefone1 ? e.ddd1+e.telefone1 : null
     };
   }
-  return null;
+  if (!r1 && !r2) return null;
+  const out = { ...(r2||{}) };
+  if (r1) Object.entries(r1).forEach(([k,v]) => { if (v!=null && String(v).trim()!=='') out[k] = v; });
+  if (r2 && r2.inscricao_estadual) out.inscricao_estadual = r2.inscricao_estadual;
+  if (out.inscricao_estadual) out.inscricao_estadual = String(out.inscricao_estadual).trim();
+  return out;
 }
 async function consultaCEP(cep){
   const c = dig(cep); if (c.length!==8) return null;
@@ -757,6 +783,35 @@ $('fLogin').addEventListener('submit', async e => {
   if (error) return aviso('lgMsg','E-mail ou senha incorretos.','erro');
   entrarPainel(data.user);
 });
+/* ---------- Sobre o sistema ---------- */
+$('navSobre').onclick = () => {
+  const lin = (r, v) => `<tr><td style="color:var(--muted);padding:6px 14px 6px 0;white-space:nowrap;vertical-align:top">${r}</td><td style="padding:6px 0;word-break:break-all">${v||'<span style="color:var(--warn)">não informado</span>'}</td></tr>`;
+  const sec = t => `<tr><td colspan="2" class="sec-t" style="padding-top:14px">${t}</td></tr>`;
+  const lk = u => `<a href="${u}" target="_blank" rel="noopener">${u}</a>`;
+  const B = SOBRE.banco, G = SOBRE.github;
+  modal('Sobre o sistema', `<table style="border-collapse:collapse;font-size:13.5px;width:100%">
+    ${sec('Sistema')}
+    ${lin('Nome', `<b>${SOBRE.sistema}</b>`)}
+    ${lin('Versão', `<b>${VERSAO.num}</b> · ${VERSAO.data}`)}
+    ${lin('Cliente', SOBRE.cliente)}
+    ${lin('Endereço publicado', lk(location.origin + location.pathname))}
+    ${sec('Banco de dados')}
+    ${lin('Serviço', B.servico)}
+    ${lin('Projeto', `${B.projeto} <span style="color:var(--muted)">(${B.ref})</span>`)}
+    ${lin('Endereço da API', SB_URL)}
+    ${lin('Painel do banco', lk('https://supabase.com/dashboard/project/'+B.ref))}
+    ${lin('Região', B.regiao)}
+    ${lin('Conta Supabase', B.conta)}
+    ${sec('Código-fonte (GitHub)')}
+    ${lin('Conta', G.conta)}
+    ${lin('E-mail', G.email)}
+    ${lin('Repositório', G.repositorio && lk(G.repositorio))}
+    ${sec('Desenvolvimento')}
+    ${lin('Desenvolvedor', `<b>${SOBRE.desenvolvedor}</b>`)}
+    ${lin('Responsável', SOBRE.responsavel)}
+  </table>`, [['Fechar','pri',o=>o.remove()]]);
+};
+
 /* sair: clique no balão do usuário (padrão ELO) */
 $('avatar').onclick = () => modal('Sair do sistema', `<p style="margin:0">Deseja sair do ELO Reforma?</p>`,
   [['Cancelar','',o=>o.remove()], ['Sair','pri', async () => { await sb.auth.signOut(); location.reload(); }]]);
@@ -777,7 +832,7 @@ async function entrarPainel(user){
 
 async function carregar(){
   const { data, error } = await sb.from('fornecedores')
-    .select('id,cnpj,razao_social,nome_fantasia,inscricao_estadual,contato,email,telefone,token,status,link_enviado_em,respondido_em,status_fase2,fase2_link_enviado_em,fase2_respondido_em,aberto_em,ultimo_acesso_em,acessos,fase2_aberto_em,fase2_ultimo_acesso_em,fase2_acessos')
+    .select('id,cnpj,razao_social,nome_fantasia,inscricao_estadual,contato,email,telefone,cep,logradouro,numero,complemento,bairro,cidade,uf,token,status,link_enviado_em,respondido_em,status_fase2,fase2_link_enviado_em,fase2_respondido_em,aberto_em,ultimo_acesso_em,acessos,fase2_aberto_em,fase2_ultimo_acesso_em,fase2_acessos')
     .order('razao_social');
   if (error) return toast('Erro ao carregar: '+error.message);
   FORN = data || [];
@@ -910,23 +965,46 @@ function abrirFornecedor(f){
       <label class="f">Contato<input class="inp" id="mCont" value="${v('contato')}"></label>
       <label class="f">Telefone / WhatsApp<input class="inp" id="mTel" value="${f?.telefone?fmtTel(f.telefone):''}"></label>
       <label class="f span2">E-mail<input class="inp" id="mEmail" type="email" value="${v('email')}"></label>
+      <label class="f">CEP<input class="inp" id="mCep" value="${f?.cep?fmtCEP(f.cep):''}" inputmode="numeric" placeholder="00000-000"></label>
+      <label class="f">Número<input class="inp" id="mNum" value="${v('numero')}"></label>
+      <label class="f span2">Logradouro<input class="inp" id="mLog" value="${v('logradouro')}"></label>
+      <label class="f">Complemento<input class="inp" id="mComp" value="${v('complemento')}"></label>
+      <label class="f">Bairro<input class="inp" id="mBai" value="${v('bairro')}"></label>
+      <label class="f">Cidade<input class="inp" id="mCid" value="${v('cidade')}"></label>
+      <label class="f">UF<input class="inp" id="mUf" value="${v('uf')}" maxlength="2" style="text-transform:uppercase"></label>
     </div><div class="msg" id="mMsg"></div>`,
     [ ...(f && PAPEL==='admin' ? [['Excluir fornecedor','del-out', o => { o.remove(); excluirFornecedor(f); }]] : []),
+      ...(f ? [['Buscar na Receita','', () => buscarReceita(f.cnpj)]] : []),
       ['Cancelar','',o=>o.remove()], ['Salvar','pri', salvar] ]);
   const cn = ov.querySelector('#mCnpj');
   ov.querySelector('#mTel').addEventListener('input', e=>e.target.value=fmtTel(e.target.value));
+  /* preenche só os campos vazios: o que já foi digitado nunca é sobrescrito */
+  async function buscarReceita(c){
+    aviso('mMsg','Buscando na Receita…');
+    const d = await consultaCNPJ(c);
+    if (!d) return aviso('mMsg','Não encontrado agora. Preencha manualmente.','erro');
+    const set=(id,val)=>{ const el=ov.querySelector(id); if(val!=null && String(val).trim() && !el.value.trim()) el.value=String(val).trim(); };
+    set('#mRazao', d.razao_social); set('#mFant', d.nome_fantasia); set('#mIe', d.inscricao_estadual);
+    set('#mEmail', d.email && d.email.toLowerCase()); set('#mTel', d.telefone && fmtTel(d.telefone));
+    set('#mCep', d.cep && fmtCEP(d.cep)); set('#mLog', d.logradouro); set('#mNum', d.numero); set('#mComp', d.complemento);
+    set('#mBai', d.bairro); set('#mCid', d.cidade); set('#mUf', d.uf && d.uf.toUpperCase());
+    const falta = [!ov.querySelector('#mIe').value.trim() && 'inscrição estadual', !ov.querySelector('#mTel').value.trim() && 'telefone'].filter(Boolean);
+    aviso('mMsg', falta.length ? `Dados encontrados, mas a Receita não informou: ${falta.join(' e ')}. Preencha manualmente.` : 'Dados encontrados. Confira antes de salvar.', falta.length?'erro':'ok');
+  }
   if (!f) cn.addEventListener('input', async () => {
     const c = dig(cn.value).slice(0,14); cn.value = c.length===14 ? fmtCNPJ(c) : c;
     if (c.length<14) return;
     if (!cnpjValido(c)) return aviso('mMsg','CNPJ inválido.','erro');
     if (FORN.some(x=>x.cnpj===c)) return aviso('mMsg','Este CNPJ já está na base.','erro');
-    aviso('mMsg','Buscando na Receita…');
-    const d = await consultaCNPJ(c);
-    if (!d) return aviso('mMsg','Não encontrado agora. Preencha manualmente.','erro');
-    const set=(id,val)=>{ const el=ov.querySelector(id); if(val && !el.value.trim()) el.value=val; };
-    set('#mRazao', d.razao_social); set('#mFant', d.nome_fantasia); set('#mIe', d.inscricao_estadual);
-    set('#mEmail', d.email && d.email.toLowerCase()); set('#mTel', d.telefone && fmtTel(d.telefone));
-    aviso('mMsg','Dados encontrados. Confira antes de salvar.','ok');
+    buscarReceita(c);
+  });
+  ov.querySelector('#mCep').addEventListener('input', async e => {
+    e.target.value = fmtCEP(e.target.value);
+    if (dig(e.target.value).length!==8) return;
+    const end = await consultaCEP(e.target.value); if (!end) return;
+    const put=(id,val)=>{ if(val) ov.querySelector(id).value=val; };
+    put('#mLog', end.logradouro); put('#mBai', end.bairro); put('#mCid', end.cidade); put('#mUf', end.uf);
+    ov.querySelector(end.logradouro ? '#mNum' : '#mLog').focus();
   });
   async function salvar(o, b){
     const c = dig(o.querySelector('#mCnpj').value);
@@ -937,6 +1015,13 @@ function abrirFornecedor(f){
       contato: o.querySelector('#mCont').value.trim()||null,
       telefone: dig(o.querySelector('#mTel').value)||null,
       email: o.querySelector('#mEmail').value.trim()||null,
+      cep: dig(o.querySelector('#mCep').value)||null,
+      logradouro: o.querySelector('#mLog').value.trim()||null,
+      numero: o.querySelector('#mNum').value.trim()||null,
+      complemento: o.querySelector('#mComp').value.trim()||null,
+      bairro: o.querySelector('#mBai').value.trim()||null,
+      cidade: o.querySelector('#mCid').value.trim()||null,
+      uf: o.querySelector('#mUf').value.trim().toUpperCase()||null,
       atualizado_em: new Date().toISOString()
     };
     if (!f && !cnpjValido(c)) return aviso('mMsg','Informe um CNPJ válido.','erro');
@@ -1198,14 +1283,25 @@ const ORIGENS = {
   8:'8 · Nacional, conteúdo importado > 70%'
 };
 /* Ordem e nomes iguais ao cadastro do ERP (planilha de ida e volta) */
+/* 3º item = true → campo interno da Vilarejo (não aparece para o fornecedor) */
 const CAMPOS_ITEM = [
-  ['codigo','Código'], ['descricao','Descrição'], ['ean','EAN'], ['ncm','NCM'], ['cest','CEST'],
-  ['origem','Origem'], ['fci','Nº FCI'], ['pct_importacao','% Conteúdo importação'],
+  ['cod_interno','Cód. Interno',true],
+  ['codigo','Cód. Fábrica'], ['descricao','Descrição'], ['fci','FCI'], ['qtd_caract','Qtd. Caract.'],
+  ['ncm','NCM/SH'], ['origem','Origem'], ['cst_icms','CST'], ['cest','CEST'],
+  ['aliq_ipi','% IPI'], ['aliq_icms','% ICMS'], ['mva','% MVA'],
   ['cst','CST IBS/CBS'], ['cclasstrib','cClassTrib IBS/CBS'], ['aliq_ibs_uf','% IBS UF'], ['aliq_ibs_mun','% IBS Mun.'],
   ['aliq_cbs','% CBS'], ['pct_reducao','% Redução IBS/CBS'], ['cst_is','CST IS'], ['cclasstrib_is','cClassTrib IS'], ['aliq_is','% IS'],
-  ['zfm','Zona Franca (S/N)']
+  ['unidade_venda','Unidade de Venda'], ['ean','GTIN13 ou EAN Tributável'], ['qtd_caixa','Qtd. Caixa'], ['ean14','EAN14'],
+  ['pct_importacao','% Conteúdo importação'], ['zfm','Zona Franca (S/N)'],
+  ['cod_departamento','Cód. Departamento',true], ['departamento','Departamento',true],
+  ['cod_secao','Cód. Seção',true], ['secao','Seção',true],
+  ['cod_categoria','Cód. Categoria',true], ['categoria','Categoria',true]
 ];
-const NUM_ITEM = ['pct_importacao','aliq_ibs_uf','aliq_ibs_mun','aliq_cbs','pct_reducao','aliq_is'];
+const CAMPOS_FORN = CAMPOS_ITEM.filter(c => !c[2]);
+/* exportados como texto (="...") para o Excel não cortar zeros nem virar notação científica */
+const TXT_ITEM = ['cod_interno','codigo','ncm','cst_icms','cest','cst','cclasstrib','cst_is','cclasstrib_is','ean','ean14'];
+const NUM_ITEM = ['aliq_ipi','aliq_icms','mva','pct_importacao','aliq_ibs_uf','aliq_ibs_mun','aliq_cbs','pct_reducao','aliq_is','qtd_caixa'];
+const UNIDADES = ['UN','CX','PC','PCT','M','M2','M3','KG','L','GL','LT','SC','BD','RL','JG','KIT','PAR','CJ','FD','TB'];
 const STATUS2 = { pendente:'Pendente', enviado:'Link enviado', aberto:'Link aberto', em_preenchimento:'Preenchendo', respondido:'Enviado' };
 const RE_FCI = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 
@@ -1215,29 +1311,40 @@ const lerNum = v => { if (vazio(v)) return null; const n = Number(String(v).repl
 const fmtNCM = v => { const c = dig(v); return c.length===8 ? `${c.slice(0,4)}.${c.slice(4,6)}.${c.slice(6)}` : (v||''); };
 
 function faltasItem(i){
+  /* obrigatórios = só os campos com * do cadastro; os demais só têm o formato conferido se forem preenchidos */
   const f = [];
-  if (vazio(i.codigo)) f.push('código');
+  if (vazio(i.codigo)) f.push('cód. fábrica');
+  if (vazio(i.descricao)) f.push('descrição');
   if (!/^\d{8}$/.test(dig(i.ncm))) f.push('NCM');
   if (vazio(i.origem)) f.push('origem');
-  else if ([3,5,8].includes(+i.origem) && !RE_FCI.test(String(i.fci||'').trim())) f.push('FCI');
-  if (!/^\d{3}$/.test(i.cst||'')) f.push('CST');
+  if (!/^\d{2,3}$/.test(dig(i.cst_icms))) f.push('CST');
+  if (!/^\d{7}$/.test(dig(i.cest))) f.push('CEST');
+  if (vazio(i.aliq_ipi)) f.push('% IPI');
+  if (vazio(i.aliq_icms)) f.push('% ICMS');
+  if (vazio(i.mva)) f.push('% MVA');
+  if (!/^\d{3}$/.test(i.cst||'')) f.push('CST IBS/CBS');
   if (!/^\d{6}$/.test(i.cclasstrib||'')) f.push('cClassTrib');
   else if (i.cst && i.cclasstrib.slice(0,3)!==i.cst) f.push('cClassTrib ≠ CST');
-  if (vazio(i.aliq_ibs_uf) || vazio(i.aliq_ibs_mun) || vazio(i.aliq_cbs)) f.push('alíquotas');
+  if (vazio(i.aliq_ibs_uf) || vazio(i.aliq_ibs_mun) || vazio(i.aliq_cbs)) f.push('alíquotas IBS/CBS');
+  if (!/^(\d{8}|\d{12}|\d{13}|\d{14})$/.test(dig(i.ean))) f.push('GTIN/EAN');
+  if (vazio(i.qtd_caixa) || +i.qtd_caixa<=0) f.push('qtd. caixa');
+  if (!vazio(i.fci) && !RE_FCI.test(String(i.fci).trim())) f.push('FCI inválida');
+  if (!vazio(i.ean14) && !/^\d{14}$/.test(dig(i.ean14))) f.push('EAN14 inválido');
   if (!vazio(i.pct_reducao) && (+i.pct_reducao<0 || +i.pct_reducao>100)) f.push('% redução');
-  if (!vazio(i.cst_is) || !vazio(i.cclasstrib_is) || !vazio(i.aliq_is)){
-    if (!/^\d{3}$/.test(i.cst_is||'') || !/^\d{6}$/.test(i.cclasstrib_is||'') || i.cclasstrib_is.slice(0,3)!==i.cst_is || vazio(i.aliq_is)) f.push('Imposto Seletivo');
-  }
+  if (!vazio(i.cst_is) && !/^\d{3}$/.test(i.cst_is)) f.push('CST IS inválido');
+  if (!vazio(i.cclasstrib_is) && !/^\d{6}$/.test(i.cclasstrib_is)) f.push('cClassTrib IS inválido');
   return f;
 }
 
 /* ---------- planilha de itens (CSV ; com vírgula decimal, abre no Excel) ---------- */
 function csvItens(itens, comFornecedor){
   const cel = v => `"${String(v??'').replace(/"/g,'""')}"`;
-  const cab = [...(comFornecedor?['CNPJ fornecedor','Razão social']:[]), ...CAMPOS_ITEM.map(c=>c[1]), ...(comFornecedor?['Situação']:[])];
+  const campos = comFornecedor ? CAMPOS_ITEM : CAMPOS_FORN;
+  const cab = [...(comFornecedor?['CNPJ fornecedor','Razão social']:[]), ...campos.map(c=>c[1]), ...(comFornecedor?['Situação']:[])];
   const linhas = itens.map(i => [
     ...(comFornecedor?[fmtCNPJ(i._cnpj), i._razao]:[]),
-    ...CAMPOS_ITEM.map(([k]) => k==='zfm' ? (i.zfm?'S':'N') : NUM_ITEM.includes(k) ? numBR(i[k]) : (i[k]??'')),
+    ...campos.map(([k]) => k==='zfm' ? (i.zfm?'S':'N') : k==='qtd_caract' ? (vazio(i.descricao)?'':String(i.descricao).length)
+      : NUM_ITEM.includes(k) ? numBR(i[k]) : TXT_ITEM.includes(k) && !vazio(i[k]) ? `="${i[k]}"` : (i[k]??'')),
     ...(comFornecedor?[faltasItem(i).length?'Falta: '+faltasItem(i).join(', '):'Completo']:[])
   ].map(cel).join(';'));
   return '﻿' + [cab.map(cel).join(';'), ...linhas].join('\r\n');
@@ -1250,11 +1357,16 @@ function baixar(nome, conteudo){
 const MAPA_ITEM = (() => {
   const m = {}; CAMPOS_ITEM.forEach(([k,l]) => m[norm(l)] = k);
   Object.assign(m, { cod:'codigo', codigo:'codigo', referencia:'codigo', ref:'codigo', codfornecedor:'codigo', codigofornecedor:'codigo',
-    descricao:'descricao', produto:'descricao', ean:'ean', gtin:'ean', codigodebarras:'ean', codbarras:'ean',
-    ncm:'ncm', cest:'cest', origem:'origem', fci:'fci', nfci:'fci', numerofci:'fci', conteudoimportacao:'pct_importacao',
-    cst:'cst', cstibscbs:'cst', cclasstrib:'cclasstrib', cclasstribibscbs:'cclasstrib', ibsuf:'aliq_ibs_uf', ibsmun:'aliq_ibs_mun',
+    codfabrica:'codigo', codigofabrica:'codigo', codinterno:'cod_interno', codigointerno:'cod_interno',
+    descricao:'descricao', produto:'descricao', ean:'ean', gtin:'ean', gtin13:'ean', eantributavel:'ean', codigodebarras:'ean', codbarras:'ean',
+    ean14:'ean14', dun14:'ean14', ncm:'ncm', ncmsh:'ncm', cest:'cest', origem:'origem', fci:'fci', nfci:'fci', numerofci:'fci',
+    conteudoimportacao:'pct_importacao',
+    cst:'cst_icms', csticms:'cst_icms', ipi:'aliq_ipi', icms:'aliq_icms', mva:'mva',
+    cstibscbs:'cst', cclasstrib:'cclasstrib', cclasstribibscbs:'cclasstrib', ibsuf:'aliq_ibs_uf', ibsmun:'aliq_ibs_mun',
     cbs:'aliq_cbs', reducao:'pct_reducao', reducaoibscbs:'pct_reducao', cstis:'cst_is', cclasstribis:'cclasstrib_is', is:'aliq_is',
+    unidade:'unidade_venda', unidadedevenda:'unidade_venda', un:'unidade_venda', qtdcaixa:'qtd_caixa', qtdeembalagem:'qtd_caixa',
     zonafranca:'zfm', zonafrancasn:'zfm', zfm:'zfm', cnpj:'_cnpj', cnpjfornecedor:'_cnpj' });
+  delete m.qtdcaract;   // calculada pela descrição, nunca importada
   return m;
 })();
 function lerPlanilhaItens(txt){
@@ -1263,11 +1375,14 @@ function lerPlanilhaItens(txt){
   const cab = rows[0].map(h => MAPA_ITEM[norm(h)] || null);
   if (!cab.includes('codigo')) return { erro:'Falta a coluna Código no cabeçalho.' };
   const itens = rows.slice(1).map(r => {
-    const o = {}; cab.forEach((k,i) => { if (k && r[i]!=null && String(r[i]).trim()!=='') o[k] = String(r[i]).trim(); });
+    const o = {}; cab.forEach((k,i) => { if (k && r[i]!=null && String(r[i]).trim()!=='') o[k] = String(r[i]).trim().replace(/^="(.*)"$/,'$1'); });
     NUM_ITEM.forEach(k => { if (k in o) o[k] = lerNum(o[k]); });
     if ('zfm' in o) o.zfm = /^(s|sim|1|x|true)$/i.test(o.zfm);
     if ('origem' in o) { const n = parseInt(o.origem,10); o.origem = isNaN(n)?null:n; }
-    ['ncm','ean','cest'].forEach(k => { if (k in o) o[k] = dig(o[k]); });
+    ['ncm','ean','cest','ean14','cst_icms'].forEach(k => { if (k in o) o[k] = dig(o[k]); });
+    if ('cst_icms' in o && o.cst_icms.length===1) o.cst_icms = o.cst_icms.padStart(2,'0');
+    if ('ncm' in o && o.ncm.length===7) o.ncm = o.ncm.padStart(8,'0');
+    if ('unidade_venda' in o) o.unidade_venda = o.unidade_venda.toUpperCase();
     ['cst','cst_is'].forEach(k => { if (k in o) o[k] = dig(o[k]).padStart(3,'0'); });
     ['cclasstrib','cclasstrib_is'].forEach(k => { if (k in o) o[k] = dig(o[k]).padStart(6,'0'); });
     return o;
@@ -1329,7 +1444,7 @@ $('p2Prev').onclick = ()=>{ pagina2--; render2(); };
 $('p2Next').onclick = ()=>{ pagina2++; render2(); };
 
 const linkFase2 = f => `${linkDe(f)}&fase=2`;
-const msgConvite2 = f => `Olá${f.contato?', '+f.contato.split(' ')[0]:''}! Seguimos com a preparação da Rede Vilarejo para a Reforma Tributária (IBS/CBS). Agora pedimos, por gentileza, que a ${f.nome_fantasia||f.razao_social} informe a tributação de IBS/CBS (CST, cClassTrib e alíquotas) e a FCI dos itens que nos fornece, no link abaixo. Dá para preencher na tela ou baixar a planilha, completar no Excel e importar:\n\n${linkFase2(f)}\n\nObrigado!`;
+const msgConvite2 = f => `Olá${f.contato?', '+f.contato.split(' ')[0]:''}! Seguimos com a preparação da Rede Vilarejo para a Reforma Tributária (IBS/CBS). Agora pedimos, por gentileza, que a ${f.nome_fantasia||f.razao_social} informe os dados de cadastro e tributação (NCM, CST, CEST, IPI, ICMS, MVA, IBS/CBS, GTIN e embalagem) dos itens que nos fornece, no link abaixo. Dá para preencher na tela ou baixar a planilha, completar no Excel e importar:\n\n${linkFase2(f)}\n\nObrigado!`;
 
 $('t2Body').addEventListener('click', async e => {
   const b = e.target.closest('button[data-a]'); if(!b) return;
@@ -1374,13 +1489,16 @@ $('bt2Export').onclick = async () => {
   baixar(`elo-reforma-itens-${new Date().toISOString().slice(0,10)}.csv`, csvItens(linhas, true));
 };
 
-/* Importa a lista de itens do ERP: CNPJ do fornecedor + Código + Descrição + EAN + NCM (+ CEST) */
+/* Importa a planilha exportada acima (ida e volta) ou uma lista do ERP: CNPJ do fornecedor + Cód. Fábrica + qualquer coluna */
+const CAMPOS_IMPORT = CAMPOS_ITEM.map(c => c[0]).filter(k => k!=='codigo' && k!=='qtd_caract');
 $('bt2Import').onclick = () => {
   let lote = [];
-  const ov = modal('Importar itens do ERP', `
+  const ov = modal('Importar planilha de itens', `
     <p style="color:var(--ink-soft);font-size:13px;line-height:1.5;margin:0">Envie um <b>.csv</b> ou cole as linhas do Excel, com o cabeçalho na primeira linha.<br>
-    Colunas: <b>CNPJ</b> do fornecedor, <b>Código</b> (do fornecedor), Descrição, EAN, NCM e CEST (opcional).<br>
-    Item que já existe (mesmo CNPJ + código) tem descrição, EAN, NCM e CEST atualizados. A tributação já informada pelo fornecedor não é alterada.</p>
+    Use a planilha de <b>Exportar planilha</b> (edite no Excel e salve como CSV) ou uma lista do ERP.
+    Obrigatórias: <b>CNPJ</b> do fornecedor e <b>Cód. Fábrica</b>; as demais colunas são opcionais e podem estar em qualquer ordem.<br>
+    Item que já existe (mesmo CNPJ + Cód. Fábrica) é atualizado só nas células preenchidas; <b>célula vazia não apaga</b> o que já existe.
+    Códigos novos são incluídos. As colunas Razão social, Qtd. Caract. e Situação são ignoradas.</p>
     <input type="file" class="inp" id="i2Arq" accept=".csv,.txt">
     <textarea class="inp" id="i2Txt" rows="6" placeholder="…ou cole aqui"></textarea>
     <div class="msg" id="i2Msg"></div>`,
@@ -1396,8 +1514,8 @@ $('bt2Import').onclick = () => {
       const c = dig(i._cnpj).padStart(14,'0'); const fid = porCnpj[c];
       if (!fid){ semForn.add(c); return; }
       const chave = fid+'|'+i.codigo; if (vistos.has(chave)) return; vistos.add(chave);
-      const o = { fornecedor_id:fid, codigo:i.codigo, origem_carga:'vilarejo', atualizado_em:new Date().toISOString() };
-      ['descricao','ean','ncm','cest'].forEach(k => { if (!vazio(i[k])) o[k] = i[k]; });
+      const o = { fornecedor_id:fid, codigo:i.codigo, atualizado_em:new Date().toISOString() };
+      CAMPOS_IMPORT.forEach(k => { if (k in i && !vazio(i[k])) o[k] = i[k]; });
       lote.push(o);
     });
     aviso('i2Msg', `${lote.length.toLocaleString('pt-BR')} item(ns) prontos para importar` +
@@ -1408,6 +1526,11 @@ $('bt2Import').onclick = () => {
   async function importar(o, b){
     if (!lote.length) return aviso('i2Msg','Nada para importar.','erro');
     b.disabled = true; let ok = 0;
+    aviso('i2Msg','Conferindo itens já cadastrados…');
+    const atuais = await todosItens(null); if (!atuais){ b.disabled=false; return; }
+    const existe = new Set(atuais.map(x => x.fornecedor_id+'|'+x.codigo));
+    // item novo entra como carregado pela Vilarejo; item existente mantém quem o incluiu
+    lote.forEach(x => { if (!existe.has(x.fornecedor_id+'|'+x.codigo)) x.origem_carga = 'vilarejo'; });
     // agrupa por conjunto de colunas para o upsert não apagar campos ausentes
     const grupos = {}; lote.forEach(x => { const k = Object.keys(x).sort().join(','); (grupos[k] = grupos[k] || []).push(x); });
     for (const g of Object.values(grupos)){
@@ -1491,18 +1614,21 @@ function editarItem(it){
   const ov = modal(novo?'Novo item':`Item ${esc(i.codigo)}`, `
     <div class="sec-t">Produto</div>
     <div class="grid g4">
-      <label class="f">Código *<input class="inp" data-k="codigo" value="${v('codigo')}" ${travaCod||!novo?'readonly':''}></label>
-      <label class="f span3">Descrição<input class="inp" data-k="descricao" value="${v('descricao')}"></label>
-      <label class="f">EAN<input class="inp" data-k="ean" value="${v('ean')}" inputmode="numeric"></label>
-      <label class="f">NCM *<input class="inp" data-k="ncm" value="${esc(fmtNCM(i.ncm))}" inputmode="numeric" placeholder="0000.00.00"></label>
-      <label class="f">CEST<input class="inp" data-k="cest" value="${v('cest')}" inputmode="numeric"></label>
-      <label class="chk" style="align-self:end;padding-bottom:9px"><input type="checkbox" data-k="zfm" ${i.zfm?'checked':''}>Fabricado na Zona Franca</label>
-    </div>
-    <div class="sec-t">Origem e FCI</div>
-    <div class="grid g4">
+      <label class="f">Cód. Fábrica *<input class="inp" data-k="codigo" value="${v('codigo')}" ${travaCod||!novo?'readonly':''}></label>
+      <label class="f span3">Descrição * <small id="qtdCar"></small><input class="inp" data-k="descricao" value="${v('descricao')}"></label>
       <label class="f span2">Origem *<select class="inp" data-k="origem"><option value="">Selecione…</option>${Object.entries(ORIGENS).map(([c,t])=>`<option value="${c}" ${String(i.origem)===c?'selected':''}>${t}</option>`).join('')}</select></label>
-      <label class="f">Nº FCI <small id="fciObr"></small><input class="inp" data-k="fci" value="${v('fci')}" placeholder="XXXXXXXX-XXXX-XXXX-XXXX-XXXXXXXXXXXX"></label>
+      <label class="f">FCI<input class="inp" data-k="fci" value="${v('fci')}" placeholder="XXXXXXXX-XXXX-XXXX-XXXX-XXXXXXXXXXXX"></label>
       <label class="f">% Conteúdo importação<input class="inp" data-k="pct_importacao" value="${v('pct_importacao')}" inputmode="decimal"></label>
+    </div>
+    <div class="sec-t">Fiscal</div>
+    <div class="grid g4">
+      <label class="f">NCM/SH *<input class="inp" data-k="ncm" value="${esc(fmtNCM(i.ncm))}" inputmode="numeric" placeholder="0000.00.00"></label>
+      <label class="f">CST *<input class="inp" data-k="cst_icms" value="${v('cst_icms')}" maxlength="3" inputmode="numeric" placeholder="00"></label>
+      <label class="f">CEST *<input class="inp" data-k="cest" value="${v('cest')}" maxlength="9" inputmode="numeric" placeholder="0000000"></label>
+      <label class="chk" style="align-self:end;padding-bottom:9px"><input type="checkbox" data-k="zfm" ${i.zfm?'checked':''}>Fabricado na Zona Franca</label>
+      <label class="f">% IPI *<input class="inp" data-k="aliq_ipi" value="${v('aliq_ipi')}" inputmode="decimal" placeholder="0"></label>
+      <label class="f">% ICMS *<input class="inp" data-k="aliq_icms" value="${v('aliq_icms')}" inputmode="decimal" placeholder="0"></label>
+      <label class="f">% MVA *<input class="inp" data-k="mva" value="${v('mva')}" inputmode="decimal" placeholder="0"></label>
     </div>
     <div class="sec-t">IBS / CBS</div>
     <div class="grid g3">
@@ -1519,13 +1645,21 @@ function editarItem(it){
       <label class="f">cClassTrib IS<input class="inp" data-k="cclasstrib_is" value="${v('cclasstrib_is')}" maxlength="6" inputmode="numeric"></label>
       <label class="f">% IS<input class="inp" data-k="aliq_is" value="${v('aliq_is')}" inputmode="decimal"></label>
     </div>
+    <div class="sec-t">Unidade de venda e embalagem master</div>
+    <div class="grid g4">
+      <label class="f">Unidade de Venda<input class="inp" data-k="unidade_venda" value="${v('unidade_venda')}" list="dlUnid" maxlength="6" placeholder="UN"></label>
+      <label class="f">GTIN13 ou EAN Tributável *<input class="inp" data-k="ean" value="${v('ean')}" maxlength="14" inputmode="numeric"></label>
+      <label class="f">Qtd. Caixa *<input class="inp" data-k="qtd_caixa" value="${v('qtd_caixa')}" inputmode="decimal"></label>
+      <label class="f">EAN14<input class="inp" data-k="ean14" value="${v('ean14')}" maxlength="14" inputmode="numeric"></label>
+    </div>
+    <datalist id="dlUnid">${UNIDADES.map(u=>`<option value="${u}">`).join('')}</datalist>
     <p style="margin:0;color:var(--ink-faint);font-size:12.5px">Tributação integral: CST <b>000</b> e cClassTrib <b>000001</b>. Os 3 primeiros dígitos do cClassTrib devem ser iguais ao CST.
       Alíquotas de ${ALIQ_PADRAO.ano} já preenchidas. Altere só se o item for exceção.</p>
     <div class="msg" id="itMsg"></div>`,
     [ ...(!novo && i.origem_carga!=='vilarejo' ? [['Excluir item','', o => { if (!confirm('Excluir este item?')) return; ITENS = ITENS.filter(x => x!==it); o.remove(); renderF2(); }]] : []),
       ['Cancelar','',o=>o.remove()], ['Salvar item','pri', salvarIt] ], 'lg');
-  const atualizaFci = () => { const o = ov.querySelector('[data-k=origem]').value; ov.querySelector('#fciObr').textContent = ['3','5','8'].includes(o)?'(obrigatória)':''; };
-  ov.querySelector('[data-k=origem]').onchange = atualizaFci; atualizaFci();
+  const contaCar = () => { const n = ov.querySelector('[data-k=descricao]').value.trim().length; ov.querySelector('#qtdCar').textContent = n ? `(${n} caracteres)` : ''; };
+  ov.querySelector('[data-k=descricao]').oninput = contaCar; contaCar();
   function salvarIt(o){
     const n = { ...i };
     o.querySelectorAll('[data-k]').forEach(el => {
@@ -1533,7 +1667,8 @@ function editarItem(it){
       if (k==='zfm') n.zfm = el.checked;
       else if (NUM_ITEM.includes(k)) n[k] = lerNum(el.value);
       else if (k==='origem') n.origem = el.value===''?null:+el.value;
-      else if (['ncm','ean','cest','cst','cclasstrib','cst_is','cclasstrib_is'].includes(k)) n[k] = dig(el.value) || null;
+      else if (['ncm','ean','cest','ean14','cst_icms','cst','cclasstrib','cst_is','cclasstrib_is'].includes(k)) n[k] = dig(el.value) || null;
+      else if (k==='unidade_venda') n[k] = el.value.trim().toUpperCase() || null;
       else n[k] = el.value.trim() || null;
     });
     if (vazio(n.codigo)) return aviso('itMsg','Informe o código do item.','erro');
@@ -1600,7 +1735,7 @@ $('f2Importar').onclick = () => {
 };
 
 async function salvarF2(finalizar){
-  const payload = ITENS.map(i => { const o = {}; CAMPOS_ITEM.forEach(([k]) => o[k] = i[k]===undefined?null:i[k]); return o; });
+  const payload = ITENS.map(i => { const o = {}; CAMPOS_FORN.forEach(([k]) => { if (k!=='qtd_caract') o[k] = i[k]===undefined?null:i[k]; }); return o; });
   const { error } = await sb.rpc('fase2_salvar', { p_token: TOKEN, p_itens: payload, p_finalizar: !!finalizar });
   if (error){ toast('Não foi possível salvar. Tente novamente.'); return false; }
   return true;
@@ -1667,13 +1802,16 @@ async function iniciarFormulario(){
   } else {
     preencher('razao_social', f.razao_social); preencher('nome_fantasia', f.nome_fantasia); preencher('inscricao_estadual', f.inscricao_estadual);
     preencher('responsavel_nome', f.contato); preencher('responsavel_email', f.email); if (f.telefone) preencher('responsavel_telefone', fmtTel(f.telefone));
+    if (f.cep) preencher('cep', fmtCEP(f.cep));
+    ['logradouro','numero','complemento','bairro','cidade','uf'].forEach(k=>preencher(k, f[k]));
     aviso('msg_cnpj','Buscando dados na Receita Federal…');
     const d = await consultaCNPJ(f.cnpj);
     if (d){
       preencher('razao_social', d.razao_social); preencher('nome_fantasia', d.nome_fantasia, false);
       preencher('inscricao_estadual', d.inscricao_estadual, false); preencher('cnae', d.cnae);
-      if (d.cep) preencher('cep', fmtCEP(d.cep));
-      ['logradouro','numero','complemento','bairro','cidade','uf'].forEach(k=>preencher(k, d[k]));
+      if (d.cep) preencher('cep', fmtCEP(d.cep), false);
+      ['logradouro','numero','complemento','bairro','cidade','uf'].forEach(k=>preencher(k, d[k], false));
+      if (d.telefone) preencher('responsavel_telefone', fmtTel(d.telefone), false);
       if (d.regime) setRadio('regime_tributario', d.regime);
       aviso('msg_cnpj','Dados preenchidos pela Receita Federal. Confira e corrija se precisar.','ok');
     } else aviso('msg_cnpj','');

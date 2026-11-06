@@ -215,6 +215,22 @@ dl.kv dd{margin:0;font-weight:600;word-break:break-word}
 .q{display:grid;gap:7px}
 .q > span{font-size:13px;font-weight:700;color:var(--ink-soft)}
 .q > span small{display:block;font-weight:400;color:var(--ink-faint);margin-top:2px}
+/* computador: o formulário cabe na tela, sem barra de rolagem */
+@media(min-width:900px){
+  #vw-form{height:100vh;min-height:0;overflow:hidden}
+  #vw-form > header{flex:0 0 auto}
+  #vw-form .fbody{padding:14px 16px;min-height:0}
+  #vw-form .fcard{max-width:1040px;max-height:100%;min-height:0}
+  #vw-form .fstep{padding:16px 26px;gap:12px;flex:1 1 auto;min-height:0;overflow:auto;scrollbar-width:none}
+  #vw-form .fstep::-webkit-scrollbar{display:none}
+  #vw-form .fstep h3{font-size:17px}
+  #vw-form .fstep[data-p="2"]{grid-template-columns:1fr 1fr;column-gap:28px;align-content:start}
+  #vw-form .fstep[data-p="2"] > h3,#vw-form .fstep[data-p="2"] > .hint,#vw-form .fstep[data-p="2"] > label.f{grid-column:1/-1}
+  #vw-form .fstep[data-p="2"] > label.f{max-width:calc(50% - 14px)}
+  #vw-form .radios label{padding:6px 11px}
+  #vw-form .steps div{padding:10px 8px}
+  #vw-form .fnav{padding:11px 24px}
+}
 .done{padding:48px 24px;text-align:center;display:grid;gap:10px;justify-items:center}
 .done h3{margin:0;font-size:20px;font-weight:800}
 .done .ic{width:56px;height:56px;border-radius:50%;background:var(--green-tint);color:var(--green);display:grid;place-items:center;font-size:28px;font-weight:800}
@@ -519,10 +535,10 @@ code.cf{background:var(--side);border:1px solid var(--line);border-radius:6px;pa
       <img class="logo-elo" data-logo="elo" alt="elo Sistemas">
       <div class="tagline"><div class="t1">Rede Vilarejo · Reforma Tributária</div><div class="t2">Cadastro de fornecedores · IBS/CBS</div></div>
     </div>
+    <div class="vil-chip" style="margin-left:auto"><img data-logo="vilarejo" alt="Rede Vilarejo"></div>
   </header>
   <div class="fbody">
     <div class="fcard" id="fCard">
-      <div class="f-vil" style="padding-bottom:10px;border-bottom:1px solid var(--line)"><img data-logo="vilarejo" alt="Rede Vilarejo"></div>
       <div class="steps" id="fSteps">
         <div data-s="0"><em>1</em><span>Empresa</span></div>
         <div data-s="1"><em>2</em><span>Endereço</span></div>
@@ -536,8 +552,8 @@ code.cf{background:var(--side);border:1px solid var(--line);border-radius:6px;pa
         <div class="grid g2">
           <label class="f">CNPJ<input class="inp" id="cnpj" readonly></label>
           <label class="f">Inscrição estadual<input class="inp" id="inscricao_estadual" placeholder="Ou ISENTO"></label>
-          <label class="f span2">Razão social *<input class="inp" id="razao_social"></label>
-          <label class="f span2">Nome fantasia<input class="inp" id="nome_fantasia"></label>
+          <label class="f">Razão social *<input class="inp" id="razao_social"></label>
+          <label class="f">Nome fantasia<input class="inp" id="nome_fantasia"></label>
           <label class="f span2">Atividade principal (CNAE)<input class="inp" id="cnae" placeholder="Ex.: 4744-0/05 · Comércio varejista de materiais de construção"></label>
         </div>
         <div class="msg" id="msg_cnpj"></div>

@@ -669,8 +669,9 @@ code.cf{background:var(--side);border:1px solid var(--line);border-radius:6px;pa
    1.6 · 05/11/2026 · Planilha modelo em branco (exportar sem itens); importar planilha sem CNPJ escolhendo o fornecedor
    1.7 · 05/11/2026 · Planilha em Excel (.xlsx) Elo_Formulario_Reforma no layout do cadastro do ERP: blocos coloridos,
                       cabeçalho em 3 linhas, * vermelho nos obrigatórios; importação lê .xlsx e .csv
+   1.8 · 05/11/2026 · Sobre: dados do GitHub e da hospedagem (Vercel)
    ============================================================ */
-const VERSAO = { num:'1.7', data:'05/11/2026' };
+const VERSAO = { num:'1.8', data:'05/11/2026' };
 
 /* Dados da tela "Sobre o sistema" — manter atualizado */
 const SOBRE = {
@@ -680,7 +681,8 @@ const SOBRE = {
   responsavel: 'Eduardo da Silva Lourenço',
   banco: { servico:'Supabase (PostgreSQL)', projeto:'Vilarejo Reforma', ref:'sdipbaobqrkcidslqdpk', regiao:'us-east-1 (EUA, Virgínia)',
            conta:'elosistemascasavip@gmail.com' },
-  github: { conta:'', email:'', repositorio:'' }   // preencher
+  github: { conta:'elosistemascasavip', email:'elosistemascasavip@gmail.com', repositorio:'https://github.com/elosistemascasavip/Vilarejo-Reforma' },
+  hospedagem: { servico:'Vercel', conta:'elosistemascasavip@gmail.com' }
 };
 
 /* ======================= CONFIG ======================= */
@@ -834,9 +836,13 @@ $('navSobre').onclick = () => {
     ${lin('Região', B.regiao)}
     ${lin('Conta Supabase', B.conta)}
     ${sec('Código-fonte (GitHub)')}
-    ${lin('Conta', G.conta)}
+    ${lin('Conta', G.conta && lk('https://github.com/'+G.conta))}
     ${lin('E-mail', G.email)}
     ${lin('Repositório', G.repositorio && lk(G.repositorio))}
+    ${sec('Hospedagem')}
+    ${lin('Serviço', SOBRE.hospedagem.servico)}
+    ${lin('Conta', SOBRE.hospedagem.conta)}
+    ${lin('Painel', lk('https://vercel.com/dashboard'))}
     ${sec('Desenvolvimento')}
     ${lin('Desenvolvedor', `<b>${SOBRE.desenvolvedor}</b>`)}
     ${lin('Responsável', SOBRE.responsavel)}

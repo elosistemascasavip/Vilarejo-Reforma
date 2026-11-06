@@ -667,8 +667,10 @@ code.cf{background:var(--side);border:1px solid var(--line);border-radius:6px;pa
                       logo Vilarejo na barra verde)
    1.5 · 05/11/2026 · Formulário do fornecedor ocupa a tela inteira; espaços e fontes acompanham a altura da janela
    1.6 · 05/11/2026 · Planilha modelo em branco (exportar sem itens); importar planilha sem CNPJ escolhendo o fornecedor
+   1.7 · 05/11/2026 · Planilha em Excel (.xlsx) Elo_Formulario_Reforma no layout do cadastro do ERP: blocos coloridos,
+                      cabeçalho em 3 linhas, * vermelho nos obrigatórios; importação lê .xlsx e .csv
    ============================================================ */
-const VERSAO = { num:'1.6', data:'05/11/2026' };
+const VERSAO = { num:'1.7', data:'05/11/2026' };
 
 /* Dados da tela "Sobre o sistema" — manter atualizado */
 const SOBRE = {
@@ -1320,7 +1322,7 @@ const CAMPOS_ITEM = [
   ['aliq_ipi','% IPI'], ['aliq_icms','% ICMS'], ['mva','% MVA'],
   ['cst','CST IBS/CBS'], ['cclasstrib','cClassTrib IBS/CBS'], ['aliq_ibs_uf','% IBS UF'], ['aliq_ibs_mun','% IBS Mun.'],
   ['aliq_cbs','% CBS'], ['pct_reducao','% Redução IBS/CBS'], ['cst_is','CST IS'], ['cclasstrib_is','cClassTrib IS'], ['aliq_is','% IS'],
-  ['unidade_venda','Unidade de Venda'], ['ean','GTIN13 ou EAN Tributável'], ['qtd_caixa','Qtd. Caixa'], ['ean14','EAN14'],
+  ['ean','GTIN13 ou EAN Tributável'], ['qtd_caixa','Qtd. Caixa'], ['ean14','EAN14'],
   ['pct_importacao','% Conteúdo importação'], ['zfm','Zona Franca (S/N)'],
   ['cod_departamento','Cód. Departamento',true], ['departamento','Departamento',true],
   ['cod_secao','Cód. Seção',true], ['secao','Seção',true],
@@ -1398,12 +1400,27 @@ const MAPA_ITEM = (() => {
   delete m.qtdcaract;   // calculada pela descrição, nunca importada
   return m;
 })();
-function lerPlanilhaItens(txt){
-  const rows = parseCSV(txt);
-  if (rows.length<2) return { erro:'Nenhuma linha encontrada.' };
-  const cab = rows[0].map(h => MAPA_ITEM[norm(h)] || null);
-  if (!cab.includes('codigo')) return { erro:'Falta a coluna Cód. Fábrica no cabeçalho.' };
-  const itens = rows.slice(1).map(r => {
+function mapaCabecalho(linha){
+  return linha.map((h, j) => {
+    const n = norm(h||'');
+    if (n==='cod'){   // no layout do ERP, "Cód." aparece antes de Departamento, Seção e Categoria
+      const prox = norm(linha[j+1]||'');
+      if (prox.startsWith('departamento')) return 'cod_departamento';
+      if (prox.startsWith('secao')) return 'cod_secao';
+      if (prox.startsWith('categoria')) return 'cod_categoria';
+    }
+    return MAPA_ITEM[n] || null;
+  });
+}
+function lerPlanilhaItens(entrada){
+  const rows = Array.isArray(entrada) ? entrada : parseCSV(entrada);
+  /* cabeçalho = última das primeiras linhas que ainda têm a coluna Cód. Fábrica (cabeçalho em 3 linhas mescladas) */
+  let h = -1;
+  for (let i = 0; i < Math.min(rows.length, 6); i++){ if (mapaCabecalho(rows[i]).includes('codigo')) h = i; else if (h>=0) break; }
+  if (h < 0) return { erro:'Falta a coluna Cód. Fábrica no cabeçalho.' };
+  if (rows.length < h+2) return { erro:'Nenhuma linha de item encontrada abaixo do cabeçalho.' };
+  const cab = mapaCabecalho(rows[h]);
+  const itens = rows.slice(h+1).map(r => {
     const o = {}; cab.forEach((k,i) => { if (k && r[i]!=null && String(r[i]).trim()!=='') o[k] = String(r[i]).trim().replace(/^="(.*)"$/,'$1'); });
     NUM_ITEM.forEach(k => { if (k in o) o[k] = lerNum(o[k]); });
     if ('zfm' in o) o.zfm = /^(s|sim|1|x|true)$/i.test(o.zfm);
@@ -1423,6 +1440,111 @@ async function lerArquivoTexto(file){
   let txt = new TextDecoder('utf-8').decode(buf);
   if (txt.includes('�')) txt = new TextDecoder('windows-1252').decode(buf);
   return txt;
+}
+
+/* ---------- Planilha Excel (.xlsx) no layout do cadastro do ERP: blocos com cores, cabeçalho em 3 linhas ---------- */
+const NOME_PLANILHA = 'Elo_Formulario_Reforma';
+/* cada bloco: titulo na 1ª linha (null = coluna ocupa as 3 linhas), cor, colunas [chave, rótulo, obrigatório]; sub = sub-bloco na 2ª linha */
+const LAYOUT_XLSX = [
+  { titulo:'Fornecedor', cor:'D9D9D9', admin:true, cols:[['_cnpj','CNPJ fornecedor',1],['_razao','Razão social',0]] },
+  { titulo:null, cor:'C0C0C0', cols:[['cod_interno','Cód. Interno',0,'int'],['codigo','Cód. Fábrica',1],['descricao','Descrição',1],['fci','FCI',0],['qtd_caract','Qtd. Carct.',0]] },
+  { titulo:'Fiscal', cor:'FFFF99', cols:[['ncm','NCM/SH',1],['origem','Origem',1],['cst_icms','CST',1],['cest','CEST',1],['aliq_ipi','IPI',1],['aliq_icms','ICMS',1],['mva','MVA',1]],
+    sub:{ titulo:'Reforma Tributária', cols:[['cst','CST IBS/CBS',1],['cclasstrib','cClassTrib IBS/CBS',1],['aliq_ibs_uf','% IBS UF',1],['aliq_ibs_mun','% IBS Mun.',1],
+      ['aliq_cbs','% CBS',1],['pct_reducao','% Redução IBS/CBS',0],['cst_is','CST IS',0],['cclasstrib_is','cClassTrib IS',0],['aliq_is','% IS',0]] } },
+  { titulo:'Unidade de Venda', cor:'99CCFF', cols:[['ean','GTIN13 ou EAN Tributável',1]] },
+  { titulo:'Embalagem Master', cor:'99CCFF', cols:[['qtd_caixa','Qtd. Caixa',1],['ean14','EAN14',0]] },
+  { titulo:'Cadastro', cor:'FFFF99', interno:true, cols:[['cod_departamento','Cód.',1],['departamento','Departamento',1],['cod_secao','Cód.',1],['secao','Seção',1],['cod_categoria','Cód.',1],['categoria','Categoria',1]] },
+  { titulo:'Complementar', cor:'CCFFCC', cols:[['pct_importacao','% Conteúdo importação',0],['zfm','Zona Franca (S/N)',0]] },
+  { titulo:'Controle', cor:'D9D9D9', admin:true, cols:[['_situacao','Situação',0]] }
+];
+let _excel = null;
+function carregarExcelJS(){
+  if (window.ExcelJS) return Promise.resolve(window.ExcelJS);
+  if (_excel) return _excel;
+  _excel = new Promise((ok, erro) => {
+    const sc = document.createElement('script');
+    sc.src = 'https://cdnjs.cloudflare.com/ajax/libs/exceljs/4.4.0/exceljs.min.js';
+    sc.onload = () => ok(window.ExcelJS); sc.onerror = () => { _excel = null; erro(new Error('Não foi possível carregar o gerador de Excel. Verifique a internet.')); };
+    document.head.appendChild(sc);
+  });
+  return _excel;
+}
+/* comAdmin = planilha da equipe (CNPJ, campos internos, situação); sem ele = planilha do fornecedor */
+async function exportarXlsx(itens, comAdmin, nomeArquivo){
+  let ExcelJS; try{ ExcelJS = await carregarExcelJS(); }catch(e){ return toast(e.message); }
+  const blocos = LAYOUT_XLSX.filter(b => comAdmin || (!b.admin && !b.interno))
+    .map(b => ({ ...b, cols: b.cols.filter(c => comAdmin || c[3]!=='int') })).filter(b => b.cols.length || b.sub);
+  const wb = new ExcelJS.Workbook(); wb.creator = 'ELO Sistemas de Informação';
+  const ws = wb.addWorksheet('Itens', { views:[{ state:'frozen', ySplit:3 }],
+    pageSetup:{ orientation:'landscape', paperSize:9, fitToPage:true, fitToWidth:1, fitToHeight:0, printTitlesRow:'1:3' } });
+  const borda = { top:{style:'thin',color:{argb:'FF808080'}}, left:{style:'thin',color:{argb:'FF808080'}}, bottom:{style:'thin',color:{argb:'FF808080'}}, right:{style:'thin',color:{argb:'FF808080'}} };
+  const rotulo = (txt, obrig) => obrig ? { richText:[{ text:txt, font:{bold:true,size:9,name:'Arial'} }, { text:'*', font:{bold:true,size:9,name:'Arial',color:{argb:'FFFF0000'}} }] } : txt;
+  const estilo = (cell, cor) => {
+    cell.fill = { type:'pattern', pattern:'solid', fgColor:{argb:'FF'+cor} };
+    cell.font = { bold:true, size:9, name:'Arial' }; cell.border = borda;
+    cell.alignment = { horizontal:'center', vertical:'middle', wrapText:true };
+  };
+  const colunas = [];   // [chave, cor]
+  let c = 1;
+  blocos.forEach(b => {
+    const todas = [...b.cols, ...(b.sub ? b.sub.cols : [])];
+    const ini = c, fim = c + todas.length - 1;
+    if (b.titulo){
+      ws.mergeCells(1, ini, 1, fim); ws.getCell(1, ini).value = b.titulo;
+      b.cols.forEach(col => { ws.mergeCells(2, c, 3, c); ws.getCell(2, c).value = rotulo(col[1], col[2]); colunas.push([col[0], b.cor]); c++; });
+      if (b.sub){
+        ws.mergeCells(2, c, 2, c + b.sub.cols.length - 1); ws.getCell(2, c).value = b.sub.titulo;
+        b.sub.cols.forEach(col => { ws.getCell(3, c).value = rotulo(col[1], col[2]); colunas.push([col[0], b.cor]); c++; });
+      }
+    } else {
+      b.cols.forEach(col => { ws.mergeCells(1, c, 3, c); ws.getCell(1, c).value = rotulo(col[1], col[2]); colunas.push([col[0], b.cor]); c++; });
+    }
+    for (let r = 1; r <= 3; r++) for (let k = ini; k <= fim; k++) estilo(ws.getCell(r, k), b.cor);
+  });
+  ws.getRow(1).height = 18; ws.getRow(2).height = 30; ws.getRow(3).height = 30;
+  /* larguras e formato de cada coluna */
+  const largura = { _cnpj:19, _razao:34, descricao:46, fci:38, codigo:16, cod_interno:12, ean:18, ean14:17, departamento:20, secao:20, categoria:20, _situacao:40, cclasstrib:11, cclasstrib_is:11 };
+  colunas.forEach(([k], i) => {
+    const col = ws.getColumn(i+1);
+    col.width = largura[k] || (k.startsWith('cod_')?7:10);
+    if (TXT_ITEM.includes(k) || ['_cnpj','fci','cod_departamento','cod_secao','cod_categoria'].includes(k)) col.numFmt = '@';
+    else if (NUM_ITEM.includes(k)) col.numFmt = '#,##0.00##';
+  });
+  /* dados */
+  itens.forEach((i, n) => {
+    const linha = ws.getRow(4 + n);
+    colunas.forEach(([k], j) => {
+      let v;
+      if (k==='_cnpj') v = fmtCNPJ(i._cnpj||'');
+      else if (k==='_razao') v = i._razao||'';
+      else if (k==='_situacao'){ const fl = faltasItem(i); v = fl.length ? 'Falta: '+fl.join(', ') : 'Completo'; }
+      else if (k==='zfm') v = i.zfm ? 'S' : 'N';
+      else if (k==='qtd_caract') v = vazio(i.descricao) ? null : String(i.descricao).length;
+      else if (NUM_ITEM.includes(k)) v = vazio(i[k]) ? null : Number(i[k]);
+      else v = vazio(i[k]) ? null : String(i[k]);
+      const cel = linha.getCell(j+1); cel.value = v; cel.border = borda; cel.font = { size:9, name:'Arial' };
+    });
+  });
+  const buf = await wb.xlsx.writeBuffer();
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(new Blob([buf], { type:'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' }));
+  a.download = (nomeArquivo || NOME_PLANILHA) + '.xlsx'; a.click();
+}
+/* lê .xlsx (cabeçalho em blocos ou simples) e devolve as linhas como matriz de texto */
+async function xlsxParaLinhas(file){
+  const ExcelJS = await carregarExcelJS();
+  const wb = new ExcelJS.Workbook(); await wb.xlsx.load(await file.arrayBuffer());
+  const ws = wb.worksheets[0]; const out = [];
+  const txt = v => v==null ? '' : typeof v==='object' ? (v.richText ? v.richText.map(t=>t.text).join('') : v.result!=null ? String(v.result) : v.text!=null ? String(v.text) : v instanceof Date ? v.toISOString() : '') : String(v);
+  for (let r = 1; r <= ws.rowCount; r++){
+    const row = []; for (let k = 1; k <= ws.columnCount; k++) row.push(txt(ws.getCell(r, k).value).trim());
+    if (row.some(x => x!=='')) out.push(row);
+  }
+  return out;
+}
+async function lerArquivo(file){
+  if (/\.xlsx$/i.test(file.name)) return await xlsxParaLinhas(file);
+  return await lerArquivoTexto(file);
 }
 
 /* =========================================================
@@ -1493,10 +1615,10 @@ $('t2Body').addEventListener('click', async e => {
     const itens = await todosItens(f.id);
     if (!itens) return;
     if (!itens.length){   // sem itens: modelo em branco, só com as colunas do fornecedor
-      baixar(`modelo-itens-${f.cnpj}.csv`, csvItens([], false));
+      await exportarXlsx([], false, `${NOME_PLANILHA}_${f.cnpj}`);
       return toast('Planilha modelo baixada. Envie ao fornecedor; ele pode preencher e importar pelo link, ou devolver para você importar.');
     }
-    baixar(`itens-${f.cnpj}.csv`, csvItens(itens.map(i=>({...i,_cnpj:f.cnpj,_razao:f.razao_social})), true));
+    await exportarXlsx(itens.map(i=>({...i,_cnpj:f.cnpj,_razao:f.razao_social})), true, `${NOME_PLANILHA}_${f.cnpj}`);
   }
 });
 
@@ -1516,13 +1638,13 @@ async function todosItens(fornecedorId){
 $('bt2Export').onclick = async () => {
   const itens = await todosItens(null); if (!itens) return;
   if (!itens.length){
-    baixar(`elo-reforma-modelo-${new Date().toISOString().slice(0,10)}.csv`, csvItens([], true));
+    await exportarXlsx([], true);
     return toast('Ainda não há itens: baixada a planilha modelo, só com o cabeçalho.');
   }
   const porId = {}; FORN.forEach(f => porId[f.id] = f);
   const linhas = itens.map(i => ({ ...i, _cnpj:porId[i.fornecedor_id]?.cnpj||'', _razao:porId[i.fornecedor_id]?.razao_social||'' }))
     .sort((a,b) => a._razao.localeCompare(b._razao) || String(a.codigo).localeCompare(String(b.codigo)));
-  baixar(`elo-reforma-itens-${new Date().toISOString().slice(0,10)}.csv`, csvItens(linhas, true));
+  await exportarXlsx(linhas, true);
 };
 
 /* Importa a planilha exportada acima (ida e volta) ou uma lista do ERP: CNPJ do fornecedor + Cód. Fábrica + qualquer coluna */
@@ -1531,13 +1653,13 @@ $('bt2Import').onclick = () => {
   let lote = [];
   const ov = modal('Importar planilha de itens', `
     <p style="color:var(--ink-soft);font-size:13px;line-height:1.5;margin:0">Envie um <b>.csv</b> ou cole as linhas do Excel, com o cabeçalho na primeira linha.<br>
-    Use a planilha de <b>Exportar planilha</b> (edite no Excel e salve como CSV) ou uma lista do ERP.
+    Use a planilha de <b>Exportar planilha</b> (Excel .xlsx, editada) ou uma lista do ERP em .xlsx ou CSV.
     Obrigatórias: <b>CNPJ</b> do fornecedor e <b>Cód. Fábrica</b>; as demais colunas são opcionais e podem estar em qualquer ordem.<br>
     Item que já existe (mesmo CNPJ + Cód. Fábrica) é atualizado só nas células preenchidas; <b>célula vazia não apaga</b> o que já existe.
     Códigos novos são incluídos. As colunas Razão social, Qtd. Caract. e Situação são ignoradas.</p>
     <label class="f">Fornecedor <small>(só para planilha sem a coluna CNPJ, como a planilha modelo devolvida pelo fornecedor)</small>
       <select class="inp" id="i2Forn"><option value="">Usar o CNPJ de cada linha</option>${[...FORN].sort((a,b)=>a.razao_social.localeCompare(b.razao_social)).map(f=>`<option value="${f.id}">${esc(f.razao_social)} · ${fmtCNPJ(f.cnpj)}</option>`).join('')}</select></label>
-    <input type="file" class="inp" id="i2Arq" accept=".csv,.txt">
+    <input type="file" class="inp" id="i2Arq" accept=".xlsx,.csv,.txt">
     <textarea class="inp" id="i2Txt" rows="6" placeholder="…ou cole aqui"></textarea>
     <div class="msg" id="i2Msg"></div>`,
     [['Cancelar','',o=>o.remove()], ['Importar','pri', importar]]);
@@ -1561,7 +1683,7 @@ $('bt2Import').onclick = () => {
     aviso('i2Msg', `${lote.length.toLocaleString('pt-BR')} item(ns) prontos para importar` +
       (semForn.size?` · ${semForn.size} CNPJ(s) não estão na base de fornecedores e foram ignorados`:'') + '.', lote.length?'ok':'erro');
   };
-  ov.querySelector('#i2Arq').onchange = async e => { const f = e.target.files[0]; if (!f) return; ov.querySelector('#i2Txt').value=''; analisar(await lerArquivoTexto(f)); };
+  ov.querySelector('#i2Arq').onchange = async e => { const f = e.target.files[0]; if (!f) return; ov.querySelector('#i2Txt').value=''; try{ analisar(await lerArquivo(f)); }catch(er){ aviso('i2Msg','Não consegui ler o arquivo: '+er.message,'erro'); } };
   ov.querySelector('#i2Forn').onchange = () => { if (ultimoTxt) analisar(ultimoTxt); };
   ov.querySelector('#i2Txt').oninput = e => analisar(e.target.value);
   async function importar(o, b){
@@ -1687,13 +1809,11 @@ function editarItem(it){
       <label class="f">% IS<input class="inp" data-k="aliq_is" value="${v('aliq_is')}" inputmode="decimal"></label>
     </div>
     <div class="sec-t">Unidade de venda e embalagem master</div>
-    <div class="grid g4">
-      <label class="f">Unidade de Venda<input class="inp" data-k="unidade_venda" value="${v('unidade_venda')}" list="dlUnid" maxlength="6" placeholder="UN"></label>
+    <div class="grid g3">
       <label class="f">GTIN13 ou EAN Tributável *<input class="inp" data-k="ean" value="${v('ean')}" maxlength="14" inputmode="numeric"></label>
       <label class="f">Qtd. Caixa *<input class="inp" data-k="qtd_caixa" value="${v('qtd_caixa')}" inputmode="decimal"></label>
       <label class="f">EAN14<input class="inp" data-k="ean14" value="${v('ean14')}" maxlength="14" inputmode="numeric"></label>
     </div>
-    <datalist id="dlUnid">${UNIDADES.map(u=>`<option value="${u}">`).join('')}</datalist>
     <p style="margin:0;color:var(--ink-faint);font-size:12.5px">Tributação integral: CST <b>000</b> e cClassTrib <b>000001</b>. Os 3 primeiros dígitos do cClassTrib devem ser iguais ao CST.
       Alíquotas de ${ALIQ_PADRAO.ano} já preenchidas. Altere só se o item for exceção.</p>
     <div class="msg" id="itMsg"></div>`,
@@ -1745,14 +1865,14 @@ $('f2Integral').onclick = () => {
 
 $('f2Baixar').onclick = () => {
   const lista = ITENS;
-  baixar(`itens-rede-vilarejo-${new Date().toISOString().slice(0,10)}.csv`, csvItens(lista, false));
+  exportarXlsx(lista, false);
 };
 $('f2Importar').onclick = () => {
   let lidos = [];
   const ov = modal('Importar planilha de itens', `
-    <p style="color:var(--ink-soft);font-size:13px;line-height:1.5;margin:0">Use a planilha baixada em <b>Baixar planilha</b>, preencha no Excel e salve como <b>CSV</b>.
+    <p style="color:var(--ink-soft);font-size:13px;line-height:1.5;margin:0">Use a planilha baixada em <b>Baixar planilha</b> (Excel), preencha e envie o arquivo <b>.xlsx</b> aqui. Também aceita CSV.
     Itens com o mesmo código são atualizados; códigos novos são incluídos. Células vazias não apagam o que já está preenchido.</p>
-    <input type="file" class="inp" id="ipArq" accept=".csv,.txt">
+    <input type="file" class="inp" id="ipArq" accept=".xlsx,.csv,.txt">
     <textarea class="inp" id="ipTxt" rows="6" placeholder="…ou cole aqui as linhas copiadas do Excel (com o cabeçalho)"></textarea>
     <div class="msg" id="ipMsg"></div>`,
     [['Cancelar','',o=>o.remove()], ['Importar','pri', o => {
@@ -1771,7 +1891,7 @@ $('f2Importar').onclick = () => {
     lidos = r.itens;
     aviso('ipMsg', `${lidos.length.toLocaleString('pt-BR')} item(ns) lidos da planilha.`, lidos.length?'ok':'erro');
   };
-  ov.querySelector('#ipArq').onchange = async e => { const f = e.target.files[0]; if (!f) return; ov.querySelector('#ipTxt').value=''; analisar(await lerArquivoTexto(f)); };
+  ov.querySelector('#ipArq').onchange = async e => { const f = e.target.files[0]; if (!f) return; ov.querySelector('#ipTxt').value=''; try{ analisar(await lerArquivo(f)); }catch(er){ aviso('ipMsg','Não consegui ler o arquivo: '+er.message,'erro'); } };
   ov.querySelector('#ipTxt').oninput = e => analisar(e.target.value);
 };
 

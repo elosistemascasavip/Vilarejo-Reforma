@@ -666,8 +666,9 @@ code.cf{background:var(--side);border:1px solid var(--line);border-radius:6px;pa
    1.4 · 05/11/2026 · Formulário do fornecedor cabe na tela sem barra de rolagem (Tributação em 2 colunas,
                       logo Vilarejo na barra verde)
    1.5 · 05/11/2026 · Formulário do fornecedor ocupa a tela inteira; espaços e fontes acompanham a altura da janela
+   1.6 · 05/11/2026 · Planilha modelo em branco (exportar sem itens); importar planilha sem CNPJ escolhendo o fornecedor
    ============================================================ */
-const VERSAO = { num:'1.5', data:'05/11/2026' };
+const VERSAO = { num:'1.6', data:'05/11/2026' };
 
 /* Dados da tela "Sobre o sistema" — manter atualizado */
 const SOBRE = {
@@ -1401,7 +1402,7 @@ function lerPlanilhaItens(txt){
   const rows = parseCSV(txt);
   if (rows.length<2) return { erro:'Nenhuma linha encontrada.' };
   const cab = rows[0].map(h => MAPA_ITEM[norm(h)] || null);
-  if (!cab.includes('codigo')) return { erro:'Falta a coluna Código no cabeçalho.' };
+  if (!cab.includes('codigo')) return { erro:'Falta a coluna Cód. Fábrica no cabeçalho.' };
   const itens = rows.slice(1).map(r => {
     const o = {}; cab.forEach((k,i) => { if (k && r[i]!=null && String(r[i]).trim()!=='') o[k] = String(r[i]).trim().replace(/^="(.*)"$/,'$1'); });
     NUM_ITEM.forEach(k => { if (k in o) o[k] = lerNum(o[k]); });
@@ -1459,7 +1460,7 @@ function render2(){
       ${celStatus(f.status_fase2, STATUS2[f.status_fase2], f.fase2_aberto_em, f.fase2_ultimo_acesso_em, f.fase2_acessos)}
       <td><div class="acts">
         ${btCopiar('convite2', !!f.fase2_link_enviado_em || f.status_fase2!=='pendente', f.fase2_link_enviado_em)}
-        <button class="btn sm" data-a="baixar2" ${r.itens?'':'disabled'} title="Planilha com os itens deste fornecedor">Baixar itens</button>
+        <button class="btn sm" data-a="baixar2" title="${r.itens?'Planilha com os itens deste fornecedor':'Planilha em branco para enviar ao fornecedor'}">${r.itens?'Baixar itens':'Baixar modelo'}</button>
       </div></td>
     </tr>`; }).join('') : `<tr><td colspan="6"><div class="empty">${FORN.length?'Nenhum fornecedor encontrado no filtro.':'Nenhum fornecedor na base.'}</div></td></tr>`;
   $('p2Info').textContent = `${lista.length} fornecedor(es)`;
@@ -1491,6 +1492,10 @@ $('t2Body').addEventListener('click', async e => {
   if (b.dataset.a==='baixar2'){
     const itens = await todosItens(f.id);
     if (!itens) return;
+    if (!itens.length){   // sem itens: modelo em branco, só com as colunas do fornecedor
+      baixar(`modelo-itens-${f.cnpj}.csv`, csvItens([], false));
+      return toast('Planilha modelo baixada. Envie ao fornecedor; ele pode preencher e importar pelo link, ou devolver para você importar.');
+    }
     baixar(`itens-${f.cnpj}.csv`, csvItens(itens.map(i=>({...i,_cnpj:f.cnpj,_razao:f.razao_social})), true));
   }
 });
@@ -1510,7 +1515,10 @@ async function todosItens(fornecedorId){
 
 $('bt2Export').onclick = async () => {
   const itens = await todosItens(null); if (!itens) return;
-  if (!itens.length) return toast('Ainda não há itens carregados.');
+  if (!itens.length){
+    baixar(`elo-reforma-modelo-${new Date().toISOString().slice(0,10)}.csv`, csvItens([], true));
+    return toast('Ainda não há itens: baixada a planilha modelo, só com o cabeçalho.');
+  }
   const porId = {}; FORN.forEach(f => porId[f.id] = f);
   const linhas = itens.map(i => ({ ...i, _cnpj:porId[i.fornecedor_id]?.cnpj||'', _razao:porId[i.fornecedor_id]?.razao_social||'' }))
     .sort((a,b) => a._razao.localeCompare(b._razao) || String(a.codigo).localeCompare(String(b.codigo)));
@@ -1527,19 +1535,23 @@ $('bt2Import').onclick = () => {
     Obrigatórias: <b>CNPJ</b> do fornecedor e <b>Cód. Fábrica</b>; as demais colunas são opcionais e podem estar em qualquer ordem.<br>
     Item que já existe (mesmo CNPJ + Cód. Fábrica) é atualizado só nas células preenchidas; <b>célula vazia não apaga</b> o que já existe.
     Códigos novos são incluídos. As colunas Razão social, Qtd. Caract. e Situação são ignoradas.</p>
+    <label class="f">Fornecedor <small>(só para planilha sem a coluna CNPJ, como a planilha modelo devolvida pelo fornecedor)</small>
+      <select class="inp" id="i2Forn"><option value="">Usar o CNPJ de cada linha</option>${[...FORN].sort((a,b)=>a.razao_social.localeCompare(b.razao_social)).map(f=>`<option value="${f.id}">${esc(f.razao_social)} · ${fmtCNPJ(f.cnpj)}</option>`).join('')}</select></label>
     <input type="file" class="inp" id="i2Arq" accept=".csv,.txt">
     <textarea class="inp" id="i2Txt" rows="6" placeholder="…ou cole aqui"></textarea>
     <div class="msg" id="i2Msg"></div>`,
     [['Cancelar','',o=>o.remove()], ['Importar','pri', importar]]);
+  let ultimoTxt = '';
   const analisar = txt => {
-    lote = [];
+    lote = []; ultimoTxt = txt;
     const r = lerPlanilhaItens(txt);
     if (r.erro) return aviso('i2Msg', r.erro, 'erro');
-    if (!r.temCnpj) return aviso('i2Msg','Falta a coluna CNPJ do fornecedor no cabeçalho.','erro');
+    const fixo = ov.querySelector('#i2Forn').value;
+    if (!r.temCnpj && !fixo) return aviso('i2Msg','A planilha não tem a coluna CNPJ. Escolha acima de qual fornecedor são os itens.','erro');
     const porCnpj = {}; FORN.forEach(f => porCnpj[f.cnpj] = f.id);
     const semForn = new Set(); const vistos = new Set();
     r.itens.forEach(i => {
-      const c = dig(i._cnpj).padStart(14,'0'); const fid = porCnpj[c];
+      const c = dig(i._cnpj).padStart(14,'0'); const fid = fixo || porCnpj[c];
       if (!fid){ semForn.add(c); return; }
       const chave = fid+'|'+i.codigo; if (vistos.has(chave)) return; vistos.add(chave);
       const o = { fornecedor_id:fid, codigo:i.codigo, atualizado_em:new Date().toISOString() };
@@ -1550,6 +1562,7 @@ $('bt2Import').onclick = () => {
       (semForn.size?` · ${semForn.size} CNPJ(s) não estão na base de fornecedores e foram ignorados`:'') + '.', lote.length?'ok':'erro');
   };
   ov.querySelector('#i2Arq').onchange = async e => { const f = e.target.files[0]; if (!f) return; ov.querySelector('#i2Txt').value=''; analisar(await lerArquivoTexto(f)); };
+  ov.querySelector('#i2Forn').onchange = () => { if (ultimoTxt) analisar(ultimoTxt); };
   ov.querySelector('#i2Txt').oninput = e => analisar(e.target.value);
   async function importar(o, b){
     if (!lote.length) return aviso('i2Msg','Nada para importar.','erro');
@@ -1731,7 +1744,7 @@ $('f2Integral').onclick = () => {
 };
 
 $('f2Baixar').onclick = () => {
-  const lista = ITENS.length ? ITENS : [{}];
+  const lista = ITENS;
   baixar(`itens-rede-vilarejo-${new Date().toISOString().slice(0,10)}.csv`, csvItens(lista, false));
 };
 $('f2Importar').onclick = () => {

@@ -124,7 +124,7 @@ h1{font-size:23px;font-weight:800;letter-spacing:-.02em;margin:0}
 .tools select.inp{max-width:190px}
 .tools .sp{flex:1}
 .tbl-card{flex:1;min-height:0;border:1px solid var(--line);border-radius:var(--r);box-shadow:var(--card-shadow);display:flex;flex-direction:column;overflow:hidden;background:#fff}
-#tblWrap,#tbl2Wrap{flex:1;min-height:0;overflow:hidden}
+#tblWrap,#tbl2Wrap,#viWrap{flex:1;min-height:0;overflow:hidden}
 table{width:100%;border-collapse:collapse;table-layout:fixed}
 thead th{white-space:nowrap;overflow:hidden;text-overflow:ellipsis;background:#f7f9fc;text-align:left;font-size:11.5px;text-transform:uppercase;letter-spacing:.05em;color:var(--ink-faint);font-weight:700;padding:0 12px;height:40px;border-bottom:1px solid var(--line)}
 tbody td{height:var(--rowh);padding:0 12px;border-bottom:1px solid var(--line);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
@@ -284,7 +284,16 @@ dl.kv dd{margin:0;font-weight:600;word-break:break-word}
 tr.clic{cursor:pointer}
 #vw-f2{height:100vh;display:flex;flex-direction:column;background:var(--side);overflow:hidden}
 /* campos faltantes em destaque */
-#f2Body tr.pend td{background:#fff4f4}
+#f2Body tr.pend td,#viBody tr.pend td{background:#fff4f4}
+#viBody tr.pend td:first-child{box-shadow:inset 3px 0 0 #d93025}
+#viBody td.cel-falta{color:#d93025;font-weight:700}
+#viBody td{white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+#pg4 .prog{padding:10px 18px;gap:7px}
+#pg4 .prog-h h3{font-size:14px}
+#pg4 .pct{font-size:20px}
+.vi-sub{color:var(--muted);font-size:13px;margin-left:6px;align-self:center}
+#t2Body tr[data-id]{cursor:pointer}
+#t2Body tr[data-id]:hover td{background:#f6faf7}
 #f2Body tr.pend td:first-child{box-shadow:inset 3px 0 0 #d93025}
 #f2Body td.cel-falta{color:#d93025;font-weight:700}
 .inp.inp-falta{border-color:#d93025;background:#fff4f4;box-shadow:0 0 0 1px #d93025 inset}
@@ -509,6 +518,53 @@ code.cf{background:var(--side);border:1px solid var(--line);border-radius:6px;pa
         <div class="pager">
           <span id="p2Info"></span>
           <div class="nav"><button class="btn sm" id="p2Prev">◀</button><span id="p2Num">1 / 1</span><button class="btn sm" id="p2Next">▶</button></div>
+        </div>
+      </div>
+     </div>
+     <div class="pg hide" id="pg4">
+      <div class="crumb">ELO Reforma › <a href="#" id="viCrumbVolta">Itens / NCM</a> › <b id="viCrumb"></b></div>
+      <div class="page-head">
+        <div class="page-ico"><svg viewBox="0 0 24 24" fill="none" stroke="#137038" stroke-width="2"><path d="M4 7l8-4 8 4-8 4-8-4zM4 7v10l8 4 8-4V7M12 11v10"/></svg></div>
+        <h1 id="viTit">Itens do fornecedor</h1><span id="viSub" class="vi-sub"></span>
+      </div>
+      <div class="prog">
+        <div class="prog-h"><h3>Itens completos</h3><span class="pct" id="viPct">0%</span></div>
+        <div class="bar"><i id="viBar" style="width:0"></i></div>
+        <div class="kpis">
+          <span>Itens: <b id="viTot">0</b> un</span>
+          <span>Completos: <b id="viOk">0</b> un</span>
+          <span>Com informação faltando: <b id="viFalta" style="color:#d93025">0</b> un</span>
+          <span id="viCampos"></span>
+        </div>
+      </div>
+      <div class="tools">
+        <input class="inp" id="viBusca" type="search" placeholder="Buscar código, Cód. Fábrica, descrição ou NCM">
+        <select class="inp" id="viFiltro" style="min-width:240px">
+          <option value="">Todos os itens</option>
+          <option value="pend">Com informação faltando</option>
+          <option value="ok">Completos</option>
+        </select>
+        <span class="sp"></span>
+        <button class="btn" id="viVoltar">◀ Voltar</button>
+        <button class="btn pri" id="viBaixar" title="Planilha Excel com os itens deste fornecedor; pendências em vermelho">Baixar itens</button>
+      </div>
+      <div class="tbl-card">
+        <div id="viWrap">
+          <table>
+            <thead><tr>
+              <th style="width:118px">Cód. Interno</th>
+              <th style="width:150px">Cód. Fábrica</th>
+              <th>Descrição</th>
+              <th style="width:112px">NCM</th>
+              <th style="width:92px">CEST</th>
+              <th style="width:300px">Situação</th>
+            </tr></thead>
+            <tbody id="viBody"></tbody>
+          </table>
+        </div>
+        <div class="pager">
+          <span id="viInfo"></span>
+          <div class="nav"><button class="btn sm" id="viPrev">◀</button><span id="viNum">1 / 1</span><button class="btn sm" id="viNext">▶</button></div>
         </div>
       </div>
      </div>
@@ -783,8 +839,10 @@ code.cf{background:var(--side);border:1px solid var(--line);border-radius:6px;pa
                       direto para o fornecedor escolhido, e só entram os itens dele
    2.6 · 11/11/2026 · Menu "Importação de dados" separado (itens de um fornecedor, base completa do ERP, planilha modelo);
                       botões de carga saem das telas Fornecedores e Itens / NCM
+   2.7 · 11/11/2026 · Painel: tela "Itens do fornecedor" (clique na linha em Itens / NCM) com os campos que faltam em vermelho,
+                      resumo do que mais falta e filtro de pendências; abre sozinha depois de carregar os itens
    ============================================================ */
-const VERSAO = { num:'2.6', data:'11/11/2026' };
+const VERSAO = { num:'2.7', data:'11/11/2026' };
 
 /* Dados da tela "Sobre o sistema" — manter atualizado */
 const SOBRE = {
@@ -1056,7 +1114,7 @@ $('fStatus').addEventListener('change', ()=>{ pagina=0; render(); });
 $('pgPrev').onclick = ()=>{ pagina--; render(); };
 $('pgNext').onclick = ()=>{ pagina++; render(); };
 let rsz; window.addEventListener('resize', ()=>{ clearTimeout(rsz); rsz=setTimeout(()=>{
-  if(!$('vw-painel').classList.contains('hide')){ PGATIVA==='1' ? render() : PGATIVA==='2' ? render2() : null; }
+  if(!$('vw-painel').classList.contains('hide')){ PGATIVA==='1' ? render() : PGATIVA==='2' ? render2() : PGATIVA==='4' ? renderVI() : null; }
   if(!$('vw-f2').classList.contains('hide')) renderF2(); },120); });
 document.addEventListener('keydown', e => {
   if (document.querySelector('.ov') || e.target.matches('input,textarea,select')) return;
@@ -1072,7 +1130,7 @@ document.addEventListener('keydown', e => {
 document.querySelectorAll('.nav-item[data-pg]').forEach(n => n.onclick = () => {
   PGATIVA = n.dataset.pg;
   document.querySelectorAll('.nav-item[data-pg]').forEach(x => x.classList.toggle('active', x===n));
-  ['1','2','3'].forEach(n => $('pg'+n).classList.toggle('hide', PGATIVA!==n));
+  ['1','2','3','4'].forEach(n => $('pg'+n).classList.toggle('hide', PGATIVA!==n));
   PGATIVA==='1' ? render() : PGATIVA==='2' ? render2() : renderImp();
 });
 
@@ -1774,7 +1832,7 @@ function render2(){
   if (pagina2 >= paginas) pagina2 = paginas-1;
   const fatia = lista.slice(pagina2*por, (pagina2+1)*por);
   $('t2Body').innerHTML = fatia.length ? fatia.map(f => { const r = RES2[f.id] || { itens:0, completos:0 }; return `
-    <tr data-id="${f.id}">
+    <tr data-id="${f.id}" title="Clique para ver os itens e o que falta">
       <td class="col-cnpj mono">${fmtCNPJ(f.cnpj)}</td>
       <td title="${esc(f.razao_social)}"><b style="font-weight:600">${esc(f.razao_social)}</b>${f.nome_fantasia?`<span style="color:var(--muted)"> · ${esc(f.nome_fantasia)}</span>`:''}</td>
       <td class="mono" style="text-align:right">${r.itens.toLocaleString('pt-BR')}</td>
@@ -1797,7 +1855,8 @@ $('p2Next').onclick = ()=>{ pagina2++; render2(); };
 /* fase 2 usa o mesmo link e o mesmo convite da fase 1 (copiarConvite) */
 
 $('t2Body').addEventListener('click', async e => {
-  const b = e.target.closest('button[data-a]'); if(!b) return;
+  const b = e.target.closest('button[data-a]');
+  if (!b){ const tr = e.target.closest('tr[data-id]'); const f = tr && FORN.find(x => x.id===tr.dataset.id); if (f) abrirItensForn(f); return; }
   const f = FORN.find(x => x.id === b.closest('tr').dataset.id); if(!f) return;
   if (b.dataset.a==='convite2') copiarConvite(f);   // mesmo convite e mesmo link da fase 1
   if (b.dataset.a==='baixar2'){
@@ -1810,6 +1869,65 @@ $('t2Body').addEventListener('click', async e => {
     await exportarXlsx(itens.map(i=>({...i,_cnpj:f.cnpj,_razao:f.razao_social})), true, `${NOME_PLANILHA}_${f.cnpj}`);
   }
 });
+
+/* ---------- Itens do fornecedor (painel da Vilarejo): lista com o que falta em destaque ---------- */
+let VI_FORN = null, VI_ITENS = [], viPagina = 0;
+async function abrirItensForn(f){
+  VI_FORN = f; viPagina = 0; $('viBusca').value = ''; $('viFiltro').value = '';
+  $('viCrumb').textContent = f.razao_social; $('viTit').textContent = f.razao_social;
+  $('viSub').textContent = `${fmtCNPJ(f.cnpj)} · em vermelho, o que o fornecedor ainda precisa informar pelo link`;
+  PGATIVA = '4'; ['1','2','3','4'].forEach(n => $('pg'+n).classList.toggle('hide', n!=='4'));
+  document.querySelectorAll('.nav-item[data-pg]').forEach(x => x.classList.toggle('active', x.dataset.pg==='2'));
+  $('viBody').innerHTML = '<tr><td colspan="6"><div class="empty">Carregando itens…</div></td></tr>';
+  const itens = await todosItens(f.id); if (!itens) return;
+  VI_ITENS = itens.map(i => ({ ...i, _f: faltasItem(i) }))
+    .sort((a,b) => (b._f.length>0)-(a._f.length>0) || String(a.descricao||'').localeCompare(String(b.descricao||'')));
+  if (VI_ITENS.some(i => i._f.length)) $('viFiltro').value = 'pend';
+  resumoVI(); renderVI();
+}
+function resumoVI(){
+  const tot = VI_ITENS.length, falta = VI_ITENS.filter(i => i._f.length).length, ok = tot - falta, pct = tot ? Math.round(ok*100/tot) : 0;
+  $('viTot').textContent = tot.toLocaleString('pt-BR'); $('viOk').textContent = ok.toLocaleString('pt-BR');
+  $('viFalta').textContent = falta.toLocaleString('pt-BR'); $('viPct').textContent = pct+'%'; $('viBar').style.width = pct+'%';
+  /* campos que mais faltam */
+  const cont = {}; VI_ITENS.forEach(i => i._f.forEach(c => cont[c] = (cont[c]||0)+1));
+  const top = Object.entries(cont).sort((a,b)=>b[1]-a[1]).slice(0,4);
+  $('viCampos').innerHTML = top.length ? 'Mais faltam: ' + top.map(([c,n]) => `<b>${esc(c)}</b> (${n.toLocaleString('pt-BR')})`).join(' · ') : '';
+}
+function filtradosVI(){
+  const q = $('viBusca').value.trim().toLowerCase(), fl = $('viFiltro').value;
+  return VI_ITENS.filter(i => (!fl || (fl==='pend' ? i._f.length : !i._f.length)) &&
+    (!q || [i.cod_interno, i.cod_fabrica, i.codigo, i.descricao].some(c => String(c??'').toLowerCase().includes(q)) || (dig(q) && dig(i.ncm).includes(dig(q)))));
+}
+function renderVI(){
+  if ($('pg4').classList.contains('hide')) return;
+  const por = linhasQueCabem('viWrap'), lista = filtradosVI();
+  const paginas = Math.max(1, Math.ceil(lista.length/por));
+  if (viPagina >= paginas) viPagina = paginas-1;
+  const fatia = lista.slice(viPagina*por, (viPagina+1)*por);
+  $('viBody').innerHTML = fatia.length ? fatia.map(i => { const ch = chavesFaltando(i);
+    const cel = (k, val) => ch.has(k) ? `<td class="mono cel-falta">${vazio(val)?'falta':esc(val)}</td>` : `<td class="mono">${esc(val??'')}</td>`;
+    return `<tr class="${i._f.length?'pend':''}">
+      <td class="mono" style="color:var(--muted)">${esc(i.cod_interno||'')}</td>
+      ${cel('cod_fabrica', i.cod_fabrica)}
+      <td title="${esc(i.descricao||'')}">${esc(i.descricao||'')}</td>
+      ${cel('ncm', fmtNCM(i.ncm))}
+      ${cel('cest', i.cest)}
+      <td title="${i._f.length?esc('Falta: '+i._f.join(', ')):'Completo'}">${i._f.length?`<span class="falta">Faltam ${i._f.length}: ${esc(i._f.join(', '))}</span>`:'<span class="okc">✓ Completo</span>'}</td>
+    </tr>`; }).join('') : `<tr><td colspan="6"><div class="empty">${VI_ITENS.length?'Nenhum item no filtro.':'Este fornecedor ainda não tem itens. Carregue em Importação de dados.'}</div></td></tr>`;
+  $('viInfo').textContent = `${lista.length.toLocaleString('pt-BR')} item(ns)`;
+  $('viNum').textContent = `${viPagina+1} / ${paginas}`;
+  $('viPrev').disabled = viPagina===0; $('viNext').disabled = viPagina>=paginas-1;
+}
+$('viBusca').addEventListener('input', () => { viPagina = 0; renderVI(); });
+$('viFiltro').addEventListener('change', () => { viPagina = 0; renderVI(); });
+$('viPrev').onclick = () => { viPagina--; renderVI(); };
+$('viNext').onclick = () => { viPagina++; renderVI(); };
+const voltarItens = () => { document.querySelector('.nav-item[data-pg="2"]').click(); };
+$('viVoltar').onclick = voltarItens;
+$('viCrumbVolta').onclick = e => { e.preventDefault(); voltarItens(); };
+$('viBaixar').onclick = () => { if (!VI_FORN) return;
+  exportarXlsx(VI_ITENS.map(i => ({ ...i, _cnpj:VI_FORN.cnpj, _razao:VI_FORN.razao_social })), true, `${NOME_PLANILHA}_${VI_FORN.cnpj}`); };
 
 /* busca paginada (o banco devolve no máximo 1000 linhas por vez) */
 async function todosItens(fornecedorId){
@@ -2019,7 +2137,12 @@ function abrirImportacao(fixo){
       }
     }
     const novos = linhas.filter(x => x.origem_carga==='vilarejo').length;
-    o.remove(); toast(`${ok.toLocaleString('pt-BR')} item(ns) importados: ${novos.toLocaleString('pt-BR')} novo(s) e ${(ok-novos).toLocaleString('pt-BR')} atualizado(s).`); carregar();
+    o.remove(); toast(`${ok.toLocaleString('pt-BR')} item(ns) importados: ${novos.toLocaleString('pt-BR')} novo(s) e ${(ok-novos).toLocaleString('pt-BR')} atualizado(s).`);
+    await carregar();
+    /* mostra em seguida os itens e o que falta (do fornecedor carregado, ou do único fornecedor da planilha) */
+    const fids = [...new Set(linhas.map(x => x.fornecedor_id))];
+    const alvo = fixo ? FORN.find(x => x.id===fixo.id) : (fids.length===1 ? FORN.find(x => x.id===fids[0]) : null);
+    if (alvo) abrirItensForn(alvo); else document.querySelector('.nav-item[data-pg="2"]').click();
   }
 }
 

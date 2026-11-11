@@ -142,7 +142,8 @@ td.stc{line-height:1.15}
 .btn.cp-no:hover{border-color:#dc2626}
 .btn.cp-ok{background:var(--green-tint);border-color:var(--green-line);color:var(--green-ink)}
 .btn.cp-ok:hover{border-color:var(--green)}
-.acts{display:flex;gap:4px}
+.acts{display:flex;gap:4px;flex-wrap:nowrap}
+.acts .btn{white-space:nowrap}
 .pager{display:flex;align-items:center;justify-content:space-between;gap:10px;padding:8px 14px;border-top:1px solid var(--line);font-size:12.5px;color:var(--ink-faint)}
 .pager .nav{display:flex;align-items:center;gap:8px}
 .empty{padding:40px;text-align:center;color:var(--ink-faint)}
@@ -483,10 +484,10 @@ code.cf{background:var(--side);border:1px solid var(--line);border-radius:6px;pa
             <thead><tr>
               <th class="col-cnpj" style="width:182px">CNPJ</th>
               <th>Razão social</th>
-              <th style="width:115px;text-align:right">Itens (un)</th>
-              <th style="width:160px;text-align:right">Completos (un)</th>
-              <th style="width:180px">Status</th>
-              <th style="width:230px">Ações</th>
+              <th style="width:110px;text-align:right">Itens (un)</th>
+              <th style="width:140px;text-align:right">Completos (un)</th>
+              <th style="width:170px">Status</th>
+              <th style="width:280px">Ações</th>
             </tr></thead>
             <tbody id="t2Body"></tbody>
           </table>
@@ -722,8 +723,9 @@ code.cf{background:var(--side);border:1px solid var(--line);border-radius:6px;pa
    2.2 · 11/11/2026 · Link único para o fornecedor (abas Dados da empresa / Itens); convite único com motivo, base de
                       fornecedores ativos, opções de preenchimento e aviso LGPD; campos faltantes em destaque nos itens
                       carregados pela Vilarejo
+   2.3 · 11/11/2026 · Painel fase 2: coluna Ações sem cortar os botões
    ============================================================ */
-const VERSAO = { num:'2.2', data:'11/11/2026' };
+const VERSAO = { num:'2.3', data:'11/11/2026' };
 
 /* Dados da tela "Sobre o sistema" — manter atualizado */
 const SOBRE = {

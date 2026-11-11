@@ -487,7 +487,7 @@ code.cf{background:var(--side);border:1px solid var(--line);border-radius:6px;pa
               <th style="width:110px;text-align:right">Itens (un)</th>
               <th style="width:140px;text-align:right">Completos (un)</th>
               <th style="width:170px">Status</th>
-              <th style="width:280px">Ações</th>
+              <th style="width:300px">Ações</th>
             </tr></thead>
             <tbody id="t2Body"></tbody>
           </table>
@@ -729,8 +729,10 @@ code.cf{background:var(--side);border:1px solid var(--line);border-radius:6px;pa
                       fornecedor achado pelo nome (com filial 0001-26), item pelo Código interno; Cód. Fábrica em coluna
                       própria (cod_fabrica); campos não enviados ficam pendentes; pendências em vermelho na planilha Excel
                       — requer o SQL ELO_Reforma_v2.4_banco.sql
+   2.5 · 11/11/2026 · Carregar itens por fornecedor (botão na linha e "Salvar e carregar itens" no cadastro): planilha vai
+                      direto para o fornecedor escolhido, e só entram os itens dele
    ============================================================ */
-const VERSAO = { num:'2.4', data:'11/11/2026' };
+const VERSAO = { num:'2.5', data:'11/11/2026' };
 
 /* Dados da tela "Sobre o sistema" — manter atualizado */
 const SOBRE = {
@@ -1125,7 +1127,7 @@ function abrirFornecedor(f){
     </div><div class="msg" id="mMsg"></div>`,
     [ ...(f && PAPEL==='admin' ? [['Excluir fornecedor','del-out', o => { o.remove(); excluirFornecedor(f); }]] : []),
       ...(f ? [['Buscar na Receita','', () => buscarReceita(f.cnpj)]] : []),
-      ['Cancelar','',o=>o.remove()], ['Salvar','pri', salvar] ]);
+      ['Cancelar','',o=>o.remove()], ['Salvar e carregar itens','', (o,b) => salvar(o,b,true)], ['Salvar','pri', salvar] ]);
   const cn = ov.querySelector('#mCnpj');
   ov.querySelector('#mTel').addEventListener('input', e=>e.target.value=fmtTel(e.target.value));
   /* preenche só os campos vazios: o que já foi digitado nunca é sobrescrito */
@@ -1156,7 +1158,7 @@ function abrirFornecedor(f){
     put('#mLog', end.logradouro); put('#mBai', end.bairro); put('#mCid', end.cidade); put('#mUf', end.uf);
     ov.querySelector(end.logradouro ? '#mNum' : '#mLog').focus();
   });
-  async function salvar(o, b){
+  async function salvar(o, b, depoisCarregar){
     const c = dig(o.querySelector('#mCnpj').value);
     const reg = {
       razao_social: o.querySelector('#mRazao').value.trim(),
@@ -1177,11 +1179,12 @@ function abrirFornecedor(f){
     if (!f && !cnpjValido(c)) return aviso('mMsg','Informe um CNPJ válido.','erro');
     if (!reg.razao_social) return aviso('mMsg','Informe a razão social.','erro');
     b.disabled = true;
-    const r = f ? await sb.from('fornecedores').update(reg).eq('id', f.id)
-                : await sb.from('fornecedores').insert({ ...reg, cnpj:c });
+    const r = f ? await sb.from('fornecedores').update(reg).eq('id', f.id).select('id,cnpj,razao_social').single()
+                : await sb.from('fornecedores').insert({ ...reg, cnpj:c }).select('id,cnpj,razao_social').single();
     b.disabled = false;
     if (r.error) return aviso('mMsg', r.error.code==='23505'?'Este CNPJ já está na base.':'Erro: '+r.error.message, 'erro');
-    o.remove(); toast('Fornecedor salvo.'); carregar();
+    o.remove(); toast('Fornecedor salvo.'); await carregar();
+    if (depoisCarregar && r.data) abrirImportacao(FORN.find(x => x.id===r.data.id) || r.data);
   }
 }
 
@@ -1727,7 +1730,8 @@ function render2(){
       ${celStatus(f.status_fase2, STATUS2[f.status_fase2], f.fase2_aberto_em, f.fase2_ultimo_acesso_em, f.fase2_acessos)}
       <td><div class="acts">
         ${btCopiar('convite2', !!f.fase2_link_enviado_em || f.status_fase2!=='pendente', f.fase2_link_enviado_em)}
-        <button class="btn sm" data-a="baixar2" title="${r.itens?'Planilha com os itens deste fornecedor':'Planilha em branco para enviar ao fornecedor'}">${r.itens?'Baixar itens':'Baixar modelo'}</button>
+        <button class="btn sm" data-a="carregar2" title="Carregar a planilha de itens deste fornecedor (ERP ou planilha do sistema)">Carregar</button>
+        <button class="btn sm" data-a="baixar2" title="${r.itens?'Planilha com os itens deste fornecedor':'Planilha em branco para enviar ao fornecedor'}">${r.itens?'Baixar':'Modelo'}</button>
       </div></td>
     </tr>`; }).join('') : `<tr><td colspan="6"><div class="empty">${FORN.length?'Nenhum fornecedor encontrado no filtro.':'Nenhum fornecedor na base.'}</div></td></tr>`;
   $('p2Info').textContent = `${lista.length} fornecedor(es)`;
@@ -1745,6 +1749,7 @@ $('t2Body').addEventListener('click', async e => {
   const b = e.target.closest('button[data-a]'); if(!b) return;
   const f = FORN.find(x => x.id === b.closest('tr').dataset.id); if(!f) return;
   if (b.dataset.a==='convite2') copiarConvite(f);   // mesmo convite e mesmo link da fase 1
+  if (b.dataset.a==='carregar2') return abrirImportacao(f);
   if (b.dataset.a==='baixar2'){
     const itens = await todosItens(f.id);
     if (!itens) return;
@@ -1810,18 +1815,22 @@ const MAPA_FORN_KEY = 'eloReforma.mapaFornecedores';
 const lerMapaForn = () => { try{ return JSON.parse(localStorage.getItem(MAPA_FORN_KEY)||'{}'); }catch{ return {}; } };
 const gravarMapaForn = m => { try{ localStorage.setItem(MAPA_FORN_KEY, JSON.stringify(m)); }catch{} };
 
-$('bt2Import').onclick = () => {
+$('bt2Import').onclick = () => abrirImportacao(null);
+/* fixo = fornecedor escolhido (Carregar itens da linha ou do cadastro): todos os itens vão para ele */
+function abrirImportacao(fixo){
   let lidos = null, fornDe = () => null;
+  const aceitos = new Set();   // modo fixo: nomes de fornecedor da planilha que pertencem a este fornecedor
   const manual = lerMapaForn();   // escolhas feitas à mão ficam lembradas neste navegador
   const opcoesForn = [...FORN].sort((a,b)=>a.razao_social.localeCompare(b.razao_social))
     .map(f=>`<option value="${f.id}">${esc(f.razao_social)} · ${fmtCNPJ(f.cnpj)}</option>`).join('');
-  const ov = modal('Importar planilha de itens', `
+  const ov = modal(fixo ? `Carregar itens · ${esc(fixo.razao_social)}` : 'Importar planilha de itens', `
+    ${fixo ? `<p style="margin:0;padding:9px 12px;border-radius:9px;background:var(--green-soft,#e8f5ec);font-size:13px">Os itens da planilha vão para <b>${esc(fixo.razao_social)}</b> · ${fmtCNPJ(fixo.cnpj)} e já aparecem no link do fornecedor para ele corrigir e completar.</p>` : ''}
     <p style="color:var(--ink-soft);font-size:13px;line-height:1.5;margin:0">
     Aceita a <b>planilha do ERP</b> (Código, Descrição, Referencia, EAN, Fornecedor, NCM, CEST, MVA, cClassTrib…), a planilha de
     <b>Exportar planilha</b> editada, ou a planilha devolvida pelo fornecedor. Envie o <b>.xlsx</b> (no CSV o Excel estraga NCM e EAN).<br>
     O fornecedor é achado pelo <b>CNPJ</b> ou pelo <b>nome</b>; o item, pelo <b>Código interno</b> ou pelo <b>Cód. Fábrica</b>.
     Item que já existe é atualizado só nas células preenchidas (<b>vazio ou "-" não apaga</b>); item novo entra com os campos da reforma <b>pendentes</b>.</p>
-    <label class="f">Fornecedor <small>(só para planilha sem CNPJ e sem nome do fornecedor)</small>
+    <label class="f ${fixo?'hide':''}">Fornecedor <small>(só para planilha sem CNPJ e sem nome do fornecedor)</small>
       <select class="inp" id="i2Forn"><option value="">Usar o CNPJ ou o nome de cada linha</option>${opcoesForn}</select></label>
     <input type="file" class="inp" id="i2Arq" accept=".xlsx,.csv,.txt">
     <div class="msg" id="i2Msg"></div>
@@ -1829,7 +1838,14 @@ $('bt2Import').onclick = () => {
     [['Cancelar','',o=>o.remove()], ['Importar','pri', importar]], 'lg');
 
   function resolverForn(r){
-    const fixo = ov.querySelector('#i2Forn').value;
+    if (fixo){   // tudo para o fornecedor escolhido, menos linhas que claramente são de outro
+      return i => {
+        if (r.temCnpj && !vazio(i._cnpj)) return dig(i._cnpj).padStart(14,'0')===fixo.cnpj ? fixo.id : null;
+        if (r.temNome && !vazio(i._fornome)) return aceitos.has(i._fornome) ? fixo.id : null;
+        return fixo.id;
+      };
+    }
+    const escolhido = ov.querySelector('#i2Forn').value;
     const porCnpj = {}; FORN.forEach(f => porCnpj[f.cnpj] = f.id);
     const buscaNome = montarBuscaForn();
     const cacheNome = {};
@@ -1841,12 +1857,43 @@ $('bt2Import').onclick = () => {
         if (!(n in cacheNome)) cacheNome[n] = buscaNome(n);
         if (cacheNome[n]) return cacheNome[n];
       }
-      return fixo || null;
+      return escolhido || null;
     };
+  }
+  /* modo fixo: nomes de fornecedor da planilha; os que batem com este fornecedor (ou o único nome) já vêm marcados */
+  function prepararAceitos(r){
+    aceitos.clear();
+    if (!fixo || !r.temNome) return [];
+    const nomes = [...new Set(r.itens.map(i => i._fornome).filter(n => !vazio(n)))];
+    const busca = montarBuscaForn();
+    nomes.forEach(n => { if (nomes.length===1 || manual[n]===fixo.id || busca(n)===fixo.id) aceitos.add(n); });
+    return nomes;
+  }
+  let nomesPlan = [];
+  function analisarFixo(){
+    const r = lidos;
+    fornDe = resolverForn(r);
+    const qtd = {}; r.itens.forEach(i => { const n = i._fornome || ''; qtd[n] = (qtd[n]||0)+1; });
+    const ok = r.itens.filter(i => fornDe(i)).length, fora = r.itens.length - ok;
+    aviso('i2Msg', `${ok.toLocaleString('pt-BR')} item(ns) serão carregados para ${fixo.razao_social}` +
+      (fora ? ` · ${fora.toLocaleString('pt-BR')} item(ns) de outros fornecedores ficam de fora.` : '.') +
+      (r.erp ? ' Planilha do ERP reconhecida: IPI, Peso, Grupo Tributação, Taxa Efetiva, Dif.ICMS e Custo não são importados.' : ''), ok?'ok':'erro');
+    $('i2Res').innerHTML = nomesPlan.length < 2 ? '' : `
+      <div class="sec-t" style="margin-top:6px">A planilha tem itens de ${nomesPlan.length} fornecedores · marque os que são de ${esc(fixo.razao_social)}</div>
+      <div style="max-height:220px;overflow:auto;border:1px solid var(--line);border-radius:9px;padding:4px 10px">
+        ${nomesPlan.sort((a,b)=>aceitos.has(b)-aceitos.has(a)||qtd[b]-qtd[a]).map(n => `<label class="chk" style="display:flex;padding:5px 0">
+          <input type="checkbox" data-nome="${esc(n)}" ${aceitos.has(n)?'checked':''}>${esc(n)} <span style="color:var(--muted)">· ${qtd[n].toLocaleString('pt-BR')} item(ns)</span></label>`).join('')}
+      </div>`;
+    $('i2Res').querySelectorAll('input[data-nome]').forEach(c => c.onchange = () => {
+      if (c.checked){ aceitos.add(c.dataset.nome); manual[c.dataset.nome] = fixo.id; }
+      else { aceitos.delete(c.dataset.nome); if (manual[c.dataset.nome]===fixo.id) delete manual[c.dataset.nome]; }
+      gravarMapaForn(manual); analisarFixo();
+    });
   }
   function analisar(){
     if (!lidos) return;
     if (lidos.erro){ $('i2Res').innerHTML=''; return aviso('i2Msg', lidos.erro, 'erro'); }
+    if (fixo) return analisarFixo();
     const r = lidos;
     if (!r.temCnpj && !r.temNome && !ov.querySelector('#i2Forn').value){ $('i2Res').innerHTML='';
       return aviso('i2Msg','A planilha não tem CNPJ nem nome do fornecedor. Escolha acima de qual fornecedor são os itens.','erro'); }
@@ -1872,6 +1919,7 @@ $('bt2Import').onclick = () => {
   ov.querySelector('#i2Arq').onchange = async e => { const f = e.target.files[0]; if (!f) return;
     aviso('i2Msg','Lendo a planilha…');
     try{ lidos = lerPlanilhaItens(await lerArquivo(f)); }catch(er){ lidos = { erro:'Não consegui ler o arquivo: '+er.message }; }
+    if (!lidos.erro) nomesPlan = prepararAceitos(lidos);
     analisar(); };
   ov.querySelector('#i2Forn').onchange = analisar;
 
@@ -1913,7 +1961,7 @@ $('bt2Import').onclick = () => {
     const novos = linhas.filter(x => x.origem_carga==='vilarejo').length;
     o.remove(); toast(`${ok.toLocaleString('pt-BR')} item(ns) importados: ${novos.toLocaleString('pt-BR')} novo(s) e ${(ok-novos).toLocaleString('pt-BR')} atualizado(s).`); carregar();
   }
-};
+}
 
 /* =========================================================
    FASE 2 · TELA DO FORNECEDOR (link ?t=…&fase=2)

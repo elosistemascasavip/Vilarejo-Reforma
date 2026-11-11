@@ -538,7 +538,8 @@ code.cf{background:var(--side);border:1px solid var(--line);border-radius:6px;pa
      <div id="f2Wrap">
       <table>
         <thead><tr>
-          <th style="width:120px">Código</th>
+          <th style="width:100px">Cód. Vilarejo</th>
+          <th style="width:120px">Cód. Fábrica</th>
           <th>Descrição</th>
           <th class="col-f2x" style="width:105px">NCM</th>
           <th class="col-f2x" style="width:70px">CST</th>
@@ -724,8 +725,12 @@ code.cf{background:var(--side);border:1px solid var(--line);border-radius:6px;pa
                       fornecedores ativos, opções de preenchimento e aviso LGPD; campos faltantes em destaque nos itens
                       carregados pela Vilarejo
    2.3 · 11/11/2026 · Painel fase 2: coluna Ações sem cortar os botões
+   2.4 · 11/11/2026 · Carga da planilha do ERP (Código, Descrição, Referencia, EAN, Fornecedor, NCM, CEST, MVA, cClassTrib):
+                      fornecedor achado pelo nome (com filial 0001-26), item pelo Código interno; Cód. Fábrica em coluna
+                      própria (cod_fabrica); campos não enviados ficam pendentes; pendências em vermelho na planilha Excel
+                      — requer o SQL ELO_Reforma_v2.4_banco.sql
    ============================================================ */
-const VERSAO = { num:'2.3', data:'11/11/2026' };
+const VERSAO = { num:'2.4', data:'11/11/2026' };
 
 /* Dados da tela "Sobre o sistema" — manter atualizado */
 const SOBRE = {
@@ -1431,8 +1436,8 @@ const ORIGENS = {
 /* Ordem e nomes iguais ao cadastro do ERP (planilha de ida e volta) */
 /* 3º item = true → campo interno da Vilarejo (não aparece para o fornecedor) */
 const CAMPOS_ITEM = [
-  ['cod_interno','Cód. Interno',true],
-  ['codigo','Cód. Fábrica'], ['descricao','Descrição'], ['fci','FCI'], ['qtd_caract','Qtd. Caract.'],
+  ['cod_interno','Cód. Interno'],
+  ['cod_fabrica','Cód. Fábrica'], ['descricao','Descrição'], ['fci','FCI'], ['qtd_caract','Qtd. Caract.'],
   ['ncm','NCM/SH'], ['origem','Origem'], ['cst_icms','CST'], ['cest','CEST'],
   ['aliq_ipi','% IPI'], ['aliq_icms','% ICMS'], ['mva','% MVA'],
   ['cst','CST IBS/CBS'], ['cclasstrib','cClassTrib IBS/CBS'], ['aliq_ibs_uf','% IBS UF'], ['aliq_ibs_mun','% IBS Mun.'],
@@ -1445,7 +1450,7 @@ const CAMPOS_ITEM = [
 ];
 const CAMPOS_FORN = CAMPOS_ITEM.filter(c => !c[2]);
 /* exportados como texto (="...") para o Excel não cortar zeros nem virar notação científica */
-const TXT_ITEM = ['cod_interno','codigo','ncm','cst_icms','cest','cst','cclasstrib','cst_is','cclasstrib_is','ean','ean14'];
+const TXT_ITEM = ['cod_interno','cod_fabrica','ncm','cst_icms','cest','cst','cclasstrib','cst_is','cclasstrib_is','ean','ean14'];
 const NUM_ITEM = ['aliq_ipi','aliq_icms','mva','pct_importacao','aliq_ibs_uf','aliq_ibs_mun','aliq_cbs','pct_reducao','aliq_is','qtd_caixa'];
 const UNIDADES = ['UN','CX','PC','PCT','M','M2','M3','KG','L','GL','LT','SC','BD','RL','JG','KIT','PAR','CJ','FD','TB'];
 const STATUS2 = { pendente:'Pendente', enviado:'Link enviado', aberto:'Link aberto', em_preenchimento:'Preenchendo', respondido:'Enviado' };
@@ -1459,7 +1464,7 @@ const fmtNCM = v => { const c = dig(v); return c.length===8 ? `${c.slice(0,4)}.$
 /* regras de cada campo: [chave, nome mostrado, teste "está com problema?"]
    obrigatórios = só os campos com * do cadastro; os demais só têm o formato conferido se forem preenchidos */
 const REGRAS_ITEM = [
-  ['codigo','cód. fábrica', i => vazio(i.codigo)],
+  ['cod_fabrica','cód. fábrica', i => vazio(i.cod_fabrica)],
   ['descricao','descrição', i => vazio(i.descricao)],
   ['ncm','NCM', i => !/^\d{8}$/.test(dig(i.ncm))],
   ['origem','origem', i => vazio(i.origem)],
@@ -1506,8 +1511,9 @@ function baixar(nome, conteudo){
 }
 const MAPA_ITEM = (() => {
   const m = {}; CAMPOS_ITEM.forEach(([k,l]) => m[norm(l)] = k);
-  Object.assign(m, { cod:'codigo', codigo:'codigo', referencia:'codigo', ref:'codigo', codfornecedor:'codigo', codigofornecedor:'codigo',
-    codfabrica:'codigo', codigofabrica:'codigo', codinterno:'cod_interno', codigointerno:'cod_interno',
+  Object.assign(m, { cod:'cod_fabrica', codigo:'cod_fabrica', referencia:'cod_fabrica', ref:'cod_fabrica', codfornecedor:'cod_fabrica', codigofornecedor:'cod_fabrica',
+    codfabrica:'cod_fabrica', codigofabrica:'cod_fabrica', codinterno:'cod_interno', codigointerno:'cod_interno', codvilarejo:'cod_interno',
+    fornecedor:'_fornome', nomefornecedor:'_fornome',
     descricao:'descricao', produto:'descricao', ean:'ean', gtin:'ean', gtin13:'ean', eantributavel:'ean', codigodebarras:'ean', codbarras:'ean',
     ean14:'ean14', dun14:'ean14', ncm:'ncm', ncmsh:'ncm', cest:'cest', origem:'origem', fci:'fci', nfci:'fci', numerofci:'fci',
     conteudoimportacao:'pct_importacao',
@@ -1519,9 +1525,22 @@ const MAPA_ITEM = (() => {
   delete m.qtdcaract;   // calculada pela descrição, nunca importada
   return m;
 })();
+/* planilha do ERP da Vilarejo: Código (interno) · Descrição · Referencia (cód. fábrica) · EAN · Peso · Fornecedor (nome) · NCM · CEST ·
+   MVA · cClassTrib · Grupo Tributação · IPI · Taxa Efetiva · Dif.ICMS · Custo Final Md */
+function ehPlanilhaERP(linha){
+  const ns = linha.map(h => norm(h||''));
+  return ns.includes('fornecedor') && (ns.includes('referencia') || ns.includes('custofinalmd') || ns.includes('grupotributacao'));
+}
+const IGNORAR_ERP = ['ipi','peso','grupotributacao','taxaefetiva','dificms','custofinalmd'];   // valores em R$ ou internos: não vão para o fornecedor
 function mapaCabecalho(linha){
+  const erp = ehPlanilhaERP(linha);
   return linha.map((h, j) => {
     const n = norm(h||'');
+    if (erp){
+      if (n==='codigo') return 'cod_interno';
+      if (n==='referencia') return 'cod_fabrica';
+      if (IGNORAR_ERP.includes(n)) return null;
+    }
     if (n==='cod'){   // no layout do ERP, "Cód." aparece antes de Departamento, Seção e Categoria
       const prox = norm(linha[j+1]||'');
       if (prox.startsWith('departamento')) return 'cod_departamento';
@@ -1535,12 +1554,14 @@ function lerPlanilhaItens(entrada){
   const rows = Array.isArray(entrada) ? entrada : parseCSV(entrada);
   /* cabeçalho = última das primeiras linhas que ainda têm a coluna Cód. Fábrica (cabeçalho em 3 linhas mescladas) */
   let h = -1;
-  for (let i = 0; i < Math.min(rows.length, 6); i++){ if (mapaCabecalho(rows[i]).includes('codigo')) h = i; else if (h>=0) break; }
-  if (h < 0) return { erro:'Falta a coluna Cód. Fábrica no cabeçalho.' };
+  const temChave = l => { const m = mapaCabecalho(l); return m.includes('cod_fabrica') || m.includes('cod_interno'); };
+  for (let i = 0; i < Math.min(rows.length, 6); i++){ if (temChave(rows[i])) h = i; else if (h>=0) break; }
+  if (h < 0) return { erro:'Falta a coluna Código / Cód. Fábrica no cabeçalho.' };
   if (rows.length < h+2) return { erro:'Nenhuma linha de item encontrada abaixo do cabeçalho.' };
   const cab = mapaCabecalho(rows[h]);
   const itens = rows.slice(h+1).map(r => {
-    const o = {}; cab.forEach((k,i) => { if (k && r[i]!=null && String(r[i]).trim()!=='') o[k] = String(r[i]).trim().replace(/^="(.*)"$/,'$1'); });
+    const o = {}; cab.forEach((k,i) => { if (!k || r[i]==null) return; const v = String(r[i]).trim().replace(/^="(.*)"$/,'$1').trim();
+      if (v!=='' && !/^[-–—]+$/.test(v)) o[k] = v; });   // "-" = pendente, igual a vazio
     NUM_ITEM.forEach(k => { if (k in o) o[k] = lerNum(o[k]); });
     if ('zfm' in o) o.zfm = /^(s|sim|1|x|true)$/i.test(o.zfm);
     if ('origem' in o) { const n = parseInt(o.origem,10); o.origem = isNaN(n)?null:n; }
@@ -1550,9 +1571,10 @@ function lerPlanilhaItens(entrada){
     if ('unidade_venda' in o) o.unidade_venda = o.unidade_venda.toUpperCase();
     ['cst','cst_is'].forEach(k => { if (k in o) o[k] = dig(o[k]).padStart(3,'0'); });
     ['cclasstrib','cclasstrib_is'].forEach(k => { if (k in o) o[k] = dig(o[k]).padStart(6,'0'); });
+    if ('cod_interno' in o) o.cod_interno = o.cod_interno.replace(/\.0+$/,'');
     return o;
-  }).filter(o => !vazio(o.codigo));
-  return { itens, temCnpj: cab.includes('_cnpj') };
+  }).filter(o => !vazio(o.cod_fabrica) || !vazio(o.cod_interno));
+  return { itens, temCnpj: cab.includes('_cnpj'), temNome: cab.includes('_fornome'), erp: ehPlanilhaERP(rows[h]) };
 }
 async function lerArquivoTexto(file){
   const buf = await file.arrayBuffer();
@@ -1566,7 +1588,7 @@ const NOME_PLANILHA = 'Elo_Formulario_Reforma';
 /* cada bloco: titulo na 1ª linha (null = coluna ocupa as 3 linhas), cor, colunas [chave, rótulo, obrigatório]; sub = sub-bloco na 2ª linha */
 const LAYOUT_XLSX = [
   { titulo:'Fornecedor', cor:'D9D9D9', admin:true, cols:[['_cnpj','CNPJ fornecedor',1],['_razao','Razão social',0]] },
-  { titulo:null, cor:'C0C0C0', cols:[['cod_interno','Cód. Interno',0,'int'],['codigo','Cód. Fábrica',1],['descricao','Descrição',1],['fci','FCI',0],['qtd_caract','Qtd. Carct.',0]] },
+  { titulo:null, cor:'C0C0C0', cols:[['cod_interno','Cód. Interno',0],['cod_fabrica','Cód. Fábrica',1],['descricao','Descrição',1],['fci','FCI',0],['qtd_caract','Qtd. Carct.',0]] },
   { titulo:'Fiscal', cor:'FFFF99', cols:[['ncm','NCM/SH',1],['origem','Origem',1],['cst_icms','CST',1],['cest','CEST',1],['aliq_ipi','IPI',1],['aliq_icms','ICMS',1],['mva','MVA',1]],
     sub:{ titulo:'Reforma Tributária', cols:[['cst','CST IBS/CBS',1],['cclasstrib','cClassTrib IBS/CBS',1],['aliq_ibs_uf','% IBS UF',1],['aliq_ibs_mun','% IBS Mun.',1],
       ['aliq_cbs','% CBS',1],['pct_reducao','% Redução IBS/CBS',0],['cst_is','CST IS',0],['cclasstrib_is','cClassTrib IS',0],['aliq_is','% IS',0]] } },
@@ -1622,7 +1644,7 @@ async function exportarXlsx(itens, comAdmin, nomeArquivo){
   });
   ws.getRow(1).height = 18; ws.getRow(2).height = 30; ws.getRow(3).height = 30;
   /* larguras e formato de cada coluna */
-  const largura = { _cnpj:19, _razao:34, descricao:46, fci:38, codigo:16, cod_interno:12, ean:18, ean14:17, departamento:20, secao:20, categoria:20, _situacao:40, cclasstrib:11, cclasstrib_is:11 };
+  const largura = { _cnpj:19, _razao:34, descricao:46, fci:38, cod_fabrica:16, cod_interno:12, ean:18, ean14:17, departamento:20, secao:20, categoria:20, _situacao:40, cclasstrib:11, cclasstrib_is:11 };
   colunas.forEach(([k], i) => {
     const col = ws.getColumn(i+1);
     col.width = largura[k] || (k.startsWith('cod_')?7:10);
@@ -1630,8 +1652,11 @@ async function exportarXlsx(itens, comAdmin, nomeArquivo){
     else if (NUM_ITEM.includes(k)) col.numFmt = '#,##0.00##';
   });
   /* dados */
+  const OBRIG = new Set(blocos.flatMap(b => [...b.cols, ...(b.sub ? b.sub.cols : [])]).filter(c => c[2]).map(c => c[0]));
+  const vermelho = { type:'pattern', pattern:'solid', fgColor:{ argb:'FFFDE2E1' } };
   itens.forEach((i, n) => {
     const linha = ws.getRow(4 + n);
+    const pend = chavesFaltando(i);   // campos obrigatórios ainda pendentes: célula em vermelho claro
     colunas.forEach(([k], j) => {
       let v;
       if (k==='_cnpj') v = fmtCNPJ(i._cnpj||'');
@@ -1642,6 +1667,7 @@ async function exportarXlsx(itens, comAdmin, nomeArquivo){
       else if (NUM_ITEM.includes(k)) v = vazio(i[k]) ? null : Number(i[k]);
       else v = vazio(i[k]) ? null : String(i[k]);
       const cel = linha.getCell(j+1); cel.value = v; cel.border = borda; cel.font = { size:9, name:'Arial' };
+      if (OBRIG.has(k) && pend.has(k)) cel.fill = vermelho;
     });
   });
   const buf = await wb.xlsx.writeBuffer();
@@ -1756,63 +1782,136 @@ $('bt2Export').onclick = async () => {
 };
 
 /* Importa a planilha exportada acima (ida e volta) ou uma lista do ERP: CNPJ do fornecedor + Cód. Fábrica + qualquer coluna */
-const CAMPOS_IMPORT = CAMPOS_ITEM.map(c => c[0]).filter(k => k!=='codigo' && k!=='qtd_caract');
-$('bt2Import').onclick = () => {
-  let lote = [];
-  const ov = modal('Importar planilha de itens', `
-    <p style="color:var(--ink-soft);font-size:13px;line-height:1.5;margin:0">Envie um <b>.csv</b> ou cole as linhas do Excel, com o cabeçalho na primeira linha.<br>
-    Use a planilha de <b>Exportar planilha</b> (Excel .xlsx, editada) ou uma lista do ERP em .xlsx ou CSV.
-    Obrigatórias: <b>CNPJ</b> do fornecedor e <b>Cód. Fábrica</b>; as demais colunas são opcionais e podem estar em qualquer ordem.<br>
-    Item que já existe (mesmo CNPJ + Cód. Fábrica) é atualizado só nas células preenchidas; <b>célula vazia não apaga</b> o que já existe.
-    Códigos novos são incluídos. As colunas Razão social, Qtd. Caract. e Situação são ignoradas.</p>
-    <label class="f">Fornecedor <small>(só para planilha sem a coluna CNPJ, como a planilha modelo devolvida pelo fornecedor)</small>
-      <select class="inp" id="i2Forn"><option value="">Usar o CNPJ de cada linha</option>${[...FORN].sort((a,b)=>a.razao_social.localeCompare(b.razao_social)).map(f=>`<option value="${f.id}">${esc(f.razao_social)} · ${fmtCNPJ(f.cnpj)}</option>`).join('')}</select></label>
-    <input type="file" class="inp" id="i2Arq" accept=".xlsx,.csv,.txt">
-    <textarea class="inp" id="i2Txt" rows="6" placeholder="…ou cole aqui"></textarea>
-    <div class="msg" id="i2Msg"></div>`,
-    [['Cancelar','',o=>o.remove()], ['Importar','pri', importar]]);
-  let ultimoTxt = '';
-  const analisar = txt => {
-    lote = []; ultimoTxt = txt;
-    const r = lerPlanilhaItens(txt);
-    if (r.erro) return aviso('i2Msg', r.erro, 'erro');
-    const fixo = ov.querySelector('#i2Forn').value;
-    if (!r.temCnpj && !fixo) return aviso('i2Msg','A planilha não tem a coluna CNPJ. Escolha acima de qual fornecedor são os itens.','erro');
-    const porCnpj = {}; FORN.forEach(f => porCnpj[f.cnpj] = f.id);
-    const semForn = new Set(); const vistos = new Set();
-    r.itens.forEach(i => {
-      const c = dig(i._cnpj).padStart(14,'0'); const fid = fixo || porCnpj[c];
-      if (!fid){ semForn.add(c); return; }
-      const chave = fid+'|'+i.codigo; if (vistos.has(chave)) return; vistos.add(chave);
-      const o = { fornecedor_id:fid, codigo:i.codigo, atualizado_em:new Date().toISOString() };
-      CAMPOS_IMPORT.forEach(k => { if (k in i && !vazio(i[k])) o[k] = i[k]; });
-      lote.push(o);
-    });
-    aviso('i2Msg', `${lote.length.toLocaleString('pt-BR')} item(ns) prontos para importar` +
-      (semForn.size?` · ${semForn.size} CNPJ(s) não estão na base de fornecedores e foram ignorados`:'') + '.', lote.length?'ok':'erro');
+const CAMPOS_IMPORT = CAMPOS_ITEM.map(c => c[0]).filter(k => k!=='qtd_caract');
+/* ---------- achar o fornecedor pelo nome que vem do ERP ----------
+   "ROCA SANITARIOS BRASIL LTDA (LOUÇAS ROCA KIAN) 0001-26" → "ROCA SANITARIOS BRASIL" + filial 0001-26 (final do CNPJ) */
+function chaveNome(t){
+  return String(t||'').normalize('NFD').replace(/[̀-ͯ]/g,'').toUpperCase()
+    .replace(/\([^)]*\)/g,' ').replace(/\b\d{4}-\d{2}\b/g,' ').replace(/[^A-Z0-9]+/g,' ')
+    .replace(/\b(LTDA|LTD|S A|SA|EIRELI|ME|EPP|CIA)\b/g,' ').replace(/\s+/g,' ').trim();
+}
+function filialDoNome(t){ const m = String(t||'').match(/\b(\d{4})-(\d{2})\b/); return m ? m[1]+m[2] : ''; }
+function montarBuscaForn(){
+  const porChave = {};
+  FORN.forEach(f => [f.razao_social, f.nome_fantasia].forEach(n => { const k = chaveNome(n); if (k) (porChave[k] = porChave[k] || new Set()).add(f); }));
+  const chaves = Object.keys(porChave);
+  return nome => {
+    const k = chaveNome(nome), fil = filialDoNome(nome);
+    let cands = [...(porChave[k] || [])];
+    if (!cands.length){   // nome do ERP maior ou menor que o da base ("NOVOS METAIS" x "NOVOS METAIS INDUSTRIA")
+      const parecidos = chaves.filter(c => c.startsWith(k+' ') || k.startsWith(c+' '));
+      cands = [...new Set(parecidos.flatMap(c => [...porChave[c]]))];
+    }
+    if (fil && cands.length > 1) cands = cands.filter(f => f.cnpj.endsWith(fil));
+    return cands.length === 1 ? cands[0].id : null;
   };
-  ov.querySelector('#i2Arq').onchange = async e => { const f = e.target.files[0]; if (!f) return; ov.querySelector('#i2Txt').value=''; try{ analisar(await lerArquivo(f)); }catch(er){ aviso('i2Msg','Não consegui ler o arquivo: '+er.message,'erro'); } };
-  ov.querySelector('#i2Forn').onchange = () => { if (ultimoTxt) analisar(ultimoTxt); };
-  ov.querySelector('#i2Txt').oninput = e => analisar(e.target.value);
+}
+const MAPA_FORN_KEY = 'eloReforma.mapaFornecedores';
+const lerMapaForn = () => { try{ return JSON.parse(localStorage.getItem(MAPA_FORN_KEY)||'{}'); }catch{ return {}; } };
+const gravarMapaForn = m => { try{ localStorage.setItem(MAPA_FORN_KEY, JSON.stringify(m)); }catch{} };
+
+$('bt2Import').onclick = () => {
+  let lidos = null, fornDe = () => null;
+  const manual = lerMapaForn();   // escolhas feitas à mão ficam lembradas neste navegador
+  const opcoesForn = [...FORN].sort((a,b)=>a.razao_social.localeCompare(b.razao_social))
+    .map(f=>`<option value="${f.id}">${esc(f.razao_social)} · ${fmtCNPJ(f.cnpj)}</option>`).join('');
+  const ov = modal('Importar planilha de itens', `
+    <p style="color:var(--ink-soft);font-size:13px;line-height:1.5;margin:0">
+    Aceita a <b>planilha do ERP</b> (Código, Descrição, Referencia, EAN, Fornecedor, NCM, CEST, MVA, cClassTrib…), a planilha de
+    <b>Exportar planilha</b> editada, ou a planilha devolvida pelo fornecedor. Envie o <b>.xlsx</b> (no CSV o Excel estraga NCM e EAN).<br>
+    O fornecedor é achado pelo <b>CNPJ</b> ou pelo <b>nome</b>; o item, pelo <b>Código interno</b> ou pelo <b>Cód. Fábrica</b>.
+    Item que já existe é atualizado só nas células preenchidas (<b>vazio ou "-" não apaga</b>); item novo entra com os campos da reforma <b>pendentes</b>.</p>
+    <label class="f">Fornecedor <small>(só para planilha sem CNPJ e sem nome do fornecedor)</small>
+      <select class="inp" id="i2Forn"><option value="">Usar o CNPJ ou o nome de cada linha</option>${opcoesForn}</select></label>
+    <input type="file" class="inp" id="i2Arq" accept=".xlsx,.csv,.txt">
+    <div class="msg" id="i2Msg"></div>
+    <div id="i2Res"></div>`,
+    [['Cancelar','',o=>o.remove()], ['Importar','pri', importar]], 'lg');
+
+  function resolverForn(r){
+    const fixo = ov.querySelector('#i2Forn').value;
+    const porCnpj = {}; FORN.forEach(f => porCnpj[f.cnpj] = f.id);
+    const buscaNome = montarBuscaForn();
+    const cacheNome = {};
+    return i => {
+      if (r.temCnpj && !vazio(i._cnpj)){ const id = porCnpj[dig(i._cnpj).padStart(14,'0')]; if (id) return id; }
+      if (r.temNome && !vazio(i._fornome)){
+        const n = i._fornome;
+        if (manual[n] !== undefined) return manual[n] || null;   // "" = ignorar
+        if (!(n in cacheNome)) cacheNome[n] = buscaNome(n);
+        if (cacheNome[n]) return cacheNome[n];
+      }
+      return fixo || null;
+    };
+  }
+  function analisar(){
+    if (!lidos) return;
+    if (lidos.erro){ $('i2Res').innerHTML=''; return aviso('i2Msg', lidos.erro, 'erro'); }
+    const r = lidos;
+    if (!r.temCnpj && !r.temNome && !ov.querySelector('#i2Forn').value){ $('i2Res').innerHTML='';
+      return aviso('i2Msg','A planilha não tem CNPJ nem nome do fornecedor. Escolha acima de qual fornecedor são os itens.','erro'); }
+    fornDe = resolverForn(r);
+    const okForn = new Set(), semForn = {}; let ok = 0;
+    r.itens.forEach(i => { const id = fornDe(i); if (id){ ok++; okForn.add(id); } else { const n = i._fornome || (i._cnpj?fmtCNPJ(dig(i._cnpj)):'(sem fornecedor)'); semForn[n] = (semForn[n]||0)+1; } });
+    const faltam = Object.entries(semForn).sort((a,b)=>b[1]-a[1]);
+    aviso('i2Msg', `${ok.toLocaleString('pt-BR')} item(ns) de ${okForn.size} fornecedor(es) prontos para importar` +
+      (faltam.length ? ` · ${faltam.reduce((s,x)=>s+x[1],0).toLocaleString('pt-BR')} item(ns) de ${faltam.length} fornecedor(es) não encontrados na base (escolha abaixo ou deixe ignorado).` : '.') +
+      (r.erp ? ' Planilha do ERP reconhecida: IPI, Peso, Grupo Tributação, Taxa Efetiva, Dif.ICMS e Custo não são importados.' : ''), ok?'ok':'erro');
+    $('i2Res').innerHTML = !faltam.length ? '' : `
+      <div class="sec-t" style="margin-top:6px">Fornecedores não encontrados</div>
+      <div style="max-height:220px;overflow:auto;border:1px solid var(--line);border-radius:9px">
+        <table style="width:100%;font-size:12.5px">${faltam.map(([n,q]) => `<tr>
+          <td style="padding:6px 10px">${esc(n)} <span style="color:var(--muted)">· ${q.toLocaleString('pt-BR')} item(ns)</span></td>
+          <td style="padding:4px 8px;width:46%">${r.temNome && !n.startsWith('(') ? `<select class="inp" data-nome="${esc(n)}" style="padding:5px 8px"><option value="">Ignorar estes itens</option>${opcoesForn}</select>` : '<span style="color:var(--muted)">cadastre o fornecedor na base</span>'}</td></tr>`).join('')}
+        </table></div>`;
+    $('i2Res').querySelectorAll('select[data-nome]').forEach(sel => sel.onchange = () => {
+      if (sel.value) manual[sel.dataset.nome] = sel.value; else delete manual[sel.dataset.nome];
+      gravarMapaForn(manual); analisar();
+    });
+  }
+  ov.querySelector('#i2Arq').onchange = async e => { const f = e.target.files[0]; if (!f) return;
+    aviso('i2Msg','Lendo a planilha…');
+    try{ lidos = lerPlanilhaItens(await lerArquivo(f)); }catch(er){ lidos = { erro:'Não consegui ler o arquivo: '+er.message }; }
+    analisar(); };
+  ov.querySelector('#i2Forn').onchange = analisar;
+
   async function importar(o, b){
-    if (!lote.length) return aviso('i2Msg','Nada para importar.','erro');
-    b.disabled = true; let ok = 0;
+    if (!lidos || lidos.erro) return aviso('i2Msg','Escolha a planilha.','erro');
+    b.disabled = true;
     aviso('i2Msg','Conferindo itens já cadastrados…');
     const atuais = await todosItens(null); if (!atuais){ b.disabled=false; return; }
-    const existe = new Set(atuais.map(x => x.fornecedor_id+'|'+x.codigo));
-    // item novo entra como carregado pela Vilarejo; item existente mantém quem o incluiu
-    lote.forEach(x => { if (!existe.has(x.fornecedor_id+'|'+x.codigo)) x.origem_carga = 'vilarejo'; });
+    /* item existente: pelo Código interno, depois pelo Cód. Fábrica, depois pela chave */
+    const porInt = {}, porFab = {}, porCod = {};
+    atuais.forEach(x => {
+      if (!vazio(x.cod_interno)) porInt[x.fornecedor_id+'|'+x.cod_interno] = x.codigo;
+      if (!vazio(x.cod_fabrica)) porFab[x.fornecedor_id+'|'+x.cod_fabrica] = x.codigo;
+      porCod[x.fornecedor_id+'|'+x.codigo] = x.codigo;
+    });
+    const agora = new Date().toISOString(), lote = {};
+    lidos.itens.forEach(i => {
+      const fid = fornDe(i); if (!fid) return;
+      const cod = (!vazio(i.cod_interno) && porInt[fid+'|'+i.cod_interno]) || (!vazio(i.cod_fabrica) && (porFab[fid+'|'+i.cod_fabrica] || porCod[fid+'|'+i.cod_fabrica])) || null;
+      const chave = cod || i.cod_interno || i.cod_fabrica;   // item novo do ERP: a chave é o Código interno
+      const o = lote[fid+'|'+chave] || { fornecedor_id:fid, codigo:chave, atualizado_em:agora };
+      if (!cod) o.origem_carga = 'vilarejo';
+      CAMPOS_IMPORT.forEach(k => { if (k in i && !vazio(i[k])) o[k] = i[k]; });
+      lote[fid+'|'+chave] = o;
+    });
+    const linhas = Object.values(lote);
+    if (!linhas.length){ b.disabled=false; return aviso('i2Msg','Nenhum item com fornecedor encontrado.','erro'); }
     // agrupa por conjunto de colunas para o upsert não apagar campos ausentes
-    const grupos = {}; lote.forEach(x => { const k = Object.keys(x).sort().join(','); (grupos[k] = grupos[k] || []).push(x); });
+    const grupos = {}; linhas.forEach(x => { const k = Object.keys(x).sort().join(','); (grupos[k] = grupos[k] || []).push(x); });
+    let ok = 0;
     for (const g of Object.values(grupos)){
       for (let i=0;i<g.length;i+=500){
         const parte = g.slice(i,i+500);
         const { error } = await sb.from('itens_fase2').upsert(parte, { onConflict:'fornecedor_id,codigo' });
-        if (error){ b.disabled=false; return aviso('i2Msg','Erro ao importar: '+error.message,'erro'); }
-        ok += parte.length; aviso('i2Msg',`Importando… ${ok.toLocaleString('pt-BR')}/${lote.length.toLocaleString('pt-BR')}`);
+        if (error){ b.disabled=false; return aviso('i2Msg','Erro ao importar: '+error.message+(/cod_fabrica/.test(error.message)?' — rode antes o SQL da versão 2.4 no Supabase.':''),'erro'); }
+        ok += parte.length; aviso('i2Msg',`Importando… ${ok.toLocaleString('pt-BR')}/${linhas.length.toLocaleString('pt-BR')}`);
       }
     }
-    o.remove(); toast(`${ok.toLocaleString('pt-BR')} item(ns) importados.`); carregar();
+    const novos = linhas.filter(x => x.origem_carga==='vilarejo').length;
+    o.remove(); toast(`${ok.toLocaleString('pt-BR')} item(ns) importados: ${novos.toLocaleString('pt-BR')} novo(s) e ${(ok-novos).toLocaleString('pt-BR')} atualizado(s).`); carregar();
   }
 };
 
@@ -1841,7 +1940,7 @@ function filtradosF2(){
     const falta = faltasItem(i).length>0;
     if (sit==='falta' && !falta) return false;
     if (sit==='ok' && falta) return false;
-    return !q || String(i.codigo).toLowerCase().includes(q) || (i.descricao||'').toLowerCase().includes(q) || dig(i.ncm).includes(dig(q)||'#');
+    return !q || [i.codigo, i.cod_fabrica, i.cod_interno].some(c => String(c??'').toLowerCase().includes(q)) || (i.descricao||'').toLowerCase().includes(q) || dig(i.ncm).includes(dig(q)||'#');
   });
 }
 function renderF2(){
@@ -1855,14 +1954,15 @@ function renderF2(){
     const cel = (k, val) => ch.has(k) ? `<td class="col-f2x mono cel-falta">${vazio(val)?'falta':esc(val)}</td>` : `<td class="col-f2x mono">${esc(val??'')}</td>`;
     return `
     <tr class="clic${fl.length?' pend':''}" data-cod="${esc(i.codigo)}" title="Clique para editar">
-      <td class="mono">${esc(i.codigo)}</td>
+      <td class="mono" style="color:var(--muted)">${esc(i.cod_interno||'')}</td>
+      ${ch.has('cod_fabrica') ? '<td class="mono cel-falta">falta</td>' : `<td class="mono">${esc(i.cod_fabrica||'')}</td>`}
       <td title="${esc(i.descricao||'')}">${esc(i.descricao||'')}</td>
       ${cel('ncm', fmtNCM(i.ncm))}
       ${cel('cst', i.cst)}
       ${cel('cclasstrib', i.cclasstrib)}
       ${cel('origem', vazio(i.origem)?'':String(i.origem))}
       <td title="${fl.length?esc('Falta: '+fl.join(', ')):'Completo'}">${fl.length?`<span class="falta">Falta: ${esc(fl.join(', '))}</span>`:'<span class="okc">✓ Completo</span>'}</td>
-    </tr>`; }).join('') : `<tr><td colspan="7"><div class="empty">${ITENS.length?'Nenhum item no filtro.':'Nenhum item ainda. Use “+ Item” ou “Importar planilha”.'}</div></td></tr>`;
+    </tr>`; }).join('') : `<tr><td colspan="8"><div class="empty">${ITENS.length?'Nenhum item no filtro.':'Nenhum item ainda. Use “+ Item” ou “Importar planilha”.'}</div></td></tr>`;
   const ok = ITENS.filter(i => !faltasItem(i).length).length;
   $('f2cTot').textContent = ITENS.length.toLocaleString('pt-BR');
   $('f2cOk').textContent = ok.toLocaleString('pt-BR');
@@ -1891,12 +1991,12 @@ function editarItem(it){
   const novo = !it;
   const i = it ? { ...it } : { origem_carga:'fornecedor', aliq_ibs_uf:ALIQ_PADRAO.aliq_ibs_uf, aliq_ibs_mun:ALIQ_PADRAO.aliq_ibs_mun, aliq_cbs:ALIQ_PADRAO.aliq_cbs };
   const v = k => esc(NUM_ITEM.includes(k) ? numBR(i[k]) : (i[k]??''));
-  const travaCod = !novo && i.origem_carga==='vilarejo';
-  const ov = modal(novo?'Novo item':`Item ${esc(i.codigo)}`, `
+  const ov = modal(novo?'Novo item':`Item ${esc(i.cod_fabrica||i.cod_interno||i.codigo)}`, `
     <div class="sec-t">Produto</div>
     <div class="grid g4">
-      <label class="f">Cód. Fábrica *<input class="inp" data-k="codigo" value="${v('codigo')}" ${travaCod||!novo?'readonly':''}></label>
-      <label class="f span3">Descrição * <small id="qtdCar"></small><input class="inp" data-k="descricao" value="${v('descricao')}"></label>
+      ${!vazio(i.cod_interno) ? `<label class="f">Cód. Vilarejo<input class="inp" value="${esc(i.cod_interno)}" readonly tabindex="-1" style="background:var(--side);color:var(--muted)"></label>` : ''}
+      <label class="f">Cód. Fábrica *<input class="inp" data-k="cod_fabrica" value="${v('cod_fabrica')}" placeholder="código do item no seu cadastro"></label>
+      <label class="f ${vazio(i.cod_interno)?'span3':'span2'}">Descrição * <small id="qtdCar"></small><input class="inp" data-k="descricao" value="${v('descricao')}"></label>
       <label class="f span2">Origem *<select class="inp" data-k="origem"><option value="">Selecione…</option>${Object.entries(ORIGENS).map(([c,t])=>`<option value="${c}" ${String(i.origem)===c?'selected':''}>${t}</option>`).join('')}</select></label>
       <label class="f">FCI<input class="inp" data-k="fci" value="${v('fci')}" placeholder="XXXXXXXX-XXXX-XXXX-XXXX-XXXXXXXXXXXX"></label>
       <label class="f">% Conteúdo importação<input class="inp" data-k="pct_importacao" value="${v('pct_importacao')}" inputmode="decimal"></label>
@@ -1944,8 +2044,10 @@ function editarItem(it){
   ov.addEventListener('input', destacar); ov.addEventListener('change', destacar); destacar();
   function salvarIt(o){
     const n = lerForm(o);
-    if (vazio(n.codigo)) return aviso('itMsg','Informe o código do item.','erro');
-    if (novo && ITENS.some(x => String(x.codigo)===String(n.codigo))) return aviso('itMsg','Já existe um item com esse código.','erro');
+    if (vazio(n.cod_fabrica)) return aviso('itMsg','Informe o Cód. Fábrica do item.','erro');
+    if (ITENS.some(x => x!==it && (String(x.cod_fabrica)===String(n.cod_fabrica) || (novo && String(x.codigo)===String(n.cod_fabrica)))))
+      return aviso('itMsg','Já existe outro item com esse Cód. Fábrica.','erro');
+    if (novo) n.codigo = n.cod_fabrica;   // item incluído pelo fornecedor: a chave é o próprio Cód. Fábrica
     if (novo) ITENS.push(n); else Object.assign(it, n);
     o.remove(); renderF2();
     const fl = faltasItem(n);
@@ -1996,19 +2098,24 @@ $('f2Importar').onclick = () => {
   let lidos = [];
   const ov = modal('Importar planilha de itens', `
     <p style="color:var(--ink-soft);font-size:13px;line-height:1.5;margin:0">Use a planilha baixada em <b>Baixar planilha</b> (Excel), preencha e envie o arquivo <b>.xlsx</b> aqui. Também aceita CSV.
-    Itens com o mesmo código são atualizados; códigos novos são incluídos. Células vazias não apagam o que já está preenchido.</p>
+    Os itens são reconhecidos pelo <b>Cód. Interno</b> (não altere essa coluna) ou pelo <b>Cód. Fábrica</b>; itens novos precisam do Cód. Fábrica. Células vazias não apagam o que já está preenchido.</p>
     <input type="file" class="inp" id="ipArq" accept=".xlsx,.csv,.txt">
     <textarea class="inp" id="ipTxt" rows="6" placeholder="…ou cole aqui as linhas copiadas do Excel (com o cabeçalho)"></textarea>
     <div class="msg" id="ipMsg"></div>`,
     [['Cancelar','',o=>o.remove()], ['Importar','pri', o => {
       if (!lidos.length) return aviso('ipMsg','Nada para importar.','erro');
       let novos = 0, atual = 0;
+      let ign = 0;
       lidos.forEach(n => {
-        const ex = ITENS.find(x => String(x.codigo)===String(n.codigo));
-        if (ex){ Object.entries(n).forEach(([k,val]) => { if (k!=='_cnpj' && !vazio(val)) ex[k] = val; }); atual++; }
-        else { const c = { origem_carga:'fornecedor', ...n }; delete c._cnpj; ITENS.push(c); novos++; }
+        const ex = (!vazio(n.cod_interno) && ITENS.find(x => String(x.cod_interno)===String(n.cod_interno)))
+                || (!vazio(n.cod_fabrica) && ITENS.find(x => String(x.cod_fabrica)===String(n.cod_fabrica) || String(x.codigo)===String(n.cod_fabrica)));
+        const proibido = ['_cnpj','_fornome','_razao','cod_interno','codigo','cod_departamento','departamento','cod_secao','secao','cod_categoria','categoria'];
+        if (ex){ Object.entries(n).forEach(([k,val]) => { if (!proibido.includes(k) && !vazio(val)) ex[k] = val; }); atual++; }
+        else if (!vazio(n.cod_fabrica)){ const c = { origem_carga:'fornecedor' }; Object.entries(n).forEach(([k,val]) => { if (!proibido.includes(k)) c[k] = val; });
+          c.codigo = n.cod_fabrica; ITENS.push(c); novos++; }
+        else ign++;   // só Código interno, sem item correspondente: não dá para incluir
       });
-      o.remove(); renderF2(); toast(`${atual} atualizado(s) e ${novos} novo(s). Não esqueça de salvar.`);
+      o.remove(); renderF2(); toast(`${atual} atualizado(s) e ${novos} novo(s)${ign?`; ${ign} linha(s) sem Cód. Fábrica ignorada(s)`:''}. Não esqueça de salvar.`);
     }]]);
   const analisar = txt => {
     const r = lerPlanilhaItens(txt); lidos = [];
@@ -2021,7 +2128,7 @@ $('f2Importar').onclick = () => {
 };
 
 async function salvarF2(finalizar){
-  const payload = ITENS.map(i => { const o = {}; CAMPOS_FORN.forEach(([k]) => { if (k!=='qtd_caract') o[k] = i[k]===undefined?null:i[k]; }); return o; });
+  const payload = ITENS.map(i => { const o = { codigo: i.codigo }; CAMPOS_FORN.forEach(([k]) => { if (k!=='qtd_caract' && k!=='cod_interno') o[k] = i[k]===undefined?null:i[k]; }); return o; });
   const { error } = await sb.rpc('fase2_salvar', { p_token: TOKEN, p_itens: payload, p_finalizar: !!finalizar });
   if (error){ toast('Não foi possível salvar. Tente novamente.'); return false; }
   SNAP2 = JSON.stringify(ITENS);

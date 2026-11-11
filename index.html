@@ -57,6 +57,15 @@ header{background:linear-gradient(100deg,var(--nav1) 0%,var(--nav2) 56%,var(--na
 .logo-txt{font-weight:800;font-size:32px;letter-spacing:-.03em;color:#fff;line-height:1}
 .logo-txt sup{font-size:11px}
 .tagline{border-left:1px solid rgba(255,255,255,.28);padding-left:18px;line-height:1.2}
+/* abas do fornecedor: um link só, duas partes */
+.ptabs{display:flex;gap:6px;margin:0 auto;background:rgba(0,0,0,.16);padding:4px;border-radius:11px}
+.ptabs button{border:0;background:transparent;color:#fff;font:inherit;font-size:13.5px;font-weight:600;padding:8px 16px;border-radius:8px;cursor:pointer;white-space:nowrap}
+.ptabs button b{display:inline-grid;place-items:center;width:20px;height:20px;border-radius:50%;background:rgba(255,255,255,.22);font-size:12px;margin-right:2px}
+.ptabs button:hover{background:rgba(255,255,255,.12)}
+.ptabs button.on{background:#fff;color:var(--green-ink)}
+.ptabs button.on b{background:var(--green);color:#fff}
+.ptabs .sm{display:none}
+@media(max-width:760px){.ptabs .lg{display:none}.ptabs .sm{display:inline}.ptabs button{padding:7px 10px}}
 .tagline .t1{font-weight:400;font-size:14px;color:#d3f0dd}
 .tagline .t2{font-weight:700;font-size:14px}
 .header-right{margin-left:auto;display:flex;align-items:center;gap:16px}
@@ -261,6 +270,13 @@ dl.kv dd{margin:0;font-weight:600;word-break:break-word}
 .okc{color:var(--green-ink);font-weight:700}
 tr.clic{cursor:pointer}
 #vw-f2{height:100vh;display:flex;flex-direction:column;background:var(--side);overflow:hidden}
+/* campos faltantes em destaque */
+#f2Body tr.pend td{background:#fff4f4}
+#f2Body tr.pend td:first-child{box-shadow:inset 3px 0 0 #d93025}
+#f2Body td.cel-falta{color:#d93025;font-weight:700}
+.inp.inp-falta{border-color:#d93025;background:#fff4f4;box-shadow:0 0 0 1px #d93025 inset}
+.f2aviso{margin:0 24px 10px;padding:9px 13px;border-radius:9px;background:#fff4f4;border:1px solid #f3c2bf;color:#8a1c14;font-size:13px}
+.f2aviso b{color:#d93025}
 #vw-f2 > header{flex:0 0 auto}
 .f2card{background:#fff;border:1px solid var(--line);border-radius:16px;box-shadow:0 4px 18px rgba(18,34,62,.06);flex:1;min-height:0;margin:16px 20px;display:flex;flex-direction:column}
 .f2card .tblbox{flex:1;min-height:0;display:flex;flex-direction:column}
@@ -491,11 +507,15 @@ code.cf{background:var(--side);border:1px solid var(--line);border-radius:6px;pa
   <header>
     <div class="brand">
       <img class="logo-elo" data-logo="elo" alt="elo Sistemas">
-      <div class="tagline"><div class="t1">Rede Vilarejo · Reforma Tributária</div><div class="t2">Tributação dos itens · IBS/CBS</div></div>
+      <div class="tagline"><div class="t1">Rede Vilarejo · Reforma Tributária</div><div class="t2">Cadastro de fornecedores · IBS/CBS</div></div>
     </div>
+    <nav class="ptabs" aria-label="Partes do cadastro">
+      <button type="button" data-parte="1"><b>1</b><span class="lg"> · Dados da empresa</span><span class="sm"> Empresa</span></button>
+      <button type="button" data-parte="2"><b>2</b><span class="lg"> · Itens (produtos)</span><span class="sm"> Itens</span></button>
+    </nav>
+    <div class="vil-chip"><img data-logo="vilarejo" alt="Rede Vilarejo"></div>
   </header>
   <div class="f2card" id="f2Card">
-    <div class="f-vil"><img data-logo="vilarejo" alt="Rede Vilarejo"></div>
     <div class="hd" style="padding-top:0">
       <h3 id="f2Tit">Itens que vocês fornecem à Rede Vilarejo</h3>
       <p>Informe, para cada item, os dados de cadastro e tributação que vão na nota fiscal (campos com * são obrigatórios). Para IBS/CBS, a maioria dos materiais de construção tem tributação integral
@@ -511,6 +531,7 @@ code.cf{background:var(--side);border:1px solid var(--line);border-radius:6px;pa
       <button class="btn" id="f2Importar">Importar planilha</button>
       <button class="btn pri" id="f2Novo">+ Item</button>
     </div>
+    <div class="f2aviso hide" id="f2Aviso"></div>
     <div class="f2cont"><span>Itens: <b id="f2cTot">0</b> un</span><span>Completos: <b id="f2cOk">0</b> un</span><span>Faltando: <b id="f2cFalta" class="falta">0</b> un</span></div>
     <div class="tblbox">
      <div id="f2Wrap">
@@ -549,7 +570,11 @@ code.cf{background:var(--side);border:1px solid var(--line);border-radius:6px;pa
       <img class="logo-elo" data-logo="elo" alt="elo Sistemas">
       <div class="tagline"><div class="t1">Rede Vilarejo · Reforma Tributária</div><div class="t2">Cadastro de fornecedores · IBS/CBS</div></div>
     </div>
-    <div class="vil-chip" style="margin-left:auto"><img data-logo="vilarejo" alt="Rede Vilarejo"></div>
+    <nav class="ptabs" aria-label="Partes do cadastro">
+      <button type="button" data-parte="1"><b>1</b><span class="lg"> · Dados da empresa</span><span class="sm"> Empresa</span></button>
+      <button type="button" data-parte="2"><b>2</b><span class="lg"> · Itens (produtos)</span><span class="sm"> Itens</span></button>
+    </nav>
+    <div class="vil-chip"><img data-logo="vilarejo" alt="Rede Vilarejo"></div>
   </header>
   <div class="fbody">
     <div class="fcard" id="fCard">
@@ -632,7 +657,8 @@ code.cf{background:var(--side);border:1px solid var(--line);border-radius:6px;pa
               <label><input type="checkbox" name="tratamentos" value="Isenção">Isenção</label>
               <label><input type="checkbox" name="tratamentos" value="Regime específico">Regime específico</label>
               <label><input type="checkbox" name="tratamentos" value="Outro">Outro</label>
-            </div></div>
+            </div>
+            <input class="inp hide" id="tratamentos_outro" maxlength="200" placeholder="Qual? Descreva o outro tratamento diferenciado *"></div>
           <div class="q"><span>A nota fiscal (NF-e) de vocês já sai com os campos de IBS/CBS? *</span>
             <div class="radios">
               <label><input type="radio" name="nfe_ibs_cbs" value="Sim">Sim, já emitimos</label>
@@ -647,7 +673,7 @@ code.cf{background:var(--side);border:1px solid var(--line);border-radius:6px;pa
       <!-- Passo 4 -->
       <div class="fstep hide" data-p="3">
         <h3>Responsável pelas informações</h3>
-        <p class="hint">Quem podemos procurar se houver dúvida sobre as respostas.</p>
+        <p class="hint">Quem podemos procurar se houver dúvida sobre as respostas. Nome, e-mail e telefone serão usados só para falar sobre este cadastro, conforme a LGPD (Lei nº 13.709/2018).</p>
         <div class="grid g3">
           <label class="f span2">Nome *<input class="inp" id="responsavel_nome"></label>
           <label class="f">Cargo<input class="inp" id="responsavel_cargo" placeholder="Ex.: Contador, Fiscal"></label>
@@ -692,8 +718,12 @@ code.cf{background:var(--side);border:1px solid var(--line);border-radius:6px;pa
    1.8 · 05/11/2026 · Sobre: dados do GitHub e da hospedagem (Vercel)
    1.9 · 11/11/2026 · Perfil da empresa com marcação múltipla (fabricante, importador, distribuidor, representante)
    2.0 · 11/11/2026 · Pergunta "Quais tratamentos diferenciados?" (marcação múltipla) quando o fornecedor responde Sim
+   2.1 · 11/11/2026 · Tratamentos diferenciados: "Outro" abre campo para descrever
+   2.2 · 11/11/2026 · Link único para o fornecedor (abas Dados da empresa / Itens); convite único com motivo, base de
+                      fornecedores ativos, opções de preenchimento e aviso LGPD; campos faltantes em destaque nos itens
+                      carregados pela Vilarejo
    ============================================================ */
-const VERSAO = { num:'2.0', data:'11/11/2026' };
+const VERSAO = { num:'2.2', data:'11/11/2026' };
 
 /* Dados da tela "Sobre o sistema" — manter atualizado */
 const SOBRE = {
@@ -818,7 +848,18 @@ $('lpVersao').innerHTML = `<i></i>Versão <b>${VERSAO.num}</b> · ${VERSAO.data}
 /* ======================= ROTEAMENTO ======================= */
 const PARAMS = new URLSearchParams(location.search);
 const TOKEN = PARAMS.get('t');
-const FASE = PARAMS.get('fase');
+const FASE = PARAMS.get('fase');   // sem "fase": abre a parte 1 (ou a 2, se a 1 já foi enviada)
+
+/* um link só para o fornecedor: as abas trocam de parte sem perder o que foi digitado (salva como rascunho antes) */
+let SNAP1 = null, SNAP2 = null, PARTE = null;
+async function trocarParte(alvo){
+  if (alvo===PARTE) return;
+  if (PARTE==='1' && SNAP1!==null && JSON.stringify(coletar())!==SNAP1) await salvar(false);
+  if (PARTE==='2' && SNAP2!==null && JSON.stringify(ITENS)!==SNAP2) await salvarF2(false);
+  location.search = `?t=${encodeURIComponent(TOKEN)}&fase=${alvo}`;
+}
+document.querySelectorAll('.ptabs button').forEach(b => b.onclick = () => trocarParte(b.dataset.parte));
+function marcarAba(n){ PARTE = n; document.querySelectorAll('.ptabs button').forEach(b => b.classList.toggle('on', b.dataset.parte===n)); }
 
 /* =========================================================
    PAINEL (equipe)
@@ -975,7 +1016,55 @@ document.querySelectorAll('.nav-item[data-pg]').forEach(n => n.onclick = () => {
 });
 
 const linkDe = f => `${location.origin}${location.pathname}?t=${f.token}`;
-const msgConvite = f => `Olá${f.contato?', '+f.contato.split(' ')[0]:''}! A Rede Vilarejo está levantando informações dos fornecedores para a Reforma Tributária (IBS/CBS). Pedimos, por gentileza, que a ${f.nome_fantasia||f.razao_social} preencha o formulário abaixo (leva poucos minutos):\n\n${linkDe(f)}\n\nObrigado!`;
+const ASSUNTO_CONVITE = 'Rede Vilarejo · Atualização cadastral para a Reforma Tributária (IBS/CBS)';
+/* convite único: o mesmo link abre a parte 1 (empresa) e a parte 2 (itens) */
+const msgConvite = f => {
+  const nome = f.nome_fantasia || f.razao_social;
+  return `Olá${f.contato ? ', ' + f.contato.split(' ')[0] : ''}!
+
+A ${nome} faz parte da base de fornecedores ativos da Rede Vilarejo, e por isso estamos entrando em contato.
+
+POR QUE ESTAMOS PEDINDO ESTAS INFORMAÇÕES
+A Reforma Tributária criou dois novos tributos, a CBS e o IBS, que vão substituir aos poucos PIS, Cofins, ICMS e ISS. A transição começou em 2026 e vai até 2033. Para que as notas fiscais das nossas compras continuem corretas, e os créditos de imposto sejam aproveitados dos dois lados, precisamos atualizar o cadastro tributário de cada fornecedor e dos itens que ele nos vende.
+
+O QUE PEDIMOS (um link só, em duas partes)
+1. Dados da empresa: CNPJ, endereço, regime tributário e um contato responsável. Leva poucos minutos.
+2. Itens (produtos): dados de cadastro e tributação de cada item (NCM, CST, CEST, IPI, ICMS, MVA, IBS/CBS, GTIN e embalagem). Os itens que vocês já nos vendem hoje já estão carregados, e os campos que faltam aparecem em destaque. Vocês podem escolher como preencher:
+   • corrigir e completar direto na tela; ou
+   • baixar a planilha (Excel), revisar e completar, e importar de volta no mesmo link.
+
+Link exclusivo da ${nome}:
+${linkDe(f)}
+
+Dá para salvar e continuar depois, quantas vezes precisarem. Por ser exclusivo, pedimos que o link não seja encaminhado para fora da empresa.
+
+PROTEÇÃO DE DADOS (LGPD)
+As informações serão usadas apenas para o cadastro de fornecedores e produtos da Rede Vilarejo e para a adequação à Reforma Tributária. Os dados pessoais do contato responsável (nome, e-mail e telefone) servem só para falarmos sobre este cadastro, conforme a Lei nº 13.709/2018 (LGPD).
+
+Qualquer dúvida, é só responder este e-mail.
+
+Atenciosamente,
+Setor de Compras · Rede Vilarejo`;
+};
+/* copia o convite e registra o envio (vale para as duas partes, já que o link é o mesmo) */
+async function copiarConvite(f){
+  const txt = msgConvite(f);
+  let copiou = true;
+  try{ await navigator.clipboard.writeText(txt); }catch{ copiou = false; }
+  const ov = modal('Convite por e-mail', `
+    <p style="margin:0 0 10px;color:${copiou?'var(--green-ink)':'var(--ink-soft)'}">${copiou?'✓ Mensagem copiada. Cole no corpo do e-mail':'Copie a mensagem abaixo e cole no e-mail'}${f.email?' para <b>'+esc(f.email)+'</b>':''}.</p>
+    <label class="f">Assunto<div style="display:flex;gap:8px"><input class="inp" id="cvAss" readonly value="${esc(ASSUNTO_CONVITE)}"><button class="btn sm" id="cvCopAss" type="button">Copiar assunto</button></div></label>
+    <label class="f" style="margin-top:10px">Mensagem<textarea class="inp" rows="14" readonly onfocus="this.select()">${esc(txt)}</textarea></label>`,
+    [['Copiar mensagem','', async () => { try{ await navigator.clipboard.writeText(txt); toast('Mensagem copiada.'); }catch{ toast('Selecione o texto e copie com Ctrl+C.'); } }],
+     ['Fechar','pri',o=>o.remove()]], 'lg');
+  ov.querySelector('#cvCopAss').onclick = async () => { try{ await navigator.clipboard.writeText(ASSUNTO_CONVITE); toast('Assunto copiado.'); }catch{ ov.querySelector('#cvAss').select(); } };
+  const agora = new Date().toISOString(), upd = { atualizado_em:agora };
+  if (!f.link_enviado_em){ upd.link_enviado_em = agora; if (f.status==='pendente') upd.status = 'enviado'; }
+  if (!f.fase2_link_enviado_em){ upd.fase2_link_enviado_em = agora; if (f.status_fase2==='pendente') upd.status_fase2 = 'enviado'; }
+  if (Object.keys(upd).length===1) return;
+  const { error } = await sb.from('fornecedores').update(upd).eq('id', f.id);
+  if (!error){ Object.assign(f, upd); progresso(); render(); progresso2(); render2(); }
+}
 
 async function marcarEnviado(f){
   if (f.link_enviado_em) return;
@@ -989,12 +1078,7 @@ $('tBody').addEventListener('click', async e => {
   const b = e.target.closest('button[data-a]'); if(!b) return;
   const f = FORN.find(x => x.id === b.closest('tr').dataset.id); if(!f) return;
   const a = b.dataset.a;
-  if (a==='copiar'){
-    const txt = msgConvite(f);
-    try{ await navigator.clipboard.writeText(txt); toast(`Convite copiado. Cole no e-mail${f.email?' para '+f.email:''}.`); }
-    catch{ modal('Copie o convite', `<textarea class="inp" rows="9" readonly onfocus="this.select()">${esc(txt)}</textarea>`, [['Fechar','',o=>o.remove()]]); }
-    marcarEnviado(f);
-  }
+  if (a==='copiar') copiarConvite(f);
   if (a==='ver') verRespostas(f);
   if (a==='edit') abrirFornecedor(f);
 });
@@ -1204,7 +1288,7 @@ const ROTULOS = {
   razao_social:'Razão social', nome_fantasia:'Nome fantasia', inscricao_estadual:'Inscrição estadual', cnae:'CNAE principal',
   cep:'CEP', logradouro:'Logradouro', numero:'Número', complemento:'Complemento', bairro:'Bairro', cidade:'Cidade', uf:'UF',
   regime_tributario:'Regime tributário', simples_regime_regular:'Simples: IBS/CBS pelo regime regular', perfil:'Perfil',
-  tratamento_diferenciado:'Produto com tratamento diferenciado', tratamentos:'Tratamentos diferenciados', nfe_ibs_cbs:'NF-e com IBS/CBS', erp:'ERP',
+  tratamento_diferenciado:'Produto com tratamento diferenciado', tratamentos:'Tratamentos diferenciados', tratamentos_outro:'Outro tratamento (descrição)', nfe_ibs_cbs:'NF-e com IBS/CBS', erp:'ERP',
   responsavel_nome:'Responsável', responsavel_cargo:'Cargo', responsavel_email:'E-mail do responsável', responsavel_telefone:'Telefone do responsável',
   observacoes:'Observações'
 };
@@ -1232,7 +1316,7 @@ async function verRespostas(f){
 const SECOES = [
   ['Empresa', ['razao_social','nome_fantasia','inscricao_estadual','cnae']],
   ['Endereço', ['cep','endereco','bairro','cidade_uf']],
-  ['Tributação', ['regime_tributario','simples_regime_regular','perfil','tratamento_diferenciado','tratamentos','nfe_ibs_cbs','erp']],
+  ['Tributação', ['regime_tributario','simples_regime_regular','perfil','tratamento_diferenciado','tratamentos','tratamentos_outro','nfe_ibs_cbs','erp']],
   ['Responsável pelas informações', ['responsavel_nome','responsavel_cargo','responsavel_email','responsavel_telefone','observacoes']]
 ];
 const ROT_REL = { ...ROTULOS, endereco:'Endereço', cidade_uf:'Cidade / UF' };
@@ -1370,31 +1454,35 @@ const numBR = v => vazio(v) ? '' : Number(v).toLocaleString('pt-BR',{maximumFrac
 const lerNum = v => { if (vazio(v)) return null; const n = Number(String(v).replace(/%/g,'').trim().replace(/\./g, m=>m).replace(',', '.')); return isNaN(n) ? null : n; };
 const fmtNCM = v => { const c = dig(v); return c.length===8 ? `${c.slice(0,4)}.${c.slice(4,6)}.${c.slice(6)}` : (v||''); };
 
-function faltasItem(i){
-  /* obrigatórios = só os campos com * do cadastro; os demais só têm o formato conferido se forem preenchidos */
-  const f = [];
-  if (vazio(i.codigo)) f.push('cód. fábrica');
-  if (vazio(i.descricao)) f.push('descrição');
-  if (!/^\d{8}$/.test(dig(i.ncm))) f.push('NCM');
-  if (vazio(i.origem)) f.push('origem');
-  if (!/^\d{2,3}$/.test(dig(i.cst_icms))) f.push('CST');
-  if (!/^\d{7}$/.test(dig(i.cest))) f.push('CEST');
-  if (vazio(i.aliq_ipi)) f.push('% IPI');
-  if (vazio(i.aliq_icms)) f.push('% ICMS');
-  if (vazio(i.mva)) f.push('% MVA');
-  if (!/^\d{3}$/.test(i.cst||'')) f.push('CST IBS/CBS');
-  if (!/^\d{6}$/.test(i.cclasstrib||'')) f.push('cClassTrib');
-  else if (i.cst && i.cclasstrib.slice(0,3)!==i.cst) f.push('cClassTrib ≠ CST');
-  if (vazio(i.aliq_ibs_uf) || vazio(i.aliq_ibs_mun) || vazio(i.aliq_cbs)) f.push('alíquotas IBS/CBS');
-  if (!/^(\d{8}|\d{12}|\d{13}|\d{14})$/.test(dig(i.ean))) f.push('GTIN/EAN');
-  if (vazio(i.qtd_caixa) || +i.qtd_caixa<=0) f.push('qtd. caixa');
-  if (!vazio(i.fci) && !RE_FCI.test(String(i.fci).trim())) f.push('FCI inválida');
-  if (!vazio(i.ean14) && !/^\d{14}$/.test(dig(i.ean14))) f.push('EAN14 inválido');
-  if (!vazio(i.pct_reducao) && (+i.pct_reducao<0 || +i.pct_reducao>100)) f.push('% redução');
-  if (!vazio(i.cst_is) && !/^\d{3}$/.test(i.cst_is)) f.push('CST IS inválido');
-  if (!vazio(i.cclasstrib_is) && !/^\d{6}$/.test(i.cclasstrib_is)) f.push('cClassTrib IS inválido');
-  return f;
-}
+/* regras de cada campo: [chave, nome mostrado, teste "está com problema?"]
+   obrigatórios = só os campos com * do cadastro; os demais só têm o formato conferido se forem preenchidos */
+const REGRAS_ITEM = [
+  ['codigo','cód. fábrica', i => vazio(i.codigo)],
+  ['descricao','descrição', i => vazio(i.descricao)],
+  ['ncm','NCM', i => !/^\d{8}$/.test(dig(i.ncm))],
+  ['origem','origem', i => vazio(i.origem)],
+  ['cst_icms','CST', i => !/^\d{2,3}$/.test(dig(i.cst_icms))],
+  ['cest','CEST', i => !/^\d{7}$/.test(dig(i.cest))],
+  ['aliq_ipi','% IPI', i => vazio(i.aliq_ipi)],
+  ['aliq_icms','% ICMS', i => vazio(i.aliq_icms)],
+  ['mva','% MVA', i => vazio(i.mva)],
+  ['cst','CST IBS/CBS', i => !/^\d{3}$/.test(i.cst||'')],
+  ['cclasstrib','cClassTrib', i => !/^\d{6}$/.test(i.cclasstrib||'')],
+  ['cclasstrib','cClassTrib ≠ CST', i => /^\d{6}$/.test(i.cclasstrib||'') && !!i.cst && i.cclasstrib.slice(0,3)!==i.cst],
+  ['aliq_ibs_uf','% IBS UF', i => vazio(i.aliq_ibs_uf)],
+  ['aliq_ibs_mun','% IBS Mun.', i => vazio(i.aliq_ibs_mun)],
+  ['aliq_cbs','% CBS', i => vazio(i.aliq_cbs)],
+  ['ean','GTIN/EAN', i => !/^(\d{8}|\d{12}|\d{13}|\d{14})$/.test(dig(i.ean))],
+  ['qtd_caixa','qtd. caixa', i => vazio(i.qtd_caixa) || +i.qtd_caixa<=0],
+  ['fci','FCI inválida', i => !vazio(i.fci) && !RE_FCI.test(String(i.fci).trim())],
+  ['ean14','EAN14 inválido', i => !vazio(i.ean14) && !/^\d{14}$/.test(dig(i.ean14))],
+  ['pct_reducao','% redução', i => !vazio(i.pct_reducao) && (+i.pct_reducao<0 || +i.pct_reducao>100)],
+  ['cst_is','CST IS inválido', i => !vazio(i.cst_is) && !/^\d{3}$/.test(i.cst_is)],
+  ['cclasstrib_is','cClassTrib IS inválido', i => !vazio(i.cclasstrib_is) && !/^\d{6}$/.test(i.cclasstrib_is)]
+];
+function faltasItem(i){ return REGRAS_ITEM.filter(r => r[2](i)).map(r => r[1]); }
+/* chaves dos campos com problema (para destacar na tela) */
+function chavesFaltando(i){ return new Set(REGRAS_ITEM.filter(r => r[2](i)).map(r => r[0])); }
 
 /* ---------- planilha de itens (CSV ; com vírgula decimal, abre no Excel) ---------- */
 function csvItens(itens, comFornecedor){
@@ -1623,23 +1711,12 @@ $('f2Status').addEventListener('change', ()=>{ pagina2=0; render2(); });
 $('p2Prev').onclick = ()=>{ pagina2--; render2(); };
 $('p2Next').onclick = ()=>{ pagina2++; render2(); };
 
-const linkFase2 = f => `${linkDe(f)}&fase=2`;
-const msgConvite2 = f => `Olá${f.contato?', '+f.contato.split(' ')[0]:''}! Seguimos com a preparação da Rede Vilarejo para a Reforma Tributária (IBS/CBS). Agora pedimos, por gentileza, que a ${f.nome_fantasia||f.razao_social} informe os dados de cadastro e tributação (NCM, CST, CEST, IPI, ICMS, MVA, IBS/CBS, GTIN e embalagem) dos itens que nos fornece, no link abaixo. Dá para preencher na tela ou baixar a planilha, completar no Excel e importar:\n\n${linkFase2(f)}\n\nObrigado!`;
+/* fase 2 usa o mesmo link e o mesmo convite da fase 1 (copiarConvite) */
 
 $('t2Body').addEventListener('click', async e => {
   const b = e.target.closest('button[data-a]'); if(!b) return;
   const f = FORN.find(x => x.id === b.closest('tr').dataset.id); if(!f) return;
-  if (b.dataset.a==='convite2'){
-    const txt = msgConvite2(f);
-    try{ await navigator.clipboard.writeText(txt); toast(`Convite da fase 2 copiado. Cole no e-mail${f.email?' para '+f.email:''}.`); }
-    catch{ modal('Copie o convite', `<textarea class="inp" rows="10" readonly onfocus="this.select()">${esc(txt)}</textarea>`, [['Fechar','',o=>o.remove()]]); }
-    if (!f.fase2_link_enviado_em){
-      const agora = new Date().toISOString();
-      const upd = { fase2_link_enviado_em:agora, atualizado_em:agora }; if (f.status_fase2==='pendente') upd.status_fase2 = 'enviado';
-      const { error } = await sb.from('fornecedores').update(upd).eq('id', f.id);
-      if (!error){ Object.assign(f, upd); progresso2(); render2(); }
-    }
-  }
+  if (b.dataset.a==='convite2') copiarConvite(f);   // mesmo convite e mesmo link da fase 1
   if (b.dataset.a==='baixar2'){
     const itens = await todosItens(f.id);
     if (!itens) return;
@@ -1752,6 +1829,7 @@ async function iniciarFase2(){
   const f = data.fornecedor;
   $('f2Tit').textContent = `Itens que a ${f.nome_fantasia||f.razao_social} fornece à Rede Vilarejo`;
   ITENS = (data.itens||[]).map(i => ({ ...i }));
+  SNAP2 = JSON.stringify(ITENS); marcarAba('2');
   renderF2();
 }
 
@@ -1766,24 +1844,33 @@ function filtradosF2(){
 }
 function renderF2(){
   POR_F2 = window.innerWidth > 760 ? linhasQueCabem('f2Wrap') : 10;
-  const lista = filtradosF2();
+  /* itens com informação faltando aparecem primeiro */
+  const lista = filtradosF2().map((it,ix)=>({it,ix,f:faltasItem(it).length?0:1})).sort((a,b)=>a.f-b.f||a.ix-b.ix).map(x=>x.it);
   const paginas = Math.max(1, Math.ceil(lista.length/POR_F2));
   if (pagF2 >= paginas) pagF2 = paginas-1;
   const fatia = lista.slice(pagF2*POR_F2, (pagF2+1)*POR_F2);
-  $('f2Body').innerHTML = fatia.length ? fatia.map(i => { const fl = faltasItem(i); return `
-    <tr class="clic" data-cod="${esc(i.codigo)}" title="Clique para editar">
+  $('f2Body').innerHTML = fatia.length ? fatia.map(i => { const fl = faltasItem(i), ch = chavesFaltando(i);
+    const cel = (k, val) => ch.has(k) ? `<td class="col-f2x mono cel-falta">${vazio(val)?'falta':esc(val)}</td>` : `<td class="col-f2x mono">${esc(val??'')}</td>`;
+    return `
+    <tr class="clic${fl.length?' pend':''}" data-cod="${esc(i.codigo)}" title="Clique para editar">
       <td class="mono">${esc(i.codigo)}</td>
       <td title="${esc(i.descricao||'')}">${esc(i.descricao||'')}</td>
-      <td class="col-f2x mono">${esc(fmtNCM(i.ncm))}</td>
-      <td class="col-f2x mono">${esc(i.cst||'')}</td>
-      <td class="col-f2x mono">${esc(i.cclasstrib||'')}</td>
-      <td class="col-f2x mono">${vazio(i.origem)?'':i.origem}</td>
+      ${cel('ncm', fmtNCM(i.ncm))}
+      ${cel('cst', i.cst)}
+      ${cel('cclasstrib', i.cclasstrib)}
+      ${cel('origem', vazio(i.origem)?'':String(i.origem))}
       <td title="${fl.length?esc('Falta: '+fl.join(', ')):'Completo'}">${fl.length?`<span class="falta">Falta: ${esc(fl.join(', '))}</span>`:'<span class="okc">✓ Completo</span>'}</td>
     </tr>`; }).join('') : `<tr><td colspan="7"><div class="empty">${ITENS.length?'Nenhum item no filtro.':'Nenhum item ainda. Use “+ Item” ou “Importar planilha”.'}</div></td></tr>`;
   const ok = ITENS.filter(i => !faltasItem(i).length).length;
   $('f2cTot').textContent = ITENS.length.toLocaleString('pt-BR');
   $('f2cOk').textContent = ok.toLocaleString('pt-BR');
   $('f2cFalta').textContent = (ITENS.length-ok).toLocaleString('pt-BR');
+  /* itens que a Vilarejo já carregou (ativos, já comercializados) */
+  const carg = ITENS.filter(i => i.origem_carga==='vilarejo'), cargFalta = carg.filter(i => faltasItem(i).length).length;
+  $('f2Aviso').classList.toggle('hide', !carg.length);
+  if (carg.length) $('f2Aviso').innerHTML = cargFalta
+    ? `A Rede Vilarejo já carregou <b>${carg.length.toLocaleString('pt-BR')}</b> item(ns) que vocês nos vendem hoje. <b>${cargFalta.toLocaleString('pt-BR')}</b> estão com informação faltando: aparecem primeiro, <b>em vermelho</b>. Clique no item para completar, ou baixe a planilha, revise e importe de volta.`
+    : `A Rede Vilarejo já carregou <b>${carg.length.toLocaleString('pt-BR')}</b> item(ns) que vocês nos vendem hoje, e todos estão completos. Confira e clique em <b>Enviar itens</b>.`;
   $('f2Info').textContent = `${lista.length} item(ns)`;
   $('f2Num').textContent = `${pagF2+1} / ${paginas}`;
   $('f2Prev').disabled = pagF2===0; $('f2Next').disabled = pagF2>=paginas-1;
@@ -1850,7 +1937,19 @@ function editarItem(it){
       ['Cancelar','',o=>o.remove()], ['Salvar item','pri', salvarIt] ], 'lg');
   const contaCar = () => { const n = ov.querySelector('[data-k=descricao]').value.trim().length; ov.querySelector('#qtdCar').textContent = n ? `(${n} caracteres)` : ''; };
   ov.querySelector('[data-k=descricao]').oninput = contaCar; contaCar();
+  /* campos faltando ou inválidos ficam em vermelho e saem do destaque assim que corrigidos */
+  const destacar = () => { const ch = chavesFaltando(lerForm(ov)); ov.querySelectorAll('[data-k]').forEach(el => el.classList.toggle('inp-falta', ch.has(el.dataset.k))); };
+  ov.addEventListener('input', destacar); ov.addEventListener('change', destacar); destacar();
   function salvarIt(o){
+    const n = lerForm(o);
+    if (vazio(n.codigo)) return aviso('itMsg','Informe o código do item.','erro');
+    if (novo && ITENS.some(x => String(x.codigo)===String(n.codigo))) return aviso('itMsg','Já existe um item com esse código.','erro');
+    if (novo) ITENS.push(n); else Object.assign(it, n);
+    o.remove(); renderF2();
+    const fl = faltasItem(n);
+    toast(fl.length ? 'Item salvo. Ainda falta: '+fl.join(', ')+'.' : 'Item completo.');
+  }
+  function lerForm(o){
     const n = { ...i };
     o.querySelectorAll('[data-k]').forEach(el => {
       const k = el.dataset.k;
@@ -1861,12 +1960,7 @@ function editarItem(it){
       else if (k==='unidade_venda') n[k] = el.value.trim().toUpperCase() || null;
       else n[k] = el.value.trim() || null;
     });
-    if (vazio(n.codigo)) return aviso('itMsg','Informe o código do item.','erro');
-    if (novo && ITENS.some(x => String(x.codigo)===String(n.codigo))) return aviso('itMsg','Já existe um item com esse código.','erro');
-    if (novo) ITENS.push(n); else Object.assign(it, n);
-    o.remove(); renderF2();
-    const fl = faltasItem(n);
-    toast(fl.length ? 'Item salvo. Ainda falta: '+fl.join(', ')+'.' : 'Item completo.');
+    return n;
   }
 }
 
@@ -1928,6 +2022,7 @@ async function salvarF2(finalizar){
   const payload = ITENS.map(i => { const o = {}; CAMPOS_FORN.forEach(([k]) => { if (k!=='qtd_caract') o[k] = i[k]===undefined?null:i[k]; }); return o; });
   const { error } = await sb.rpc('fase2_salvar', { p_token: TOKEN, p_itens: payload, p_finalizar: !!finalizar });
   if (error){ toast('Não foi possível salvar. Tente novamente.'); return false; }
+  SNAP2 = JSON.stringify(ITENS);
   return true;
 }
 function telaFimF2(titulo, texto, comVoltar){
@@ -1961,7 +2056,7 @@ $('f2Enviar').onclick = async () => {
 let passo = 0;
 const N_PASSOS = 4;
 const CAMPOS_TXT = ['razao_social','nome_fantasia','inscricao_estadual','cep','logradouro','numero','complemento','bairro','cidade','uf','responsavel_nome','responsavel_email','responsavel_telefone'];
-const EXTRAS_TXT = ['cnae','erp','responsavel_cargo','observacoes'];
+const EXTRAS_TXT = ['cnae','erp','responsavel_cargo','observacoes','tratamentos_outro'];
 const EXTRAS_RADIO = ['simples_regime_regular','tratamento_diferenciado','nfe_ibs_cbs'];
 const EXTRAS_MULTI = ['perfil','tratamentos'];   // várias opções marcadas ao mesmo tempo; gravado como lista
 
@@ -1978,6 +2073,7 @@ function coletar(){
   const extra = {}; EXTRAS_TXT.forEach(k=>extra[k]=$(k).value.trim()); EXTRAS_RADIO.forEach(k=>extra[k]=radio(k)); EXTRAS_MULTI.forEach(k=>extra[k]=multi(k));
   if (d.regime_tributario!=='Simples Nacional') extra.simples_regime_regular = '';
   if (extra.tratamento_diferenciado!=='Sim') extra.tratamentos = [];
+  if (!extra.tratamentos.includes('Outro')) extra.tratamentos_outro = '';
   d.respostas = extra; return d;
 }
 
@@ -1989,6 +2085,9 @@ async function iniciarFormulario(){
     return;
   }
   const f = data.fornecedor, r = data.resposta;
+  /* link sem parte indicada e parte 1 já enviada: vai direto para os itens */
+  if (!FASE && r && r.finalizado){ location.replace(`?t=${encodeURIComponent(TOKEN)}&fase=2`); return; }
+  marcarAba('1');
   $('cnpj').value = fmtCNPJ(f.cnpj);
   if (r){
     CAMPOS_TXT.forEach(k => { if (r[k]!=null) $(k).value = k==='cep'?fmtCEP(r[k]):r[k]; });
@@ -2013,11 +2112,15 @@ async function iniciarFormulario(){
     } else aviso('msg_cnpj','');
   }
   toggleSimples(); toggleTratamentos(); irPara(0);
+  SNAP1 = JSON.stringify(coletar());
 }
 
 function toggleSimples(){ $('qSimples').classList.toggle('hide', radio('regime_tributario')!=='Simples Nacional'); }
 document.querySelectorAll('input[name="regime_tributario"]').forEach(r=>r.addEventListener('change', toggleSimples));
-function toggleTratamentos(){ $('qTratamentos').classList.toggle('hide', radio('tratamento_diferenciado')!=='Sim'); }
+function toggleTratamentos(){ $('qTratamentos').classList.toggle('hide', radio('tratamento_diferenciado')!=='Sim'); toggleOutro(); }
+/* "Outro" marcado: abre o campo para descrever */
+function toggleOutro(){ const on = multi('tratamentos').includes('Outro'); const el = $('tratamentos_outro'); el.classList.toggle('hide', !on); return on; }
+document.querySelectorAll('input[name="tratamentos"]').forEach(c=>c.addEventListener('change', e => { if (toggleOutro() && e.target.value==='Outro') $('tratamentos_outro').focus(); }));
 document.querySelectorAll('input[name="tratamento_diferenciado"]').forEach(r=>r.addEventListener('change', toggleTratamentos));
 
 $('cep').addEventListener('input', async e => {
@@ -2036,7 +2139,7 @@ function validar(p){
   const d = coletar(), falta = [];
   if (p===0 && !d.razao_social) falta.push('razão social');
   if (p===1){ if(dig(d.cep).length!==8) falta.push('CEP'); if(!d.logradouro) falta.push('logradouro'); if(!d.numero) falta.push('número'); if(!d.cidade) falta.push('cidade'); if(!/^[A-Z]{2}$/.test(d.uf)) falta.push('UF'); }
-  if (p===2){ if(!d.regime_tributario) falta.push('regime tributário'); if(!(d.respostas.perfil||[]).length) falta.push('perfil da empresa'); if(d.respostas.tratamento_diferenciado==='Sim' && !(d.respostas.tratamentos||[]).length) falta.push('quais tratamentos diferenciados'); if(!d.respostas.nfe_ibs_cbs) falta.push('NF-e com IBS/CBS'); }
+  if (p===2){ if(!d.regime_tributario) falta.push('regime tributário'); if(!(d.respostas.perfil||[]).length) falta.push('perfil da empresa'); if(d.respostas.tratamento_diferenciado==='Sim' && !(d.respostas.tratamentos||[]).length) falta.push('quais tratamentos diferenciados'); if((d.respostas.tratamentos||[]).includes('Outro') && !d.respostas.tratamentos_outro) falta.push('descrição do outro tratamento'); if(!d.respostas.nfe_ibs_cbs) falta.push('NF-e com IBS/CBS'); }
   if (p===3){ if(!d.responsavel_nome) falta.push('responsável'); if(!/^\S+@\S+\.\S+$/.test(d.responsavel_email)) falta.push('e-mail do responsável'); }
   if (falta.length){ toast('Preencha: '+falta.join(', ')+'.'); return false; }
   return true;
@@ -2052,8 +2155,10 @@ function irPara(p){
 }
 
 async function salvar(finalizar){
-  const { error } = await sb.rpc('fase1_salvar', { p_token: TOKEN, p_dados: coletar(), p_finalizar: !!finalizar });
+  const dados = coletar();
+  const { error } = await sb.rpc('fase1_salvar', { p_token: TOKEN, p_dados: dados, p_finalizar: !!finalizar });
   if (error){ toast('Não foi possível salvar. Tente novamente.'); return false; }
+  SNAP1 = JSON.stringify(dados);
   return true;
 }
 
@@ -2093,7 +2198,9 @@ $('fAvancar').onclick = async () => {
   $('fAvancar').disabled = false;
   if (!ok) return;
   $('fCard').innerHTML = `<div class="done"><div class="ic">✓</div><h3>Respostas enviadas. Obrigado!</h3>
-    <p style="color:var(--muted);max-width:440px;line-height:1.5">Recebemos as informações da ${esc($('razao_social').value)}. Se precisar corrigir algo, é só abrir o mesmo link de novo.</p></div>`;
+    <p style="color:var(--muted);max-width:460px;line-height:1.5">Recebemos as informações da ${esc($('razao_social').value)}. Agora falta a <b>parte 2: os itens que vocês nos vendem</b>. Se precisar corrigir algo, é só abrir o mesmo link de novo.</p>
+    <button class="btn pri" id="fIrItens" style="margin-top:8px">Seguir para os itens ▶</button></div>`;
+  SNAP1 = null; $('fIrItens').onclick = () => trocarParte('2');
 };
 
 /* ======================= INÍCIO ======================= */

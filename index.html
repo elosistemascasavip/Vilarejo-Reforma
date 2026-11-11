@@ -124,7 +124,7 @@ h1{font-size:23px;font-weight:800;letter-spacing:-.02em;margin:0}
 .tools select.inp{max-width:190px}
 .tools .sp{flex:1}
 .tbl-card{flex:1;min-height:0;border:1px solid var(--line);border-radius:var(--r);box-shadow:var(--card-shadow);display:flex;flex-direction:column;overflow:hidden;background:#fff}
-#tblWrap,#tbl2Wrap,#viWrap{flex:1;min-height:0;overflow:hidden}
+#tblWrap,#tbl2Wrap{flex:1;min-height:0;overflow:hidden}
 table{width:100%;border-collapse:collapse;table-layout:fixed}
 thead th{white-space:nowrap;overflow:hidden;text-overflow:ellipsis;background:#f7f9fc;text-align:left;font-size:11.5px;text-transform:uppercase;letter-spacing:.05em;color:var(--ink-faint);font-weight:700;padding:0 12px;height:40px;border-bottom:1px solid var(--line)}
 tbody td{height:var(--rowh);padding:0 12px;border-bottom:1px solid var(--line);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
@@ -284,10 +284,31 @@ dl.kv dd{margin:0;font-weight:600;word-break:break-word}
 tr.clic{cursor:pointer}
 #vw-f2{height:100vh;display:flex;flex-direction:column;background:var(--side);overflow:hidden}
 /* campos faltantes em destaque */
-#f2Body tr.pend td,#viBody tr.pend td{background:#fff4f4}
-#viBody tr.pend td:first-child{box-shadow:inset 3px 0 0 #d93025}
-#viBody td.cel-falta{color:#d93025;font-weight:700}
-#viBody td{white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+#f2Body tr.pend td{background:#fff4f4}
+/* grade editável dos itens (painel) */
+.vi-card{flex:1;min-height:0;display:flex;flex-direction:column;background:#fff;border:1px solid var(--line);border-radius:14px;overflow:hidden}
+#viWrap{flex:1;min-height:0;overflow:auto}
+#viGrade{border-collapse:separate;border-spacing:0;table-layout:fixed;width:max-content;font-size:12.5px}
+#viGrade th{position:sticky;z-index:3;text-transform:none;letter-spacing:0;font-size:12px;font-weight:700;color:#1f2937;padding:5px 7px;border-right:1px solid #c9ccd3;border-bottom:1px solid #c9ccd3;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;text-align:center}
+#viGrade tr.g th{top:0;height:24px;letter-spacing:.02em}
+#viGrade tr.h th{top:24px;height:30px}
+#viGrade tr.h th b{color:#d93025;margin-left:1px}
+#viGrade th.fixa{z-index:5}
+#viGrade td{height:30px;padding:0 7px;border-right:1px solid #eceef2;border-bottom:1px solid #eceef2;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;background:#fff;cursor:cell}
+#viGrade td.fixa{background:#fafbfc}
+#viGrade td.c2{box-shadow:inset -2px 0 0 #d6d9df}
+#viGrade tr.pend td.c0{box-shadow:inset 3px 0 0 #d93025}
+#viGrade td.falta{background:#fde2e1}
+#viGrade td.falta i{color:#d93025;font-style:normal;font-weight:700;font-size:11.5px}
+#viGrade td.ro{color:var(--muted);cursor:default}
+#viGrade td.sit-p{color:#b45309;font-weight:600}
+#viGrade td.sit-ok{color:var(--green-ink);font-weight:600}
+#viGrade td.sel{outline:2px solid var(--green);outline-offset:-2px}
+#viGrade td.editando{padding:0;outline:2px solid var(--green);outline-offset:-2px}
+#viGrade .vi-ed{width:100%;height:100%;border:0;padding:0 6px;font:inherit;background:#f0fbf3;outline:none}
+.vi-dica{padding:7px 14px;border-top:1px solid var(--line);font-size:11.5px;color:var(--muted);background:#fafbfc}
+.vi-info{color:var(--muted);font-size:13px}
+.vi-salvo{font-size:12.5px;font-weight:600}.vi-salvo.s{color:var(--muted)}.vi-salvo.ok{color:var(--green-ink)}.vi-salvo.e{color:#d93025}
 #pg4 .prog{padding:10px 18px;gap:7px}
 #pg4 .prog-h h3{font-size:14px}
 #pg4 .pct{font-size:20px}
@@ -544,28 +565,21 @@ code.cf{background:var(--side);border:1px solid var(--line);border-radius:6px;pa
           <option value="pend">Com informação faltando</option>
           <option value="ok">Completos</option>
         </select>
+        <span id="viInfo" class="vi-info"></span>
         <span class="sp"></span>
+        <span id="viSalvo" class="vi-salvo"></span>
         <button class="btn" id="viVoltar">◀ Voltar</button>
         <button class="btn pri" id="viBaixar" title="Planilha Excel com os itens deste fornecedor; pendências em vermelho">Baixar itens</button>
       </div>
-      <div class="tbl-card">
+      <style id="viCss"></style>
+      <div class="vi-card">
         <div id="viWrap">
-          <table>
-            <thead><tr>
-              <th style="width:118px">Cód. Interno</th>
-              <th style="width:150px">Cód. Fábrica</th>
-              <th>Descrição</th>
-              <th style="width:112px">NCM</th>
-              <th style="width:92px">CEST</th>
-              <th style="width:300px">Situação</th>
-            </tr></thead>
+          <table id="viGrade">
+            <thead id="viHead"></thead>
             <tbody id="viBody"></tbody>
           </table>
         </div>
-        <div class="pager">
-          <span id="viInfo"></span>
-          <div class="nav"><button class="btn sm" id="viPrev">◀</button><span id="viNum">1 / 1</span><button class="btn sm" id="viNext">▶</button></div>
-        </div>
+        <div class="vi-dica">Clique para selecionar e clique de novo (ou digite) para editar · Enter desce · Tab vai para a direita · Delete apaga · Ctrl+V cola um bloco copiado do Excel · cada alteração é salva na hora</div>
       </div>
      </div>
      <div class="pg hide" id="pg3">
@@ -841,8 +855,10 @@ code.cf{background:var(--side);border:1px solid var(--line);border-radius:6px;pa
                       botões de carga saem das telas Fornecedores e Itens / NCM
    2.7 · 11/11/2026 · Painel: tela "Itens do fornecedor" (clique na linha em Itens / NCM) com os campos que faltam em vermelho,
                       resumo do que mais falta e filtro de pendências; abre sozinha depois de carregar os itens
+   2.8 · 11/11/2026 · Itens do fornecedor (painel): grade tipo planilha com todas as colunas, rolagem contínua, cabeçalho e
+                      3 colunas fixos, edição na célula com gravação imediata, teclado e colar do Excel
    ============================================================ */
-const VERSAO = { num:'2.7', data:'11/11/2026' };
+const VERSAO = { num:'2.8', data:'11/11/2026' };
 
 /* Dados da tela "Sobre o sistema" — manter atualizado */
 const SOBRE = {
@@ -879,7 +895,7 @@ function celStatus(st, rotulo, aberto, ultimo, acessos){
 /* botão copiar: vermelho = ainda não copiado; verde = já copiado/enviado */
 const btCopiar = (acao, enviado, quando) => `<button class="btn sm ${enviado?'cp-ok':'cp-no'}" data-a="${acao}"
   title="${enviado?(quando?'Convite já copiado em '+new Date(quando).toLocaleString('pt-BR'):'Convite já enviado'):'Convite ainda não copiado'}">${enviado?'✓ ':''}Copiar convite</button>`;
-function toast(t){ const d=document.createElement('div'); d.className='toast'; d.textContent=t; document.body.appendChild(d);
+function toast(t){ document.querySelectorAll('.toast').forEach(x=>x.remove()); const d=document.createElement('div'); d.className='toast'; d.textContent=t; document.body.appendChild(d);
   requestAnimationFrame(()=>d.classList.add('show')); setTimeout(()=>{ d.classList.remove('show'); setTimeout(()=>d.remove(),250); },2600); }
 function aviso(id, t, tipo){ const el=$(id); if(!el) return; el.textContent=t; el.style.color = tipo==='erro'?'var(--warn)':tipo==='ok'?'var(--ok)':'var(--muted)'; }
 function show(v){ ['vw-login','vw-painel','vw-form','vw-f2'].forEach(x => $(x).classList.toggle('hide', x!==v)); }
@@ -1114,7 +1130,7 @@ $('fStatus').addEventListener('change', ()=>{ pagina=0; render(); });
 $('pgPrev').onclick = ()=>{ pagina--; render(); };
 $('pgNext').onclick = ()=>{ pagina++; render(); };
 let rsz; window.addEventListener('resize', ()=>{ clearTimeout(rsz); rsz=setTimeout(()=>{
-  if(!$('vw-painel').classList.contains('hide')){ PGATIVA==='1' ? render() : PGATIVA==='2' ? render2() : PGATIVA==='4' ? renderVI() : null; }
+  if(!$('vw-painel').classList.contains('hide')){ PGATIVA==='1' ? render() : PGATIVA==='2' ? render2() : null; }
   if(!$('vw-f2').classList.contains('hide')) renderF2(); },120); });
 document.addEventListener('keydown', e => {
   if (document.querySelector('.ov') || e.target.matches('input,textarea,select')) return;
@@ -1870,26 +1886,68 @@ $('t2Body').addEventListener('click', async e => {
   }
 });
 
-/* ---------- Itens do fornecedor (painel da Vilarejo): lista com o que falta em destaque ---------- */
-let VI_FORN = null, VI_ITENS = [], viPagina = 0;
+/* ---------- Itens do fornecedor (painel da Vilarejo): grade tipo planilha, rolagem contínua, edição na célula ---------- */
+let VI_FORN = null, VI_ITENS = [], VI_LISTA = [], VI_REND = 0, VI_SEL = null, VI_EDIT = null;
+const VI_LOTE = 150;   // linhas desenhadas por vez (as próximas entram ao rolar)
+/* colunas na ordem do cadastro do ERP, nos mesmos blocos e cores da planilha Excel */
+const VI_BLOCOS = [
+  { t:'Identificação', cor:'#e6e6e6', fixo:true, cols:[['cod_interno','Cód. Interno',0,100,'ro'],['cod_fabrica','Cód. Fábrica',1,130],['descricao','Descrição',1,320]] },
+  { t:'', cor:'#e6e6e6', cols:[['fci','FCI',0,150],['qtd_caract','Qtd. Carct.',0,84,'ro']] },
+  { t:'Fiscal', cor:'#fff6b3', cols:[['ncm','NCM/SH',1,96],['origem','Origem',1,72],['cst_icms','CST',1,56],['cest','CEST',1,82],['aliq_ipi','IPI',1,62],['aliq_icms','ICMS',1,62],['mva','MVA',1,62]] },
+  { t:'Reforma Tributária', cor:'#fff6b3', cols:[['cst','CST IBS/CBS',1,98],['cclasstrib','cClassTrib IBS/CBS',1,138],['aliq_ibs_uf','% IBS UF',1,74],['aliq_ibs_mun','% IBS Mun.',1,84],['aliq_cbs','% CBS',1,66],['pct_reducao','% Redução IBS/CBS',0,136],['cst_is','CST IS',0,64],['cclasstrib_is','cClassTrib IS',0,100],['aliq_is','% IS',0,56]] },
+  { t:'Unidade de Venda', cor:'#cfe4ff', cols:[['ean','GTIN13 ou EAN Tributável',1,180]] },
+  { t:'Embalagem Master', cor:'#cfe4ff', cols:[['qtd_caixa','Qtd. Caixa',1,82],['ean14','EAN14',0,130]] },
+  { t:'Complementar', cor:'#dff5e3', cols:[['pct_importacao','% Conteúdo importação',0,160],['zfm','Zona Franca',0,90]] },
+  { t:'Cadastro', cor:'#fff6b3', cols:[['cod_departamento','Cód.',0,56],['departamento','Departamento',0,150],['cod_secao','Cód.',0,56],['secao','Seção',0,150],['cod_categoria','Cód.',0,56],['categoria','Categoria',0,150]] },
+  { t:'', cor:'#e6e6e6', cols:[['_situacao','Situação',0,320,'ro']] }
+];
+const VI_COLS = VI_BLOCOS.flatMap(b => b.cols.map(c => ({ k:c[0], rot:c[1], obrig:!!c[2], w:c[3], ro:c[4]==='ro', cor:b.cor })));
+const VI_FIXAS = 3;   // Cód. Interno, Cód. Fábrica e Descrição ficam presas à esquerda
+const VI_DIG = { ncm:8, cest:7, ean:0, ean14:14, cst_icms:2, cst:3, cclasstrib:6, cst_is:3, cclasstrib_is:6 };
+
+function viTexto(i, k){
+  if (k==='_situacao') return i._f.length ? `Faltam ${i._f.length}: ${i._f.join(', ')}` : '✓ Completo';
+  if (k==='qtd_caract') return vazio(i.descricao) ? '' : String(i.descricao).length;
+  if (k==='ncm') return fmtNCM(i.ncm);
+  if (k==='zfm') return i.zfm ? 'S' : 'N';
+  if (NUM_ITEM.includes(k)) return numBR(i[k]);
+  return i[k] ?? '';
+}
+function viCelula(i, c, r, j, ch){
+  const falta = ch.has(c.k), v = viTexto(i, c.k);
+  const cls = ['c'+j, c.ro?'ro':'', falta?'falta':'', j<VI_FIXAS?'fixa':'', c.k==='_situacao'?(i._f.length?'sit-p':'sit-ok'):''].filter(Boolean).join(' ');
+  return `<td class="${cls}" data-r="${r}" data-j="${j}" title="${esc(String(v))}">${falta && vazio(v) ? '<i>falta</i>' : esc(String(v))}</td>`;
+}
+function viLinha(i, r){
+  const ch = chavesFaltando(i);
+  return `<tr data-r="${r}" class="${i._f.length?'pend':''}">${VI_COLS.map((c,j) => viCelula(i, c, r, j, ch)).join('')}</tr>`;
+}
+function viCabecalho(){
+  let esq = 0; const pos = VI_COLS.map((c,j) => { const p = esq; if (j<VI_FIXAS) esq += c.w; return p; });
+  const g = VI_BLOCOS.map(b => `<th colspan="${b.cols.length}" style="background:${b.cor}${b.fixo?';left:0;z-index:6;box-shadow:inset -2px 0 0 #c9ccd3':''}">${esc(b.t)}</th>`).join('');
+  const h = VI_COLS.map((c,j) => `<th class="c${j}${j<VI_FIXAS?' fixa':''}" style="background:${c.cor};${j<VI_FIXAS?`left:${pos[j]}px;`:''}">${esc(c.rot)}${c.obrig?'<b>*</b>':''}</th>`).join('');
+  const css = VI_COLS.map((c,j) => `#viGrade .c${j}{width:${c.w}px;min-width:${c.w}px;max-width:${c.w}px${j<VI_FIXAS?`;position:sticky;left:${pos[j]}px;z-index:2`:''}}`).join('');
+  $('viCss').textContent = css;
+  $('viHead').innerHTML = `<tr class="g">${g}</tr><tr class="h">${h}</tr>`;
+}
+
 async function abrirItensForn(f){
-  VI_FORN = f; viPagina = 0; $('viBusca').value = ''; $('viFiltro').value = '';
+  VI_FORN = f; VI_SEL = null; viFecharEditor(false); $('viBusca').value = ''; $('viFiltro').value = '';
   $('viCrumb').textContent = f.razao_social; $('viTit').textContent = f.razao_social;
-  $('viSub').textContent = `${fmtCNPJ(f.cnpj)} · em vermelho, o que o fornecedor ainda precisa informar pelo link`;
+  $('viSub').textContent = `${fmtCNPJ(f.cnpj)} · clique na célula para editar; em vermelho, o que falta`;
   PGATIVA = '4'; ['1','2','3','4'].forEach(n => $('pg'+n).classList.toggle('hide', n!=='4'));
   document.querySelectorAll('.nav-item[data-pg]').forEach(x => x.classList.toggle('active', x.dataset.pg==='2'));
-  $('viBody').innerHTML = '<tr><td colspan="6"><div class="empty">Carregando itens…</div></td></tr>';
+  viCabecalho();
+  $('viBody').innerHTML = `<tr><td colspan="${VI_COLS.length}"><div class="empty">Carregando itens…</div></td></tr>`;
   const itens = await todosItens(f.id); if (!itens) return;
   VI_ITENS = itens.map(i => ({ ...i, _f: faltasItem(i) }))
     .sort((a,b) => (b._f.length>0)-(a._f.length>0) || String(a.descricao||'').localeCompare(String(b.descricao||'')));
-  if (VI_ITENS.some(i => i._f.length)) $('viFiltro').value = 'pend';
   resumoVI(); renderVI();
 }
 function resumoVI(){
   const tot = VI_ITENS.length, falta = VI_ITENS.filter(i => i._f.length).length, ok = tot - falta, pct = tot ? Math.round(ok*100/tot) : 0;
   $('viTot').textContent = tot.toLocaleString('pt-BR'); $('viOk').textContent = ok.toLocaleString('pt-BR');
   $('viFalta').textContent = falta.toLocaleString('pt-BR'); $('viPct').textContent = pct+'%'; $('viBar').style.width = pct+'%';
-  /* campos que mais faltam */
   const cont = {}; VI_ITENS.forEach(i => i._f.forEach(c => cont[c] = (cont[c]||0)+1));
   const top = Object.entries(cont).sort((a,b)=>b[1]-a[1]).slice(0,4);
   $('viCampos').innerHTML = top.length ? 'Mais faltam: ' + top.map(([c,n]) => `<b>${esc(c)}</b> (${n.toLocaleString('pt-BR')})`).join(' · ') : '';
@@ -1901,29 +1959,151 @@ function filtradosVI(){
 }
 function renderVI(){
   if ($('pg4').classList.contains('hide')) return;
-  const por = linhasQueCabem('viWrap'), lista = filtradosVI();
-  const paginas = Math.max(1, Math.ceil(lista.length/por));
-  if (viPagina >= paginas) viPagina = paginas-1;
-  const fatia = lista.slice(viPagina*por, (viPagina+1)*por);
-  $('viBody').innerHTML = fatia.length ? fatia.map(i => { const ch = chavesFaltando(i);
-    const cel = (k, val) => ch.has(k) ? `<td class="mono cel-falta">${vazio(val)?'falta':esc(val)}</td>` : `<td class="mono">${esc(val??'')}</td>`;
-    return `<tr class="${i._f.length?'pend':''}">
-      <td class="mono" style="color:var(--muted)">${esc(i.cod_interno||'')}</td>
-      ${cel('cod_fabrica', i.cod_fabrica)}
-      <td title="${esc(i.descricao||'')}">${esc(i.descricao||'')}</td>
-      ${cel('ncm', fmtNCM(i.ncm))}
-      ${cel('cest', i.cest)}
-      <td title="${i._f.length?esc('Falta: '+i._f.join(', ')):'Completo'}">${i._f.length?`<span class="falta">Faltam ${i._f.length}: ${esc(i._f.join(', '))}</span>`:'<span class="okc">✓ Completo</span>'}</td>
-    </tr>`; }).join('') : `<tr><td colspan="6"><div class="empty">${VI_ITENS.length?'Nenhum item no filtro.':'Este fornecedor ainda não tem itens. Carregue em Importação de dados.'}</div></td></tr>`;
-  $('viInfo').textContent = `${lista.length.toLocaleString('pt-BR')} item(ns)`;
-  $('viNum').textContent = `${viPagina+1} / ${paginas}`;
-  $('viPrev').disabled = viPagina===0; $('viNext').disabled = viPagina>=paginas-1;
+  viFecharEditor(false);
+  VI_LISTA = filtradosVI(); VI_REND = 0; VI_SEL = null;
+  $('viBody').innerHTML = VI_LISTA.length ? '' : `<tr><td colspan="${VI_COLS.length}"><div class="empty">${VI_ITENS.length?'Nenhum item no filtro.':'Este fornecedor ainda não tem itens. Carregue em Importação de dados.'}</div></td></tr>`;
+  $('viWrap').scrollTop = 0;
+  viMais();
+  $('viInfo').textContent = `${VI_LISTA.length.toLocaleString('pt-BR')} item(ns)`;
 }
-$('viBusca').addEventListener('input', () => { viPagina = 0; renderVI(); });
-$('viFiltro').addEventListener('change', () => { viPagina = 0; renderVI(); });
-$('viPrev').onclick = () => { viPagina--; renderVI(); };
-$('viNext').onclick = () => { viPagina++; renderVI(); };
-const voltarItens = () => { document.querySelector('.nav-item[data-pg="2"]').click(); };
+function viMais(){   // desenha o próximo lote de linhas
+  if (VI_REND >= VI_LISTA.length) return;
+  const fim = Math.min(VI_LISTA.length, VI_REND + VI_LOTE);
+  $('viBody').insertAdjacentHTML('beforeend', VI_LISTA.slice(VI_REND, fim).map((i,n) => viLinha(i, VI_REND+n)).join(''));
+  VI_REND = fim;
+}
+function viRedesenharLinha(r){
+  const tr = $('viBody').querySelector(`tr[data-r="${r}"]`); if (!tr) return;
+  tr.outerHTML = viLinha(VI_LISTA[r], r);
+  if (VI_SEL && VI_SEL.r===r) viSelecionar(r, VI_SEL.j, false);
+}
+function viTd(r, j){ return $('viBody').querySelector(`td[data-r="${r}"][data-j="${j}"]`); }
+function viSelecionar(r, j, rolar = true){
+  if (r<0 || j<0 || j>=VI_COLS.length || r>=VI_LISTA.length) return;
+  while (r >= VI_REND) viMais();
+  $('viBody').querySelectorAll('td.sel').forEach(t => t.classList.remove('sel'));
+  VI_SEL = { r, j }; const td = viTd(r, j); if (!td) return;
+  td.classList.add('sel');
+  if (rolar) td.scrollIntoView({ block:'nearest', inline:'nearest' });
+}
+
+/* ---------- editor da célula ---------- */
+function viAbrirEditor(r, j, inicial){
+  const c = VI_COLS[j], i = VI_LISTA[r], td = viTd(r, j);
+  if (!td || c.ro) return;
+  viSelecionar(r, j);
+  let el;
+  if (c.k==='origem'){
+    el = document.createElement('select');
+    el.innerHTML = '<option value=""></option>' + Object.entries(ORIGENS).map(([v,t]) => `<option value="${v}" ${String(i.origem)===v?'selected':''}>${esc(t)}</option>`).join('');
+  } else if (c.k==='zfm'){
+    el = document.createElement('select');
+    el.innerHTML = `<option value="false" ${!i.zfm?'selected':''}>N</option><option value="true" ${i.zfm?'selected':''}>S</option>`;
+  } else {
+    el = document.createElement('input');
+    el.value = inicial!==undefined ? inicial : (c.k==='ncm' ? dig(i.ncm) : NUM_ITEM.includes(c.k) ? numBR(i[c.k]) : (i[c.k] ?? ''));
+  }
+  el.className = 'vi-ed';
+  td.classList.add('editando'); td.textContent = ''; td.appendChild(el);
+  VI_EDIT = { r, j, el };
+  el.focus(); if (el.select && inicial===undefined) el.select();
+  el.addEventListener('keydown', e => {
+    if (e.key==='Enter'){ e.preventDefault(); viFecharEditor(true); viSelecionar(r + (e.shiftKey?-1:1), j); }
+    else if (e.key==='Tab'){ e.preventDefault(); viFecharEditor(true); viSelecionar(r, j + (e.shiftKey?-1:1)); }
+    else if (e.key==='Escape'){ e.preventDefault(); viFecharEditor(false); viSelecionar(r, j); }
+  });
+  el.addEventListener('blur', () => setTimeout(() => { if (VI_EDIT && VI_EDIT.el===el) viFecharEditor(true); }, 0));
+  if (el.tagName==='SELECT') el.addEventListener('change', () => { viFecharEditor(true); viSelecionar(r, j); });
+}
+function viFecharEditor(gravar){
+  if (!VI_EDIT) return;
+  const { r, j, el } = VI_EDIT; VI_EDIT = null;
+  const bruto = el.value;
+  if (gravar) viGravar([{ r, k:VI_COLS[j].k, bruto }]);
+  else viRedesenharLinha(r);
+}
+/* converte o que foi digitado/colado no valor do banco; devolve undefined se for inválido */
+function viConverter(k, bruto){
+  const t = String(bruto ?? '').trim();
+  if (t==='' || /^[-–—]+$/.test(t)) return null;
+  if (k==='origem'){ const n = parseInt(t,10); return n>=0 && n<=8 ? n : undefined; }
+  if (k==='zfm') return /^(s|sim|1|x|true)$/i.test(t);
+  if (NUM_ITEM.includes(k)){ const n = lerNum(t); return n===null ? undefined : n; }
+  if (k in VI_DIG){ let d = dig(t); if (!d) return undefined; const p = VI_DIG[k];
+    if (['cst','cst_is','cclasstrib','cclasstrib_is','cst_icms'].includes(k)) d = d.padStart(p,'0');
+    if (k==='ncm' && d.length===7) d = d.padStart(8,'0');
+    return d; }
+  if (k==='unidade_venda') return t.toUpperCase();
+  return t;
+}
+/* grava uma ou várias células (colar do Excel): uma requisição por linha */
+let VI_FILA = Promise.resolve();
+function viGravar(mudancas){
+  const porLinha = {}; let invalidos = 0;
+  mudancas.forEach(({ r, k, bruto }) => {
+    const c = VI_COLS.find(x => x.k===k); if (!c || c.ro) return;
+    const v = viConverter(k, bruto);
+    if (v===undefined){ invalidos++; return; }
+    const i = VI_LISTA[r]; if (!i) return;
+    if (String(i[k] ?? '') === String(v ?? '')) return;
+    (porLinha[r] = porLinha[r] || {})[k] = v;
+  });
+  if (invalidos) toast(`${invalidos} valor(es) inválido(s) não foram gravados.`);
+  const linhas = Object.entries(porLinha);
+  linhas.forEach(([r, upd]) => { const i = VI_LISTA[r]; Object.assign(i, upd); i._f = faltasItem(i); viRedesenharLinha(+r); });
+  if (!linhas.length){ mudancas.forEach(m => viRedesenharLinha(m.r)); return; }
+  resumoVI();
+  $('viSalvo').textContent = 'Salvando…'; $('viSalvo').className = 'vi-salvo s';
+  VI_FILA = VI_FILA.then(async () => {
+    let erro = null;
+    for (let n = 0; n < linhas.length; n += 8){   // até 8 linhas em paralelo
+      const res = await Promise.all(linhas.slice(n, n+8).map(([r, upd]) =>
+        sb.from('itens_fase2').update({ ...upd, atualizado_em:new Date().toISOString() }).eq('id', VI_LISTA[r].id)));
+      erro = erro || res.find(x => x.error)?.error;
+    }
+    if (erro){ $('viSalvo').textContent = 'Erro ao salvar'; $('viSalvo').className = 'vi-salvo e'; toast('Não foi possível salvar: '+erro.message); }
+    else { $('viSalvo').textContent = '✓ Salvo'; $('viSalvo').className = 'vi-salvo ok'; }
+  });
+}
+
+/* ---------- mouse, teclado e colar ---------- */
+$('viBody').addEventListener('click', e => {
+  const td = e.target.closest('td[data-j]'); if (!td || td.classList.contains('editando')) return;
+  const r = +td.dataset.r, j = +td.dataset.j;
+  if (VI_SEL && VI_SEL.r===r && VI_SEL.j===j) viAbrirEditor(r, j); else viSelecionar(r, j, false);
+});
+$('viBody').addEventListener('dblclick', e => { const td = e.target.closest('td[data-j]'); if (td) viAbrirEditor(+td.dataset.r, +td.dataset.j); });
+$('viWrap').addEventListener('scroll', () => { const w = $('viWrap'); if (w.scrollTop + w.clientHeight > w.scrollHeight - 400) viMais(); });
+document.addEventListener('keydown', e => {
+  if ($('pg4').classList.contains('hide') || !VI_SEL || VI_EDIT || document.querySelector('.ov')) return;
+  if (e.target.closest && e.target.closest('input,select,textarea')) return;
+  const { r, j } = VI_SEL;
+  const mov = { ArrowDown:[1,0], ArrowUp:[-1,0], ArrowRight:[0,1], ArrowLeft:[0,-1], Tab:[0, e.shiftKey?-1:1], Enter:[0,0] }[e.key];
+  if (e.key==='Enter' || e.key==='F2'){ e.preventDefault(); return viAbrirEditor(r, j); }
+  if (mov){ e.preventDefault(); return viSelecionar(r+mov[0], j+mov[1]); }
+  if (e.key==='Delete' || e.key==='Backspace'){ e.preventDefault(); return viGravar([{ r, k:VI_COLS[j].k, bruto:'' }]); }
+  if (e.key.length===1 && !e.ctrlKey && !e.metaKey && !e.altKey){ e.preventDefault(); viAbrirEditor(r, j, VI_COLS[j].k==='origem'||VI_COLS[j].k==='zfm' ? undefined : e.key); }
+});
+/* colar do Excel: várias linhas e colunas a partir da célula selecionada */
+document.addEventListener('paste', e => {
+  if ($('pg4').classList.contains('hide') || !VI_SEL || VI_EDIT) return;
+  if (e.target.closest && e.target.closest('input,select,textarea')) return;
+  const txt = (e.clipboardData || window.clipboardData).getData('text'); if (!txt) return;
+  e.preventDefault();
+  const linhas = txt.replace(/\r/g,'').replace(/\n$/,'').split('\n').map(l => l.split('\t'));
+  const mud = [];
+  linhas.forEach((cels, a) => cels.forEach((v, b) => {
+    const r = VI_SEL.r + a, j = VI_SEL.j + b;
+    if (r < VI_LISTA.length && j < VI_COLS.length) mud.push({ r, k:VI_COLS[j].k, bruto:v });
+  }));
+  while (VI_SEL.r + linhas.length > VI_REND && VI_REND < VI_LISTA.length) viMais();
+  viGravar(mud);
+  toast(`${mud.length.toLocaleString('pt-BR')} célula(s) coladas.`);
+});
+
+$('viBusca').addEventListener('input', renderVI);
+$('viFiltro').addEventListener('change', renderVI);
+const voltarItens = () => { viFecharEditor(true); document.querySelector('.nav-item[data-pg="2"]').click(); };
 $('viVoltar').onclick = voltarItens;
 $('viCrumbVolta').onclick = e => { e.preventDefault(); voltarItens(); };
 $('viBaixar').onclick = () => { if (!VI_FORN) return;

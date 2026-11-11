@@ -209,6 +209,9 @@ dl.kv dd{margin:0;font-weight:600;word-break:break-word}
 .fstep p.hint{color:var(--ink-soft);font-size:13.5px;line-height:1.5;margin:0}
 .fnav{display:flex;justify-content:space-between;gap:8px;padding:14px 24px;border-top:1px solid var(--line);flex-wrap:wrap}
 .radios{display:flex;flex-wrap:wrap;gap:8px}
+/* Tributação: duas colunas independentes (uma coluna no celular) */
+.tcols{display:grid;gap:14px}
+.tcol{display:grid;gap:14px;align-content:start;min-width:0}
 .radios label{border:1px solid var(--line);border-radius:9px;padding:8px 12px;cursor:pointer;font-size:13px;font-weight:600;display:flex;gap:6px;align-items:center;color:var(--ink-soft)}
 .radios label:has(input:checked){border-color:var(--green);background:var(--green-tint);color:var(--green-ink)}
 .radios input{accent-color:var(--green)}
@@ -234,9 +237,11 @@ dl.kv dd{margin:0;font-weight:600;word-break:break-word}
   #vw-form .q > span{font-size:clamp(13px,1.8vh,15px)}
   #vw-form .radios{gap:clamp(8px,1vh,12px)}
   #vw-form .radios label{padding:clamp(6px,1.2vh,12px) clamp(11px,1.2vw,18px);font-size:clamp(13px,1.7vh,14.5px)}
-  #vw-form .fstep[data-p="2"]{grid-template-columns:1fr 1fr;column-gap:clamp(28px,4vw,64px)}
-  #vw-form .fstep[data-p="2"] > h3,#vw-form .fstep[data-p="2"] > .hint,#vw-form .fstep[data-p="2"] > label.f{grid-column:1/-1}
-  #vw-form .fstep[data-p="2"] > label.f{max-width:calc(50% - 32px)}
+  #vw-form .tcols{grid-template-columns:1fr 1fr;column-gap:clamp(28px,4vw,64px);align-items:start}
+  #vw-form .tcol{gap:clamp(10px,2.6vh,30px)}
+  /* título e orientação na mesma linha */
+  #vw-form .fstep[data-p="2"]{grid-template-columns:auto 1fr;column-gap:18px;align-items:baseline}
+  #vw-form .fstep[data-p="2"] > .tcols{grid-column:1/-1}
   #vw-form .steps div{padding:clamp(10px,1.8vh,16px) 8px;font-size:clamp(12.5px,1.7vh,14px)}
   #vw-form .fnav{padding:clamp(10px,1.8vh,16px) clamp(24px,3vw,48px)}
 }
@@ -588,40 +593,55 @@ code.cf{background:var(--side);border:1px solid var(--line);border-radius:6px;pa
       <div class="fstep hide" data-p="2">
         <h3>Tributação</h3>
         <p class="hint">Se tiver dúvida em alguma resposta, marque “Não sei”. Seu contador pode ajudar.</p>
-        <div class="q"><span>Regime tributário atual *</span>
-          <div class="radios" data-name="regime_tributario">
-            <label><input type="radio" name="regime_tributario" value="Simples Nacional">Simples Nacional</label>
-            <label><input type="radio" name="regime_tributario" value="MEI">MEI</label>
-            <label><input type="radio" name="regime_tributario" value="Lucro Presumido">Lucro Presumido</label>
-            <label><input type="radio" name="regime_tributario" value="Lucro Real">Lucro Real</label>
-          </div></div>
-        <div class="q hide" id="qSimples"><span>Pretende optar por recolher IBS/CBS pelo regime regular (fora do Simples)?<small>Quem é do Simples pode escolher pagar IBS/CBS por fora. Assim o cliente aproveita o crédito integral.</small></span>
-          <div class="radios">
-            <label><input type="radio" name="simples_regime_regular" value="Sim">Sim</label>
-            <label><input type="radio" name="simples_regime_regular" value="Não">Não</label>
-            <label><input type="radio" name="simples_regime_regular" value="Ainda não decidiu">Ainda não decidimos</label>
-          </div></div>
-        <div class="q"><span>Qual é o perfil da sua empresa? *</span>
-          <div class="radios">
-            <label><input type="radio" name="perfil" value="Fabricante">Fabricante / indústria</label>
-            <label><input type="radio" name="perfil" value="Importador">Importador</label>
-            <label><input type="radio" name="perfil" value="Distribuidor/Atacadista">Distribuidor / atacadista</label>
-            <label><input type="radio" name="perfil" value="Representante">Representante comercial</label>
-          </div></div>
-        <div class="q"><span>Algum produto que vocês vendem tem tratamento diferenciado de IBS/CBS?<small>Por exemplo: alíquota reduzida, isenção ou regime específico.</small></span>
-          <div class="radios">
-            <label><input type="radio" name="tratamento_diferenciado" value="Sim">Sim</label>
-            <label><input type="radio" name="tratamento_diferenciado" value="Não">Não</label>
-            <label><input type="radio" name="tratamento_diferenciado" value="Não sei">Não sei</label>
-          </div></div>
-        <div class="q"><span>A nota fiscal (NF-e) de vocês já sai com os campos de IBS/CBS? *</span>
-          <div class="radios">
-            <label><input type="radio" name="nfe_ibs_cbs" value="Sim">Sim, já emitimos</label>
-            <label><input type="radio" name="nfe_ibs_cbs" value="Em adaptação">Em adaptação</label>
-            <label><input type="radio" name="nfe_ibs_cbs" value="Não">Ainda não</label>
-            <label><input type="radio" name="nfe_ibs_cbs" value="Não sei">Não sei</label>
-          </div></div>
-        <label class="f">Sistema (ERP) que emite as notas<input class="inp" id="erp" placeholder="Ex.: TOTVS, SAP, Bling…"></label>
+        <div class="tcols">
+          <div class="tcol">
+          <div class="q"><span>Regime tributário atual *</span>
+            <div class="radios" data-name="regime_tributario">
+              <label><input type="radio" name="regime_tributario" value="Simples Nacional">Simples Nacional</label>
+              <label><input type="radio" name="regime_tributario" value="MEI">MEI</label>
+              <label><input type="radio" name="regime_tributario" value="Lucro Presumido">Lucro Presumido</label>
+              <label><input type="radio" name="regime_tributario" value="Lucro Real">Lucro Real</label>
+            </div></div>
+          <div class="q hide" id="qSimples"><span>Pretende optar por recolher IBS/CBS pelo regime regular (fora do Simples)?<small>Quem é do Simples pode escolher pagar IBS/CBS por fora. Assim o cliente aproveita o crédito integral.</small></span>
+            <div class="radios">
+              <label><input type="radio" name="simples_regime_regular" value="Sim">Sim</label>
+              <label><input type="radio" name="simples_regime_regular" value="Não">Não</label>
+              <label><input type="radio" name="simples_regime_regular" value="Ainda não decidiu">Ainda não decidimos</label>
+            </div></div>
+          <div class="q"><span>Qual é o perfil da sua empresa? *<small>Marque todos que se aplicam.</small></span>
+            <div class="radios">
+              <label><input type="checkbox" name="perfil" value="Fabricante">Fabricante</label>
+              <label><input type="checkbox" name="perfil" value="Importador">Importador</label>
+              <label><input type="checkbox" name="perfil" value="Distribuidor/Atacadista">Distribuidor</label>
+              <label><input type="checkbox" name="perfil" value="Representante">Representante</label>
+            </div></div>
+          <label class="f">Sistema (ERP) que emite as notas<input class="inp" id="erp" placeholder="Ex.: TOTVS, SAP, Bling…"></label>
+          </div>
+          <div class="tcol">
+          <div class="q"><span>Algum produto que vocês vendem tem tratamento diferenciado de IBS/CBS?<small>Por exemplo: alíquota reduzida, isenção ou regime específico.</small></span>
+            <div class="radios">
+              <label><input type="radio" name="tratamento_diferenciado" value="Sim">Sim</label>
+              <label><input type="radio" name="tratamento_diferenciado" value="Não">Não</label>
+              <label><input type="radio" name="tratamento_diferenciado" value="Não sei">Não sei</label>
+            </div></div>
+          <div class="q hide" id="qTratamentos"><span>Quais tratamentos diferenciados? *<small>Marque todos que se aplicam aos produtos que vocês vendem.</small></span>
+            <div class="radios">
+              <label><input type="checkbox" name="tratamentos" value="Redução de 60%">Redução de 60%</label>
+              <label><input type="checkbox" name="tratamentos" value="Redução de 30%">Redução de 30%</label>
+              <label><input type="checkbox" name="tratamentos" value="Alíquota zero">Alíquota zero</label>
+              <label><input type="checkbox" name="tratamentos" value="Isenção">Isenção</label>
+              <label><input type="checkbox" name="tratamentos" value="Regime específico">Regime específico</label>
+              <label><input type="checkbox" name="tratamentos" value="Outro">Outro</label>
+            </div></div>
+          <div class="q"><span>A nota fiscal (NF-e) de vocês já sai com os campos de IBS/CBS? *</span>
+            <div class="radios">
+              <label><input type="radio" name="nfe_ibs_cbs" value="Sim">Sim, já emitimos</label>
+              <label><input type="radio" name="nfe_ibs_cbs" value="Em adaptação">Em adaptação</label>
+              <label><input type="radio" name="nfe_ibs_cbs" value="Não">Ainda não</label>
+              <label><input type="radio" name="nfe_ibs_cbs" value="Não sei">Não sei</label>
+            </div></div>
+          </div>
+        </div>
       </div>
 
       <!-- Passo 4 -->
@@ -670,8 +690,10 @@ code.cf{background:var(--side);border:1px solid var(--line);border-radius:6px;pa
    1.7 · 05/11/2026 · Planilha em Excel (.xlsx) Elo_Formulario_Reforma no layout do cadastro do ERP: blocos coloridos,
                       cabeçalho em 3 linhas, * vermelho nos obrigatórios; importação lê .xlsx e .csv
    1.8 · 05/11/2026 · Sobre: dados do GitHub e da hospedagem (Vercel)
+   1.9 · 11/11/2026 · Perfil da empresa com marcação múltipla (fabricante, importador, distribuidor, representante)
+   2.0 · 11/11/2026 · Pergunta "Quais tratamentos diferenciados?" (marcação múltipla) quando o fornecedor responde Sim
    ============================================================ */
-const VERSAO = { num:'1.8', data:'05/11/2026' };
+const VERSAO = { num:'2.0', data:'11/11/2026' };
 
 /* Dados da tela "Sobre o sistema" — manter atualizado */
 const SOBRE = {
@@ -1182,13 +1204,14 @@ const ROTULOS = {
   razao_social:'Razão social', nome_fantasia:'Nome fantasia', inscricao_estadual:'Inscrição estadual', cnae:'CNAE principal',
   cep:'CEP', logradouro:'Logradouro', numero:'Número', complemento:'Complemento', bairro:'Bairro', cidade:'Cidade', uf:'UF',
   regime_tributario:'Regime tributário', simples_regime_regular:'Simples: IBS/CBS pelo regime regular', perfil:'Perfil',
-  tratamento_diferenciado:'Produto com tratamento diferenciado', nfe_ibs_cbs:'NF-e com IBS/CBS', erp:'ERP',
+  tratamento_diferenciado:'Produto com tratamento diferenciado', tratamentos:'Tratamentos diferenciados', nfe_ibs_cbs:'NF-e com IBS/CBS', erp:'ERP',
   responsavel_nome:'Responsável', responsavel_cargo:'Cargo', responsavel_email:'E-mail do responsável', responsavel_telefone:'Telefone do responsável',
   observacoes:'Observações'
 };
 function achatar(r){
   if (!r) return {};
   const o = { ...r, ...(r.respostas||{}) }; delete o.respostas;
+  Object.keys(o).forEach(k => { if (Array.isArray(o[k])) o[k] = o[k].join(' · '); });   // perfil com várias opções
   if (o.cep) o.cep = fmtCEP(o.cep);
   return o;
 }
@@ -1209,7 +1232,7 @@ async function verRespostas(f){
 const SECOES = [
   ['Empresa', ['razao_social','nome_fantasia','inscricao_estadual','cnae']],
   ['Endereço', ['cep','endereco','bairro','cidade_uf']],
-  ['Tributação', ['regime_tributario','simples_regime_regular','perfil','tratamento_diferenciado','nfe_ibs_cbs','erp']],
+  ['Tributação', ['regime_tributario','simples_regime_regular','perfil','tratamento_diferenciado','tratamentos','nfe_ibs_cbs','erp']],
   ['Responsável pelas informações', ['responsavel_nome','responsavel_cargo','responsavel_email','responsavel_telefone','observacoes']]
 ];
 const ROT_REL = { ...ROTULOS, endereco:'Endereço', cidade_uf:'Cidade / UF' };
@@ -1939,16 +1962,22 @@ let passo = 0;
 const N_PASSOS = 4;
 const CAMPOS_TXT = ['razao_social','nome_fantasia','inscricao_estadual','cep','logradouro','numero','complemento','bairro','cidade','uf','responsavel_nome','responsavel_email','responsavel_telefone'];
 const EXTRAS_TXT = ['cnae','erp','responsavel_cargo','observacoes'];
-const EXTRAS_RADIO = ['simples_regime_regular','perfil','tratamento_diferenciado','nfe_ibs_cbs'];
+const EXTRAS_RADIO = ['simples_regime_regular','tratamento_diferenciado','nfe_ibs_cbs'];
+const EXTRAS_MULTI = ['perfil','tratamentos'];   // várias opções marcadas ao mesmo tempo; gravado como lista
 
 function radio(n){ const r=document.querySelector(`input[name="${n}"]:checked`); return r?r.value:''; }
 function setRadio(n,v){ const r=document.querySelector(`input[name="${n}"][value="${CSS.escape(v||'')}"]`); if(r) r.checked=true; }
+function multi(n){ return [...document.querySelectorAll(`input[name="${n}"]:checked`)].map(x=>x.value); }
+/* aceita lista ou valor único (respostas antigas, de antes da marcação múltipla) */
+function setMulti(n,v){ const lista = Array.isArray(v) ? v : (v ? [v] : []);
+  document.querySelectorAll(`input[name="${n}"]`).forEach(x => x.checked = lista.includes(x.value)); }
 
 function coletar(){
   const d = {}; CAMPOS_TXT.forEach(k => d[k] = $(k).value.trim());
   d.uf = d.uf.toUpperCase(); d.regime_tributario = radio('regime_tributario');
-  const extra = {}; EXTRAS_TXT.forEach(k=>extra[k]=$(k).value.trim()); EXTRAS_RADIO.forEach(k=>extra[k]=radio(k));
+  const extra = {}; EXTRAS_TXT.forEach(k=>extra[k]=$(k).value.trim()); EXTRAS_RADIO.forEach(k=>extra[k]=radio(k)); EXTRAS_MULTI.forEach(k=>extra[k]=multi(k));
   if (d.regime_tributario!=='Simples Nacional') extra.simples_regime_regular = '';
+  if (extra.tratamento_diferenciado!=='Sim') extra.tratamentos = [];
   d.respostas = extra; return d;
 }
 
@@ -1964,7 +1993,7 @@ async function iniciarFormulario(){
   if (r){
     CAMPOS_TXT.forEach(k => { if (r[k]!=null) $(k).value = k==='cep'?fmtCEP(r[k]):r[k]; });
     setRadio('regime_tributario', r.regime_tributario);
-    const x = r.respostas||{}; EXTRAS_TXT.forEach(k=>{ if(x[k]) $(k).value=x[k]; }); EXTRAS_RADIO.forEach(k=>setRadio(k,x[k]));
+    const x = r.respostas||{}; EXTRAS_TXT.forEach(k=>{ if(x[k]) $(k).value=x[k]; }); EXTRAS_RADIO.forEach(k=>setRadio(k,x[k])); EXTRAS_MULTI.forEach(k=>setMulti(k,x[k]));
     if (r.finalizado) aviso('msg_cnpj','Vocês já enviaram este formulário. Se precisar, atualize e envie de novo.','ok');
   } else {
     preencher('razao_social', f.razao_social); preencher('nome_fantasia', f.nome_fantasia); preencher('inscricao_estadual', f.inscricao_estadual);
@@ -1983,11 +2012,13 @@ async function iniciarFormulario(){
       aviso('msg_cnpj','Dados preenchidos pela Receita Federal. Confira e corrija se precisar.','ok');
     } else aviso('msg_cnpj','');
   }
-  toggleSimples(); irPara(0);
+  toggleSimples(); toggleTratamentos(); irPara(0);
 }
 
 function toggleSimples(){ $('qSimples').classList.toggle('hide', radio('regime_tributario')!=='Simples Nacional'); }
 document.querySelectorAll('input[name="regime_tributario"]').forEach(r=>r.addEventListener('change', toggleSimples));
+function toggleTratamentos(){ $('qTratamentos').classList.toggle('hide', radio('tratamento_diferenciado')!=='Sim'); }
+document.querySelectorAll('input[name="tratamento_diferenciado"]').forEach(r=>r.addEventListener('change', toggleTratamentos));
 
 $('cep').addEventListener('input', async e => {
   e.target.value = fmtCEP(e.target.value);
@@ -2005,7 +2036,7 @@ function validar(p){
   const d = coletar(), falta = [];
   if (p===0 && !d.razao_social) falta.push('razão social');
   if (p===1){ if(dig(d.cep).length!==8) falta.push('CEP'); if(!d.logradouro) falta.push('logradouro'); if(!d.numero) falta.push('número'); if(!d.cidade) falta.push('cidade'); if(!/^[A-Z]{2}$/.test(d.uf)) falta.push('UF'); }
-  if (p===2){ if(!d.regime_tributario) falta.push('regime tributário'); if(!d.respostas.perfil) falta.push('perfil da empresa'); if(!d.respostas.nfe_ibs_cbs) falta.push('NF-e com IBS/CBS'); }
+  if (p===2){ if(!d.regime_tributario) falta.push('regime tributário'); if(!(d.respostas.perfil||[]).length) falta.push('perfil da empresa'); if(d.respostas.tratamento_diferenciado==='Sim' && !(d.respostas.tratamentos||[]).length) falta.push('quais tratamentos diferenciados'); if(!d.respostas.nfe_ibs_cbs) falta.push('NF-e com IBS/CBS'); }
   if (p===3){ if(!d.responsavel_nome) falta.push('responsável'); if(!/^\S+@\S+\.\S+$/.test(d.responsavel_email)) falta.push('e-mail do responsável'); }
   if (falta.length){ toast('Preencha: '+falta.join(', ')+'.'); return false; }
   return true;
@@ -2033,7 +2064,7 @@ $('fLimpar').onclick = () => {
   etapa.querySelectorAll('input:not([readonly]):not([type=radio]), textarea').forEach(el => el.value = '');
   etapa.querySelectorAll('input[type=radio]').forEach(el => el.checked = false);
   etapa.querySelectorAll('.msg').forEach(el => el.textContent = '');
-  toggleSimples();
+  toggleSimples(); toggleTratamentos();
   const primeiro = etapa.querySelector('input:not([readonly]):not([type=radio]), textarea'); if (primeiro) primeiro.focus();
 };
 $('fSalvar').onclick = async () => {

@@ -261,6 +261,18 @@ dl.kv dd{margin:0;font-weight:600;word-break:break-word}
 
 /* ---------- Páginas do painel / fase 2 ---------- */
 .nav-item[data-pg]{cursor:pointer}
+/* Importação de dados */
+.imp-grid{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-top:2px}
+.imp-card{background:#fff;border:1px solid var(--line);border-radius:16px;padding:14px 18px;display:flex;flex-direction:column;gap:8px}
+.imp-card h3{margin:0;font-size:15.5px}
+.imp-card p{margin:0;color:var(--ink-soft);font-size:13px;line-height:1.5}
+.imp-acts{display:flex;gap:8px;align-items:center}.imp-acts .sp{flex:1}
+.imp-wide{grid-column:1/-1}
+.imp-map{display:grid;grid-template-columns:repeat(4,1fr);gap:8px}
+.imp-map div{border:1px solid var(--line);border-radius:10px;padding:6px 10px;display:grid;gap:2px;font-size:12.5px}
+.imp-map b{font-size:12.5px}.imp-map span{color:var(--muted)}.imp-map .ign{color:#b45309}
+.imp-nota{font-size:12.5px!important}
+@media(max-width:900px){.imp-grid{grid-template-columns:1fr}.imp-map{grid-template-columns:1fr 1fr}}
 .nav-item[data-pg]:not(.active):hover{background:#e8ecf4}
 .pg{display:flex;flex-direction:column;gap:14px;flex:1;min-height:0}
 .modal.lg{max-width:900px}
@@ -379,6 +391,9 @@ code.cf{background:var(--side);border:1px solid var(--line);border-radius:6px;pa
         <div class="nav-item" data-pg="2">
           <svg class="ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 7l8-4 8 4-8 4-8-4zM4 7v10l8 4 8-4V7M12 11v10"/></svg>
           Itens / NCM<small>FASE 2</small></div>
+        <div class="nav-item" data-pg="3">
+          <svg class="ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 3v12M7 10l5 5 5-5M4 17v3h16v-3"/></svg>
+          Importação de dados</div>
         <div class="nav-item" id="navSobre" style="cursor:pointer;margin-top:auto">
           <svg class="ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="9"/><path d="M12 11v5M12 8h.01"/></svg>
           Sobre o sistema</div>
@@ -475,7 +490,6 @@ code.cf{background:var(--side);border:1px solid var(--line);border-radius:6px;pa
           <option value="respondido">Enviado</option>
         </select>
         <span class="sp"></span>
-        <button class="btn" id="bt2Import" title="Planilha exportada daqui (editada no Excel) ou do ERP, com CNPJ do fornecedor">Importar planilha</button>
         <button class="btn pri" id="bt2Export" title="Todos os itens, com todas as colunas, no modelo para importar de volta">Exportar planilha</button>
       </div>
       <div class="tbl-card">
@@ -487,7 +501,7 @@ code.cf{background:var(--side);border:1px solid var(--line);border-radius:6px;pa
               <th style="width:110px;text-align:right">Itens (un)</th>
               <th style="width:140px;text-align:right">Completos (un)</th>
               <th style="width:170px">Status</th>
-              <th style="width:300px">Ações</th>
+              <th style="width:280px">Ações</th>
             </tr></thead>
             <tbody id="t2Body"></tbody>
           </table>
@@ -495,6 +509,42 @@ code.cf{background:var(--side);border:1px solid var(--line);border-radius:6px;pa
         <div class="pager">
           <span id="p2Info"></span>
           <div class="nav"><button class="btn sm" id="p2Prev">◀</button><span id="p2Num">1 / 1</span><button class="btn sm" id="p2Next">▶</button></div>
+        </div>
+      </div>
+     </div>
+     <div class="pg hide" id="pg3">
+      <div class="crumb">ELO Reforma › <b>Importação de dados</b></div>
+      <div class="page-head">
+        <div class="page-ico"><svg viewBox="0 0 24 24" fill="none" stroke="#137038" stroke-width="2"><path d="M12 3v12M7 10l5 5 5-5M4 17v3h16v-3"/></svg></div>
+        <h1>Importação de dados</h1>
+      </div>
+      <p class="sub">Carga feita pela Rede Vilarejo. Os itens carregados aparecem no link do fornecedor, com os campos que faltam em destaque, para ele corrigir e completar.</p>
+      <div class="imp-grid">
+        <div class="imp-card">
+          <h3>Itens de um fornecedor</h3>
+          <p>Escolha o fornecedor cadastrado e carregue a planilha dele. Se a planilha tiver itens de outros fornecedores, só entram os dele.</p>
+          <label class="f">Fornecedor<select class="inp" id="impForn"></select></label>
+          <div class="imp-acts"><button class="btn" id="impNovo">+ Novo fornecedor</button><span class="sp"></span><button class="btn pri" id="impCarregar">Carregar planilha</button></div>
+        </div>
+        <div class="imp-card">
+          <h3>Base completa do ERP</h3>
+          <p>Uma planilha com os itens de todos os fornecedores. Cada linha vai para o fornecedor pelo <b>nome</b> (coluna Fornecedor); os nomes não reconhecidos você escolhe na hora.</p>
+          <div class="imp-acts" style="margin-top:auto"><span class="sp"></span><button class="btn pri" id="impBase">Importar base completa</button></div>
+        </div>
+        <div class="imp-card imp-wide">
+          <div style="display:flex;align-items:center;gap:10px"><h3 style="margin:0">Como a planilha do ERP é lida</h3><span class="sp" style="flex:1"></span>
+            <button class="btn sm" id="impModelo" title="Elo_Formulario_Reforma.xlsx em branco, com todas as colunas">Baixar planilha modelo</button></div>
+          <div class="imp-map">
+            <div><b>Código</b><span>Cód. Interno (chave do item)</span></div>
+            <div><b>Referencia</b><span>Cód. Fábrica · vazio = pendente</span></div>
+            <div><b>Descrição</b><span>Descrição</span></div>
+            <div><b>Fornecedor</b><span>associa ao fornecedor pelo nome</span></div>
+            <div><b>EAN</b><span>GTIN13 ou EAN Tributável</span></div>
+            <div><b>NCM · CEST · MVA</b><span>campos de mesmo nome</span></div>
+            <div><b>cClassTrib</b><span>cClassTrib IBS/CBS</span></div>
+            <div title="IPI, Taxa Efetiva, Dif.ICMS e Custo vêm em R$; Peso e Grupo Tributação são internos"><b>IPI · Taxas · Custo · Peso · Grupo</b><span class="ign">não importados (R$ ou internos)</span></div>
+          </div>
+          <p class="imp-nota">Envie sempre <b>.xlsx</b> (no CSV o Excel grava o NCM como 4E+07). O que não vier na planilha fica <b>pendente</b> para o fornecedor; célula vazia ou "-" não apaga o que já existe. Recarregar a mesma planilha atualiza os itens, sem duplicar.</p>
         </div>
       </div>
      </div>
@@ -731,8 +781,10 @@ code.cf{background:var(--side);border:1px solid var(--line);border-radius:6px;pa
                       — requer o SQL ELO_Reforma_v2.4_banco.sql
    2.5 · 11/11/2026 · Carregar itens por fornecedor (botão na linha e "Salvar e carregar itens" no cadastro): planilha vai
                       direto para o fornecedor escolhido, e só entram os itens dele
+   2.6 · 11/11/2026 · Menu "Importação de dados" separado (itens de um fornecedor, base completa do ERP, planilha modelo);
+                      botões de carga saem das telas Fornecedores e Itens / NCM
    ============================================================ */
-const VERSAO = { num:'2.5', data:'11/11/2026' };
+const VERSAO = { num:'2.6', data:'11/11/2026' };
 
 /* Dados da tela "Sobre o sistema" — manter atualizado */
 const SOBRE = {
@@ -947,7 +999,7 @@ async function carregar(){
   FORN = data || [];
   const r2 = await sb.from('vw_fase2_resumo').select('*');
   RES2 = {}; (r2.data||[]).forEach(x => RES2[x.fornecedor_id] = x);
-  progresso(); render(); progresso2(); render2();
+  progresso(); render(); progresso2(); render2(); renderImp();
 }
 
 function progresso(){
@@ -1004,7 +1056,7 @@ $('fStatus').addEventListener('change', ()=>{ pagina=0; render(); });
 $('pgPrev').onclick = ()=>{ pagina--; render(); };
 $('pgNext').onclick = ()=>{ pagina++; render(); };
 let rsz; window.addEventListener('resize', ()=>{ clearTimeout(rsz); rsz=setTimeout(()=>{
-  if(!$('vw-painel').classList.contains('hide')){ PGATIVA==='1' ? render() : render2(); }
+  if(!$('vw-painel').classList.contains('hide')){ PGATIVA==='1' ? render() : PGATIVA==='2' ? render2() : null; }
   if(!$('vw-f2').classList.contains('hide')) renderF2(); },120); });
 document.addEventListener('keydown', e => {
   if (document.querySelector('.ov') || e.target.matches('input,textarea,select')) return;
@@ -1020,8 +1072,8 @@ document.addEventListener('keydown', e => {
 document.querySelectorAll('.nav-item[data-pg]').forEach(n => n.onclick = () => {
   PGATIVA = n.dataset.pg;
   document.querySelectorAll('.nav-item[data-pg]').forEach(x => x.classList.toggle('active', x===n));
-  $('pg1').classList.toggle('hide', PGATIVA!=='1'); $('pg2').classList.toggle('hide', PGATIVA!=='2');
-  PGATIVA==='1' ? render() : render2();
+  ['1','2','3'].forEach(n => $('pg'+n).classList.toggle('hide', PGATIVA!==n));
+  PGATIVA==='1' ? render() : PGATIVA==='2' ? render2() : renderImp();
 });
 
 const linkDe = f => `${location.origin}${location.pathname}?t=${f.token}`;
@@ -1106,7 +1158,7 @@ function modal(titulo, corpo, botoes=[], cls=''){
 
 /* ---------- Novo / editar fornecedor ---------- */
 $('btNovo').onclick = ()=>abrirFornecedor(null);
-function abrirFornecedor(f){
+function abrirFornecedor(f, opts = {}){
   const v = k => esc(f?.[k]||'');
   const ov = modal(f?'Editar fornecedor':'Novo fornecedor', `
     <div class="grid g2">
@@ -1127,7 +1179,7 @@ function abrirFornecedor(f){
     </div><div class="msg" id="mMsg"></div>`,
     [ ...(f && PAPEL==='admin' ? [['Excluir fornecedor','del-out', o => { o.remove(); excluirFornecedor(f); }]] : []),
       ...(f ? [['Buscar na Receita','', () => buscarReceita(f.cnpj)]] : []),
-      ['Cancelar','',o=>o.remove()], ['Salvar e carregar itens','', (o,b) => salvar(o,b,true)], ['Salvar','pri', salvar] ]);
+      ['Cancelar','',o=>o.remove()], ...(opts.carregar ? [['Salvar e carregar itens','pri', (o,b) => salvar(o,b,true)]] : [['Salvar','pri', salvar]]) ]);
   const cn = ov.querySelector('#mCnpj');
   ov.querySelector('#mTel').addEventListener('input', e=>e.target.value=fmtTel(e.target.value));
   /* preenche só os campos vazios: o que já foi digitado nunca é sobrescrito */
@@ -1184,7 +1236,7 @@ function abrirFornecedor(f){
     b.disabled = false;
     if (r.error) return aviso('mMsg', r.error.code==='23505'?'Este CNPJ já está na base.':'Erro: '+r.error.message, 'erro');
     o.remove(); toast('Fornecedor salvo.'); await carregar();
-    if (depoisCarregar && r.data) abrirImportacao(FORN.find(x => x.id===r.data.id) || r.data);
+    if (depoisCarregar && r.data){ renderImp(); $('impForn').value = r.data.id; abrirImportacao(FORN.find(x => x.id===r.data.id) || r.data); }
   }
 }
 
@@ -1730,8 +1782,7 @@ function render2(){
       ${celStatus(f.status_fase2, STATUS2[f.status_fase2], f.fase2_aberto_em, f.fase2_ultimo_acesso_em, f.fase2_acessos)}
       <td><div class="acts">
         ${btCopiar('convite2', !!f.fase2_link_enviado_em || f.status_fase2!=='pendente', f.fase2_link_enviado_em)}
-        <button class="btn sm" data-a="carregar2" title="Carregar a planilha de itens deste fornecedor (ERP ou planilha do sistema)">Carregar</button>
-        <button class="btn sm" data-a="baixar2" title="${r.itens?'Planilha com os itens deste fornecedor':'Planilha em branco para enviar ao fornecedor'}">${r.itens?'Baixar':'Modelo'}</button>
+        <button class="btn sm" data-a="baixar2" title="${r.itens?'Planilha com os itens deste fornecedor':'Planilha em branco para enviar ao fornecedor'}">${r.itens?'Baixar itens':'Baixar modelo'}</button>
       </div></td>
     </tr>`; }).join('') : `<tr><td colspan="6"><div class="empty">${FORN.length?'Nenhum fornecedor encontrado no filtro.':'Nenhum fornecedor na base.'}</div></td></tr>`;
   $('p2Info').textContent = `${lista.length} fornecedor(es)`;
@@ -1749,7 +1800,6 @@ $('t2Body').addEventListener('click', async e => {
   const b = e.target.closest('button[data-a]'); if(!b) return;
   const f = FORN.find(x => x.id === b.closest('tr').dataset.id); if(!f) return;
   if (b.dataset.a==='convite2') copiarConvite(f);   // mesmo convite e mesmo link da fase 1
-  if (b.dataset.a==='carregar2') return abrirImportacao(f);
   if (b.dataset.a==='baixar2'){
     const itens = await todosItens(f.id);
     if (!itens) return;
@@ -1815,7 +1865,17 @@ const MAPA_FORN_KEY = 'eloReforma.mapaFornecedores';
 const lerMapaForn = () => { try{ return JSON.parse(localStorage.getItem(MAPA_FORN_KEY)||'{}'); }catch{ return {}; } };
 const gravarMapaForn = m => { try{ localStorage.setItem(MAPA_FORN_KEY, JSON.stringify(m)); }catch{} };
 
-$('bt2Import').onclick = () => abrirImportacao(null);
+/* ---------- menu Importação de dados (só a equipe da Vilarejo enxerga) ---------- */
+function renderImp(){
+  const sel = $('impForn'), atual = sel.value;
+  sel.innerHTML = '<option value="">Selecione o fornecedor…</option>' + [...FORN].sort((a,b)=>a.razao_social.localeCompare(b.razao_social))
+    .map(f => `<option value="${f.id}">${esc(f.razao_social)}${f.nome_fantasia?' · '+esc(f.nome_fantasia):''} · ${fmtCNPJ(f.cnpj)} · ${(RES2[f.id]?.itens||0).toLocaleString('pt-BR')} item(ns)</option>`).join('');
+  sel.value = FORN.some(f => f.id===atual) ? atual : '';
+}
+$('impCarregar').onclick = () => { const f = FORN.find(x => x.id===$('impForn').value); if (!f) return toast('Escolha o fornecedor.'); abrirImportacao(f); };
+$('impNovo').onclick = () => abrirFornecedor(null, { carregar:true });
+$('impBase').onclick = () => abrirImportacao(null);
+$('impModelo').onclick = () => exportarXlsx([], true);
 /* fixo = fornecedor escolhido (Carregar itens da linha ou do cadastro): todos os itens vão para ele */
 function abrirImportacao(fixo){
   let lidos = null, fornDe = () => null;

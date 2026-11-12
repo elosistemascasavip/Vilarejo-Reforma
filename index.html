@@ -262,6 +262,21 @@ dl.kv dd{margin:0;font-weight:600;word-break:break-word}
 /* ---------- Páginas do painel / fase 2 ---------- */
 .nav-item[data-pg]{cursor:pointer}
 /* Importação de dados */
+.imp-linha{display:flex;gap:10px;align-items:flex-end}
+.imp-rel{flex:1;min-height:0;overflow:auto}
+.imp-vazio{color:var(--muted);font-size:13.5px;padding:18px 4px;text-align:center}
+.rel-h{display:flex;align-items:center;gap:12px}.rel-h h3{margin:0;font-size:16px;flex:1}.rel-h h3 span{color:var(--muted);font-weight:500;font-size:13px;margin-left:6px}
+.rel-carga{font-size:13px;background:#eef7f0;border:1px solid #cfe9d6;border-radius:9px;padding:8px 12px}
+.rel-kpis{display:grid;grid-template-columns:repeat(4,1fr);gap:10px}
+.rel-kpis div{border:1px solid var(--line);border-radius:12px;padding:10px 14px;display:grid;gap:2px}
+.rel-kpis b{font-size:22px}.rel-kpis span{font-size:12px;color:var(--muted)}
+.rel-kpis .ok b{color:var(--green-ink)}.rel-kpis .fal b{color:#d93025}
+.rel-frase{font-size:14px}
+.rel-sub{font-size:12.5px;font-weight:700;color:var(--ink-soft);margin-bottom:6px}
+.rel-lista{display:grid;grid-template-columns:repeat(4,1fr);gap:6px}
+.rel-lista div{display:flex;justify-content:space-between;gap:8px;border:1px solid var(--line);border-radius:9px;padding:6px 10px;font-size:12.5px}
+.rel-lista b{color:#d93025;font-variant-numeric:tabular-nums}
+@media(max-width:900px){.imp-linha{flex-wrap:wrap}.rel-kpis,.rel-lista{grid-template-columns:1fr 1fr}}
 .imp-grid{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-top:2px}
 .imp-card{background:#fff;border:1px solid var(--line);border-radius:16px;padding:14px 18px;display:flex;flex-direction:column;gap:8px}
 .imp-card h3{margin:0;font-size:15.5px}
@@ -527,7 +542,7 @@ code.cf{background:var(--side);border:1px solid var(--line);border-radius:6px;pa
           <option value="respondido">Enviado</option>
         </select>
         <span class="sp"></span>
-        <button class="btn pri" id="bt2Export" title="Todos os itens, com todas as colunas, no modelo para importar de volta">Exportar planilha</button>
+        <button class="btn pri" id="bt2Export" title="Planilha padrão em branco (Elo_Formulario_Reforma), sem itens">Exportar planilha</button>
       </div>
       <div class="tbl-card">
         <div id="tbl2Wrap">
@@ -595,34 +610,17 @@ code.cf{background:var(--side);border:1px solid var(--line);border-radius:6px;pa
         <div class="page-ico"><svg viewBox="0 0 24 24" fill="none" stroke="#137038" stroke-width="2"><path d="M12 3v12M7 10l5 5 5-5M4 17v3h16v-3"/></svg></div>
         <h1>Importação de dados</h1>
       </div>
-      <p class="sub">Carga feita pela Rede Vilarejo. Os itens carregados aparecem no link do fornecedor, com os campos que faltam em destaque, para ele corrigir e completar.</p>
-      <div class="imp-grid">
-        <div class="imp-card">
-          <h3>Itens de um fornecedor</h3>
-          <p>Escolha o fornecedor cadastrado e carregue a planilha dele. Se a planilha tiver itens de outros fornecedores, só entram os dele.</p>
-          <label class="f">Fornecedor<select class="inp" id="impForn"></select></label>
-          <div class="imp-acts"><button class="btn" id="impNovo">+ Novo fornecedor</button><span class="sp"></span><button class="btn pri" id="impCarregar">Carregar planilha</button></div>
+      <p class="sub">Os dados entram só pela <b>planilha padrão do sistema</b> (Elo_Formulario_Reforma). Preencha a planilha com os itens do fornecedor e carregue aqui; os itens aparecem no link dele para corrigir e completar.</p>
+      <div class="imp-card">
+        <div class="imp-linha">
+          <label class="f" style="flex:1">Fornecedor<select class="inp" id="impForn"></select></label>
+          <button class="btn" id="impNovo">+ Novo fornecedor</button>
+          <button class="btn" id="impModelo" title="Elo_Formulario_Reforma.xlsx em branco">Baixar planilha padrão</button>
+          <button class="btn pri" id="impCarregar">Carregar planilha</button>
         </div>
-        <div class="imp-card">
-          <h3>Base completa do ERP</h3>
-          <p>Uma planilha com os itens de todos os fornecedores. Cada linha vai para o fornecedor pelo <b>nome</b> (coluna Fornecedor); os nomes não reconhecidos você escolhe na hora.</p>
-          <div class="imp-acts" style="margin-top:auto"><span class="sp"></span><button class="btn pri" id="impBase">Importar base completa</button></div>
-        </div>
-        <div class="imp-card imp-wide">
-          <div style="display:flex;align-items:center;gap:10px"><h3 style="margin:0">Como a planilha do ERP é lida</h3><span class="sp" style="flex:1"></span>
-            <button class="btn sm" id="impModelo" title="Elo_Formulario_Reforma.xlsx em branco, com todas as colunas">Baixar planilha modelo</button></div>
-          <div class="imp-map">
-            <div><b>Código</b><span>Cód. Interno (chave do item)</span></div>
-            <div><b>Referencia</b><span>Cód. Fábrica · vazio = pendente</span></div>
-            <div><b>Descrição</b><span>Descrição</span></div>
-            <div><b>Fornecedor</b><span>associa ao fornecedor pelo nome</span></div>
-            <div><b>EAN</b><span>GTIN13 ou EAN Tributável</span></div>
-            <div><b>NCM · CEST · MVA</b><span>campos de mesmo nome</span></div>
-            <div><b>cClassTrib</b><span>cClassTrib IBS/CBS</span></div>
-            <div title="IPI, Taxa Efetiva, Dif.ICMS e Custo vêm em R$; Peso e Grupo Tributação são internos"><b>IPI · Taxas · Custo · Peso · Grupo</b><span class="ign">não importados (R$ ou internos)</span></div>
-          </div>
-          <p class="imp-nota">Envie sempre <b>.xlsx</b> (no CSV o Excel grava o NCM como 4E+07). O que não vier na planilha fica <b>pendente</b> para o fornecedor; célula vazia ou "-" não apaga o que já existe. Recarregar a mesma planilha atualiza os itens, sem duplicar.</p>
-        </div>
+      </div>
+      <div class="imp-card imp-rel" id="impRel">
+        <div class="imp-vazio">Escolha um fornecedor para ver a situação dos itens dele, ou carregue uma planilha.</div>
       </div>
      </div>
     </main>
@@ -873,8 +871,12 @@ code.cf{background:var(--side);border:1px solid var(--line);border-radius:6px;pa
                       Fiscal e Reforma Tributária com cores próprias; rolagem lateral de 1 em 1 coluna
    3.3 · 11/11/2026 · Grade: códigos alinhados (números de largura igual, mesma fonte Inter), números à direita, códigos curtos ao centro;
                       todo campo vazio mostra "-" (vermelho se obrigatório, cinza se opcional)
+   3.4 · 11/11/2026 · Peso (kg) importado do ERP e na grade, na tela do fornecedor e no Excel (requer coluna peso no banco);
+                      "Exportar planilha" baixa a planilha padrão em branco; "Baixar itens" baixa os itens cadastrados
+   3.5 · 11/11/2026 · Importação de dados só pela planilha padrão (planilha do ERP é recusada); página enxuta com relatório:
+                      itens cadastrados, completos, com informação faltando e dados que faltam
    ============================================================ */
-const VERSAO = { num:'3.3', data:'11/11/2026' };
+const VERSAO = { num:'3.5', data:'11/11/2026' };
 
 /* Dados da tela "Sobre o sistema" — manter atualizado */
 const SOBRE = {
@@ -1587,12 +1589,12 @@ const CAMPOS_ITEM = [
   ['aliq_ipi','% IPI'], ['aliq_icms','% ICMS'], ['mva','% MVA'],
   ['cst','CST IBS/CBS'], ['cclasstrib','cClassTrib IBS/CBS'], ['aliq_ibs_uf','% IBS UF'], ['aliq_ibs_mun','% IBS Mun.'],
   ['aliq_cbs','% CBS'], ['pct_reducao','% Redução IBS/CBS'], ['cst_is','CST IS'], ['cclasstrib_is','cClassTrib IS'], ['aliq_is','% IS'],
-  ['ean','GTIN13 ou EAN Tributável'], ['qtd_caixa','Qtd. Caixa'], ['ean14','EAN14'],
+  ['ean','GTIN13 ou EAN Tributável'], ['peso','Peso (kg)'], ['qtd_caixa','Qtd. Caixa'], ['ean14','EAN14'],
 ];
 const CAMPOS_FORN = CAMPOS_ITEM.filter(c => !c[2]);
 /* exportados como texto (="...") para o Excel não cortar zeros nem virar notação científica */
 const TXT_ITEM = ['cod_interno','cod_fabrica','ncm','cst_icms','cest','cst','cclasstrib','cst_is','cclasstrib_is','ean','ean14'];
-const NUM_ITEM = ['aliq_ipi','aliq_icms','mva','pct_importacao','aliq_ibs_uf','aliq_ibs_mun','aliq_cbs','pct_reducao','aliq_is','qtd_caixa'];
+const NUM_ITEM = ['aliq_ipi','aliq_icms','mva','pct_importacao','aliq_ibs_uf','aliq_ibs_mun','aliq_cbs','pct_reducao','aliq_is','qtd_caixa','peso'];
 const UNIDADES = ['UN','CX','PC','PCT','M','M2','M3','KG','L','GL','LT','SC','BD','RL','JG','KIT','PAR','CJ','FD','TB'];
 const STATUS2 = { pendente:'Pendente', enviado:'Link enviado', aberto:'Link aberto', em_preenchimento:'Preenchendo', respondido:'Enviado' };
 const RE_FCI = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
@@ -1654,7 +1656,7 @@ const MAPA_ITEM = (() => {
   const m = {}; CAMPOS_ITEM.forEach(([k,l]) => m[norm(l)] = k);
   Object.assign(m, { cod:'cod_fabrica', codigo:'cod_fabrica', referencia:'cod_fabrica', ref:'cod_fabrica', codfornecedor:'cod_fabrica', codigofornecedor:'cod_fabrica',
     codfabrica:'cod_fabrica', codigofabrica:'cod_fabrica', codinterno:'cod_interno', codigointerno:'cod_interno', codvilarejo:'cod_interno',
-    fornecedor:'_fornome', nomefornecedor:'_fornome',
+    fornecedor:'_fornome', nomefornecedor:'_fornome', peso:'peso', pesobruto:'peso', pesoliquido:'peso',
     descricao:'descricao', produto:'descricao', ean:'ean', gtin:'ean', gtin13:'ean', eantributavel:'ean', codigodebarras:'ean', codbarras:'ean',
     ean14:'ean14', dun14:'ean14', ncm:'ncm', ncmsh:'ncm', cest:'cest', origem:'origem', fci:'fci', nfci:'fci', numerofci:'fci',
     conteudoimportacao:'pct_importacao',
@@ -1672,7 +1674,7 @@ function ehPlanilhaERP(linha){
   const ns = linha.map(h => norm(h||''));
   return ns.includes('fornecedor') && (ns.includes('referencia') || ns.includes('custofinalmd') || ns.includes('grupotributacao'));
 }
-const IGNORAR_ERP = ['ipi','peso','grupotributacao','taxaefetiva','dificms','custofinalmd'];   // valores em R$ ou internos: não vão para o fornecedor
+const IGNORAR_ERP = ['ipi','grupotributacao','taxaefetiva','dificms','custofinalmd'];   // valores em R$ ou internos: não vão para o fornecedor
 function mapaCabecalho(linha){
   const erp = ehPlanilhaERP(linha);
   return linha.map((h, j) => {
@@ -1733,7 +1735,7 @@ const LAYOUT_XLSX = [
   { titulo:'Fiscal', cor:'FFE0BD', cols:[['ncm','NCM/SH',1],['origem','Origem',1],['cst_icms','CST',1],['cest','CEST',1],['aliq_ipi','IPI',1],['aliq_icms','ICMS',1],['mva','MVA',1]],
     sub:{ titulo:'Reforma Tributária', cor:'D4EFDA', cols:[['cst','CST IBS/CBS',1],['cclasstrib','cClassTrib IBS/CBS',1],['aliq_ibs_uf','% IBS UF',1],['aliq_ibs_mun','% IBS Mun.',1],
       ['aliq_cbs','% CBS',1],['pct_reducao','% Redução IBS/CBS',0],['cst_is','CST IS',0],['cclasstrib_is','cClassTrib IS',0],['aliq_is','% IS',0]] } },
-  { titulo:'Unidade de Venda', cor:'99CCFF', cols:[['ean','GTIN13 ou EAN Tributável',1]] },
+  { titulo:'Unidade de Venda', cor:'99CCFF', cols:[['ean','GTIN13 ou EAN Tributável',1],['peso','Peso (kg)',0]] },
   { titulo:'Embalagem Master', cor:'99CCFF', cols:[['qtd_caixa','Qtd. Caixa',1],['ean14','EAN14',0]] },
 
 ];
@@ -1905,7 +1907,7 @@ const VI_BLOCOS = [
   { t:'', cor:'#e6e6e6', cols:[['fci','FCI',0,150],['qtd_caract','Qtd. Carct.',0,84,'ro']] },
   { t:'Fiscal', cor:'#ffe0bd', cols:[['ncm','NCM/SH',1,96],['origem','Origem',1,72],['cst_icms','CST',1,56],['cest','CEST',1,82],['aliq_ipi','IPI',1,62],['aliq_icms','ICMS',1,62],['mva','MVA',1,62]] },
   { t:'Reforma Tributária', cor:'#d4efda', cols:[['cst','CST IBS/CBS',1,98],['cclasstrib','cClassTrib IBS/CBS',1,138],['aliq_ibs_uf','% IBS UF',1,74],['aliq_ibs_mun','% IBS Mun.',1,84],['aliq_cbs','% CBS',1,66],['pct_reducao','% Redução IBS/CBS',0,136],['cst_is','CST IS',0,64],['cclasstrib_is','cClassTrib IS',0,100],['aliq_is','% IS',0,56]] },
-  { t:'Unidade de Venda', cor:'#cfe4ff', cols:[['ean','GTIN13 ou EAN Tributável',1,180]] },
+  { t:'Unidade de Venda', cor:'#cfe4ff', cols:[['ean','GTIN13 ou EAN Tributável',1,180],['peso','Peso (kg)',0,80]] },
   { t:'Embalagem Master', cor:'#cfe4ff', cols:[['qtd_caixa','Qtd. Caixa',1,82],['ean14','EAN14',0,130]] },
 
 ];
@@ -1918,7 +1920,7 @@ function viTexto(i, k){
   if (k==='qtd_caract') return vazio(i.descricao) ? '' : String(i.descricao).length;
   if (k==='ncm') return fmtNCM(i.ncm);
   if (k==='zfm') return i.zfm ? 'S' : 'N';
-  if (k==='qtd_caixa') return numBR(i[k]);
+  if (k==='qtd_caixa' || k==='peso') return numBR(i[k]);
   if (NUM_ITEM.includes(k)) return vazio(i[k]) ? '' : Number(i[k]).toLocaleString('pt-BR',{minimumFractionDigits:2,maximumFractionDigits:4});   // alíquotas: 2 casas, vírgulas alinhadas
   return i[k] ?? '';
 }
@@ -2165,17 +2167,8 @@ async function todosItens(fornecedorId){
   return out;
 }
 
-$('bt2Export').onclick = async () => {
-  const itens = await todosItens(null); if (!itens) return;
-  if (!itens.length){
-    await exportarXlsx([], true);
-    return toast('Ainda não há itens: baixada a planilha modelo, só com o cabeçalho.');
-  }
-  const porId = {}; FORN.forEach(f => porId[f.id] = f);
-  const linhas = itens.map(i => ({ ...i, _cnpj:porId[i.fornecedor_id]?.cnpj||'', _razao:porId[i.fornecedor_id]?.razao_social||'' }))
-    .sort((a,b) => a._razao.localeCompare(b._razao) || String(a.codigo).localeCompare(String(b.codigo)));
-  await exportarXlsx(linhas, true);
-};
+/* Exportar planilha = planilha padrão em branco (Elo_Formulario_Reforma); os itens cadastrados saem em "Baixar itens" */
+$('bt2Export').onclick = async () => { await exportarXlsx([], false); toast('Planilha padrão em branco baixada. Para os itens já cadastrados, use Baixar itens no fornecedor.'); };
 
 /* Importa a planilha exportada acima (ida e volta) ou uma lista do ERP: CNPJ do fornecedor + Cód. Fábrica + qualquer coluna */
 const CAMPOS_IMPORT = CAMPOS_ITEM.map(c => c[0]).filter(k => k!=='qtd_caract');
@@ -2215,8 +2208,37 @@ function renderImp(){
 }
 $('impCarregar').onclick = () => { const f = FORN.find(x => x.id===$('impForn').value); if (!f) return toast('Escolha o fornecedor.'); abrirImportacao(f); };
 $('impNovo').onclick = () => abrirFornecedor(null, { carregar:true });
-$('impBase').onclick = () => abrirImportacao(null);
-$('impModelo').onclick = () => exportarXlsx([], true);
+$('impModelo').onclick = () => exportarXlsx([], false);
+$('impForn').addEventListener('change', () => relatorioImp(FORN.find(x => x.id===$('impForn').value)));
+/* ---------- relatório da Importação de dados: situação dos itens de um fornecedor (e da última carga) ---------- */
+async function relatorioImp(f, carga){
+  const box = $('impRel');
+  if (!f){ box.innerHTML = '<div class="imp-vazio">Escolha um fornecedor para ver a situação dos itens dele, ou carregue uma planilha.</div>'; return; }
+  box.innerHTML = '<div class="imp-vazio">Montando o relatório…</div>';
+  const itens = await todosItens(f.id); if (!itens) return;
+  const tot = itens.length, comFalta = itens.filter(i => faltasItem(i).length), falta = comFalta.length, ok = tot - falta;
+  const pct = tot ? Math.round(ok*100/tot) : 0;
+  const cont = {}; comFalta.forEach(i => faltasItem(i).forEach(c => cont[c] = (cont[c]||0)+1));
+  const campos = Object.entries(cont).sort((a,b) => b[1]-a[1]);
+  const n = v => v.toLocaleString('pt-BR');
+  box.innerHTML = `
+    <div class="rel-h"><h3>${esc(f.razao_social)} <span>${fmtCNPJ(f.cnpj)}</span></h3>
+      ${tot ? '<button class="btn sm" id="impVer">Ver itens na grade ▶</button>' : ''}</div>
+    ${carga ? `<div class="rel-carga">Última carga: <b>${n(carga.lidas)}</b> linha(s) na planilha · <b>${n(carga.novos)}</b> item(ns) novo(s) · <b>${n(carga.atualizados)}</b> atualizado(s)${carga.ignoradas ? ` · <b>${n(carga.ignoradas)}</b> linha(s) ignorada(s)` : ''}</div>` : ''}
+    ${tot ? `
+    <div class="rel-kpis">
+      <div><b>${n(tot)}</b><span>itens cadastrados (un)</span></div>
+      <div class="ok"><b>${n(ok)}</b><span>itens completos (un)</span></div>
+      <div class="fal"><b>${n(falta)}</b><span>itens com informação faltando (un)</span></div>
+      <div><b>${pct}%</b><span>completos</span></div>
+    </div>
+    <div class="rel-frase">${falta ? `Faltam dados em <b>${n(falta)}</b> de <b>${n(tot)}</b> itens.` : `Todos os <b>${n(tot)}</b> itens estão completos.`}</div>
+    ${campos.length ? `<div class="rel-campos"><div class="rel-sub">Dados que faltam (itens sem a informação)</div>
+      <div class="rel-lista">${campos.map(([c,q]) => `<div><span>${esc(c)}</span><b>${n(q)} un</b></div>`).join('')}</div></div>` : ''}`
+    : '<div class="imp-vazio">Este fornecedor ainda não tem itens. Preencha a planilha padrão e clique em Carregar planilha.</div>'}`;
+  const ver = $('impVer'); if (ver) ver.onclick = () => abrirItensForn(f);
+}
+
 /* fixo = fornecedor escolhido (Carregar itens da linha ou do cadastro): todos os itens vão para ele */
 function abrirImportacao(fixo){
   let lidos = null, fornDe = () => null;
@@ -2227,10 +2249,8 @@ function abrirImportacao(fixo){
   const ov = modal(fixo ? `Carregar itens · ${esc(fixo.razao_social)}` : 'Importar planilha de itens', `
     ${fixo ? `<p style="margin:0;padding:9px 12px;border-radius:9px;background:var(--green-soft,#e8f5ec);font-size:13px">Os itens da planilha vão para <b>${esc(fixo.razao_social)}</b> · ${fmtCNPJ(fixo.cnpj)} e já aparecem no link do fornecedor para ele corrigir e completar.</p>` : ''}
     <p style="color:var(--ink-soft);font-size:13px;line-height:1.5;margin:0">
-    Aceita a <b>planilha do ERP</b> (Código, Descrição, Referencia, EAN, Fornecedor, NCM, CEST, MVA, cClassTrib…), a planilha de
-    <b>Exportar planilha</b> editada, ou a planilha devolvida pelo fornecedor. Envie o <b>.xlsx</b> (no CSV o Excel estraga NCM e EAN).<br>
-    O fornecedor é achado pelo <b>CNPJ</b> ou pelo <b>nome</b>; o item, pelo <b>Código interno</b> ou pelo <b>Cód. Fábrica</b>.
-    Item que já existe é atualizado só nas células preenchidas (<b>vazio ou "-" não apaga</b>); item novo entra com os campos da reforma <b>pendentes</b>.</p>
+    Envie a <b>planilha padrão do sistema</b> (Elo_Formulario_Reforma.xlsx) preenchida. O item é reconhecido pelo <b>Cód. Interno</b> ou pelo <b>Cód. Fábrica</b>:
+    item que já existe é atualizado só nas células preenchidas (<b>vazio ou "-" não apaga</b>); item novo entra com o que faltar <b>pendente</b>.</p>
     <label class="f ${fixo?'hide':''}">Fornecedor <small>(só para planilha sem CNPJ e sem nome do fornecedor)</small>
       <select class="inp" id="i2Forn"><option value="">Usar o CNPJ ou o nome de cada linha</option>${opcoesForn}</select></label>
     <input type="file" class="inp" id="i2Arq" accept=".xlsx,.csv,.txt">
@@ -2320,6 +2340,7 @@ function abrirImportacao(fixo){
   ov.querySelector('#i2Arq').onchange = async e => { const f = e.target.files[0]; if (!f) return;
     aviso('i2Msg','Lendo a planilha…');
     try{ lidos = lerPlanilhaItens(await lerArquivo(f)); }catch(er){ lidos = { erro:'Não consegui ler o arquivo: '+er.message }; }
+    if (lidos.erp) lidos = { erro:'Esta é a planilha do ERP. Passe os dados para a planilha padrão do sistema (botão Baixar planilha padrão) e carregue ela.' };
     if (!lidos.erro) nomesPlan = prepararAceitos(lidos);
     analisar(); };
   ov.querySelector('#i2Forn').onchange = analisar;
@@ -2360,12 +2381,14 @@ function abrirImportacao(fixo){
       }
     }
     const novos = linhas.filter(x => x.origem_carga==='vilarejo').length;
-    o.remove(); toast(`${ok.toLocaleString('pt-BR')} item(ns) importados: ${novos.toLocaleString('pt-BR')} novo(s) e ${(ok-novos).toLocaleString('pt-BR')} atualizado(s).`);
+    o.remove(); toast(`${ok.toLocaleString('pt-BR')} item(ns) carregados: ${novos.toLocaleString('pt-BR')} novo(s) e ${(ok-novos).toLocaleString('pt-BR')} atualizado(s).`);
     await carregar();
-    /* mostra em seguida os itens e o que falta (do fornecedor carregado, ou do único fornecedor da planilha) */
+    /* relatório da carga na Importação de dados */
     const fids = [...new Set(linhas.map(x => x.fornecedor_id))];
     const alvo = fixo ? FORN.find(x => x.id===fixo.id) : (fids.length===1 ? FORN.find(x => x.id===fids[0]) : null);
-    if (alvo) abrirItensForn(alvo); else document.querySelector('.nav-item[data-pg="2"]').click();
+    document.querySelector('.nav-item[data-pg="3"]').click();
+    if (alvo){ $('impForn').value = alvo.id;
+      relatorioImp(alvo, { lidas:lidos.itens.length, novos, atualizados:ok-novos, ignoradas:lidos.itens.length - lidos.itens.filter(i => fornDe(i)).length }); }
   }
 }
 
@@ -2481,6 +2504,7 @@ function editarItem(it){
     <div class="sec-t">Unidade de venda e embalagem master</div>
     <div class="grid g3">
       <label class="f">GTIN13 ou EAN Tributável *<input class="inp" data-k="ean" value="${v('ean')}" maxlength="14" inputmode="numeric"></label>
+      <label class="f">Peso (kg)<input class="inp" data-k="peso" value="${v('peso')}" inputmode="decimal"></label>
       <label class="f">Qtd. Caixa *<input class="inp" data-k="qtd_caixa" value="${v('qtd_caixa')}" inputmode="decimal"></label>
       <label class="f">EAN14<input class="inp" data-k="ean14" value="${v('ean14')}" maxlength="14" inputmode="numeric"></label>
     </div>

@@ -525,12 +525,12 @@ code.cf{background:var(--side);border:1px solid var(--line);border-radius:6px;pa
         <div id="tblWrap">
           <table>
             <thead><tr>
-              <th class="col-cnpj" style="width:182px">CNPJ</th>
+              <th class="col-cnpj" style="width:176px">CNPJ</th>
               <th>Razão social</th>
-              <th class="col-ct" style="width:13%">Contato</th>
-              <th class="col-em" style="width:17%">E-mail</th>
-              <th style="width:140px">Status</th>
-              <th style="width:230px">Ações</th>
+              <th class="col-ct" style="width:9%">Contato</th>
+              <th class="col-em" style="width:13%">E-mail</th>
+              <th style="width:120px">Status</th>
+              <th style="width:224px">Ações</th>
             </tr></thead>
             <tbody id="tBody"></tbody>
           </table>
@@ -577,12 +577,12 @@ code.cf{background:var(--side);border:1px solid var(--line);border-radius:6px;pa
         <div id="tbl2Wrap">
           <table>
             <thead><tr>
-              <th class="col-cnpj" style="width:182px">CNPJ</th>
+              <th class="col-cnpj" style="width:176px">CNPJ</th>
               <th>Razão social</th>
-              <th style="width:110px;text-align:right">Itens (un)</th>
-              <th style="width:140px;text-align:right">Completos (un)</th>
-              <th style="width:170px">Status</th>
-              <th style="width:280px">Ações</th>
+              <th style="width:92px;text-align:right">Itens (un)</th>
+              <th style="width:128px;text-align:right">Completos (un)</th>
+              <th style="width:130px">Status</th>
+              <th style="width:252px">Ações</th>
             </tr></thead>
             <tbody id="t2Body"></tbody>
           </table>
@@ -889,8 +889,10 @@ code.cf{background:var(--side);border:1px solid var(--line);border-radius:6px;pa
                       editor da célula e modal do item (alíquotas, peso e qtd. à direita)
    3.9 · 11/11/2026 · Retirado "Aplicar tributação integral": a tributação é preenchida manualmente pelo fornecedor,
                       item a item; item novo não vem mais com alíquotas preenchidas
+   3.10 · 11/11/2026 · Listas de fornecedores: Razão social com mais espaço (só abrevia nome muito grande)
+   3.11 · 11/11/2026 · Campo FCI do item mais largo (código de 36 caracteres aparece inteiro)
    ============================================================ */
-const VERSAO = { num:'3.9', data:'11/11/2026' };
+const VERSAO = { num:'3.11', data:'11/11/2026' };
 
 /* Dados da tela "Sobre o sistema" — manter atualizado */
 const SOBRE = {
@@ -2566,7 +2568,7 @@ function editarItem(it){
       <label class="f">Cód. Fábrica *<input class="inp" data-k="cod_fabrica" value="${v('cod_fabrica')}" placeholder="código do item no seu cadastro"></label>
       <label class="f ${vazio(i.cod_interno)?'span3':'span2'}">Descrição * <small id="qtdCar"></small><input class="inp" data-k="descricao" value="${v('descricao')}"></label>
       <label class="f span2">Origem *<select class="inp" data-k="origem"><option value="">Selecione…</option>${Object.entries(ORIGENS).map(([c,t])=>`<option value="${c}" ${String(i.origem)===c?'selected':''}>${t}</option>`).join('')}</select></label>
-      <label class="f">FCI<input class="inp" data-k="fci" value="${v('fci')}" placeholder="XXXXXXXX-XXXX-XXXX-XXXX-XXXXXXXXXXXX"></label>
+      <label class="f span2">FCI<input class="inp" data-k="fci" value="${v('fci')}" placeholder="XXXXXXXX-XXXX-XXXX-XXXX-XXXXXXXXXXXX"></label>
     </div>
     <div class="sec-t">Fiscal</div>
     <div class="grid g4">

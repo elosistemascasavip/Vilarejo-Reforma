@@ -891,8 +891,10 @@ code.cf{background:var(--side);border:1px solid var(--line);border-radius:6px;pa
                       item a item; item novo não vem mais com alíquotas preenchidas
    3.10 · 11/11/2026 · Listas de fornecedores: Razão social com mais espaço (só abrevia nome muito grande)
    3.11 · 11/11/2026 · Campo FCI do item mais largo (código de 36 caracteres aparece inteiro)
+   3.12 · 11/11/2026 · Máscara ao digitar: o sistema coloca os pontos/traços de NCM (0000.00.00), CEST (00.000.00) e
+                      FCI (8-4-4-4-12), na janela do item e na grade; CEST exibido com pontos; FCI ainda mais largo
    ============================================================ */
-const VERSAO = { num:'3.11', data:'11/11/2026' };
+const VERSAO = { num:'3.12', data:'11/11/2026' };
 
 /* Dados da tela "Sobre o sistema" — manter atualizado */
 const SOBRE = {
@@ -1617,6 +1619,33 @@ const RE_FCI = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i
 const vazio = v => v===null || v===undefined || String(v).trim()==='';
 const numBR = v => vazio(v) ? '' : Number(v).toLocaleString('pt-BR',{maximumFractionDigits:4});
 const lerNum = v => { if (vazio(v)) return null; const n = Number(String(v).replace(/%/g,'').trim().replace(/\./g, m=>m).replace(',', '.')); return isNaN(n) ? null : n; };
+/* máscaras: o sistema coloca os pontos e traços enquanto a pessoa digita (# = número, H = 0-9/A-F) */
+const MASCARAS = { ncm:'####.##.##', cest:'##.###.##', fci:'HHHHHHHH-HHHH-HHHH-HHHH-HHHHHHHHHHHH' };
+const mascSig = (k, ch) => k==='fci' ? /[0-9A-F]/i.test(ch) : /\d/.test(ch);
+function aplicarMascara(k, v){
+  const m = MASCARAS[k], sig = [...String(v ?? '')].filter(ch => mascSig(k, ch)).map(ch => ch.toUpperCase());
+  let out = '', n = 0;
+  for (const ch of m){ if (n >= sig.length) break; if (ch==='#' || ch==='H') out += sig[n++]; else out += ch; }
+  return out;
+}
+function mascararCampo(el, k){
+  let ant = el.value;
+  el.addEventListener('input', e => {
+    let v = el.value, pos = el.selectionStart ?? v.length;
+    const conta = t => [...t].filter(ch => mascSig(k, ch)).length;
+    /* apagou só um ponto/traço: apaga também o número antes dele */
+    if (e.inputType==='deleteContentBackward' && conta(v)===conta(ant) && v.length < ant.length){
+      let p = pos; while (p>0 && !mascSig(k, v[p-1])) p--;
+      if (p>0){ v = v.slice(0,p-1) + v.slice(p); pos = p-1; }
+    }
+    const nAntes = conta(v.slice(0, pos));
+    el.value = aplicarMascara(k, v);
+    let p = 0, c = 0; while (p < el.value.length && c < nAntes){ if (mascSig(k, el.value[p])) c++; p++; }
+    try { el.setSelectionRange(p, p); } catch(_){}
+    ant = el.value;
+  }, true);
+}
+const fmtCEST = v => { const c = dig(v); return c.length===7 ? `${c.slice(0,2)}.${c.slice(2,5)}.${c.slice(5)}` : (v||''); };
 const fmtNCM = v => { const c = dig(v); return c.length===8 ? `${c.slice(0,4)}.${c.slice(4,6)}.${c.slice(6)}` : (v||''); };
 
 /* regras de cada campo: [chave, nome mostrado, teste "está com problema?"]
@@ -1936,6 +1965,7 @@ function viTexto(i, k){
   if (k==='_situacao') return i._f.length ? `Faltam ${i._f.length}: ${i._f.join(', ')}` : '✓ Completo';
   if (k==='qtd_caract') return vazio(i.descricao) ? '' : String(i.descricao).length;
   if (k==='ncm') return fmtNCM(i.ncm);
+  if (k==='cest') return fmtCEST(i.cest);
   if (k==='zfm') return i.zfm ? 'S' : 'N';
   if (k==='qtd_caixa' || k==='peso') return numBR(i[k]);
   if (NUM_ITEM.includes(k)) return vazio(i[k]) ? '' : Number(i[k]).toLocaleString('pt-BR',{minimumFractionDigits:2,maximumFractionDigits:4});   // alíquotas: 2 casas, vírgulas alinhadas
@@ -2126,7 +2156,8 @@ function viAbrirEditor(r, j, inicial){
     el.innerHTML = `<option value="false" ${!i.zfm?'selected':''}>N</option><option value="true" ${i.zfm?'selected':''}>S</option>`;
   } else {
     el = document.createElement('input');
-    el.value = inicial!==undefined ? inicial : (c.k==='ncm' ? dig(i.ncm) : NUM_ITEM.includes(c.k) ? numBR(i[c.k]) : (i[c.k] ?? ''));
+    el.value = inicial!==undefined ? inicial : (c.k==='ncm' ? fmtNCM(i.ncm) : c.k==='cest' ? fmtCEST(i.cest) : NUM_ITEM.includes(c.k) ? numBR(i[c.k]) : (i[c.k] ?? ''));
+    if (MASCARAS[c.k]){ el.value = aplicarMascara(c.k, el.value); el.maxLength = MASCARAS[c.k].length; mascararCampo(el, c.k); }
   }
   el.className = 'vi-ed';
   td.classList.add('editando'); td.textContent = ''; td.appendChild(el);
@@ -2159,6 +2190,7 @@ function viConverter(k, bruto){
     if (k==='ncm' && d.length===7) d = d.padStart(8,'0');
     return d; }
   if (k==='unidade_venda') return t.toUpperCase();
+  if (k==='fci') return /^[0-9a-f]{32}$/i.test(t.replace(/[^0-9a-f]/gi,'')) ? aplicarMascara('fci', t) : t;
   return t;
 }
 /* grava uma ou várias células (colar do Excel): uma requisição por linha */
@@ -2567,14 +2599,14 @@ function editarItem(it){
       ${!vazio(i.cod_interno) ? `<label class="f">Cód. Vilarejo<input class="inp" value="${esc(i.cod_interno)}" readonly tabindex="-1" style="background:var(--side);color:var(--muted)"></label>` : ''}
       <label class="f">Cód. Fábrica *<input class="inp" data-k="cod_fabrica" value="${v('cod_fabrica')}" placeholder="código do item no seu cadastro"></label>
       <label class="f ${vazio(i.cod_interno)?'span3':'span2'}">Descrição * <small id="qtdCar"></small><input class="inp" data-k="descricao" value="${v('descricao')}"></label>
-      <label class="f span2">Origem *<select class="inp" data-k="origem"><option value="">Selecione…</option>${Object.entries(ORIGENS).map(([c,t])=>`<option value="${c}" ${String(i.origem)===c?'selected':''}>${t}</option>`).join('')}</select></label>
-      <label class="f span2">FCI<input class="inp" data-k="fci" value="${v('fci')}" placeholder="XXXXXXXX-XXXX-XXXX-XXXX-XXXXXXXXXXXX"></label>
+      <label class="f">Origem *<select class="inp" data-k="origem"><option value="">Selecione…</option>${Object.entries(ORIGENS).map(([c,t])=>`<option value="${c}" ${String(i.origem)===c?'selected':''}>${t}</option>`).join('')}</select></label>
+      <label class="f span3">FCI<input class="inp" data-k="fci" maxlength="36" value="${v('fci')}" placeholder="XXXXXXXX-XXXX-XXXX-XXXX-XXXXXXXXXXXX"></label>
     </div>
     <div class="sec-t">Fiscal</div>
     <div class="grid g4">
       <label class="f">NCM/SH *<input class="inp" data-k="ncm" value="${esc(fmtNCM(i.ncm))}" inputmode="numeric" placeholder="0000.00.00"></label>
       <label class="f">CST *<input class="inp" data-k="cst_icms" value="${v('cst_icms')}" maxlength="3" inputmode="numeric" placeholder="00"></label>
-      <label class="f">CEST *<input class="inp" data-k="cest" value="${v('cest')}" maxlength="9" inputmode="numeric" placeholder="0000000"></label>
+      <label class="f">CEST *<input class="inp" data-k="cest" value="${esc(fmtCEST(i.cest))}" maxlength="9" inputmode="numeric" placeholder="00.000.00"></label>
       <label class="f">% IPI *<input class="inp" data-k="aliq_ipi" value="${v('aliq_ipi')}" inputmode="decimal" placeholder="0"></label>
       <label class="f">% ICMS *<input class="inp" data-k="aliq_icms" value="${v('aliq_icms')}" inputmode="decimal" placeholder="0"></label>
       <label class="f">% MVA *<input class="inp" data-k="mva" value="${v('mva')}" inputmode="decimal" placeholder="0"></label>
@@ -2609,6 +2641,7 @@ function editarItem(it){
   ov.querySelector('[data-k=descricao]').oninput = contaCar; contaCar();
   /* campos faltando ou inválidos ficam em vermelho e saem do destaque assim que corrigidos */
   const destacar = () => { const ch = chavesFaltando(lerForm(ov)); ov.querySelectorAll('[data-k]').forEach(el => el.classList.toggle('inp-falta', ch.has(el.dataset.k))); };
+  Object.keys(MASCARAS).forEach(k => { const el = ov.querySelector(`[data-k=${k}]`); if (el){ el.value = aplicarMascara(k, el.value); mascararCampo(el, k); } });
   ov.addEventListener('input', destacar); ov.addEventListener('change', destacar); destacar();
   function salvarIt(o){
     const n = lerForm(o);
@@ -2630,6 +2663,7 @@ function editarItem(it){
       else if (k==='origem') n.origem = el.value===''?null:+el.value;
       else if (['ncm','ean','cest','ean14','cst_icms','cst','cclasstrib','cst_is','cclasstrib_is'].includes(k)) n[k] = dig(el.value) || null;
       else if (k==='unidade_venda') n[k] = el.value.trim().toUpperCase() || null;
+      else if (k==='fci') n[k] = viConverter('fci', el.value);
       else n[k] = el.value.trim() || null;
     });
     return n;

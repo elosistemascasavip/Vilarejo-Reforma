@@ -284,27 +284,26 @@ dl.kv dd{margin:0;font-weight:600;word-break:break-word}
 tr.clic{cursor:pointer}
 #vw-f2{height:100vh;display:flex;flex-direction:column;background:var(--side);overflow:hidden}
 /* campos faltantes em destaque */
-#f2Body tr.pend td{background:#fff4f4}
 /* grade editável dos itens (painel) */
 .vi-card{flex:1;min-height:0;display:flex;flex-direction:column;background:#fff;border:1px solid var(--line);border-radius:14px;overflow:hidden}
 #viWrap{flex:1;min-height:0;overflow:auto;scroll-snap-type:x mandatory}
 #viGrade{border-collapse:separate;border-spacing:0;table-layout:fixed;width:max-content;font-size:11.5px}
 #viGrade th{position:sticky;z-index:3;text-transform:none;letter-spacing:0;font-size:11px;font-weight:700;color:#1f2937;padding:4px 7px;border-right:1px solid #c9ccd3;border-bottom:1px solid #c9ccd3;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;text-align:center}
 #viGrade tr.g th{top:0;height:22px;letter-spacing:.02em}
-#viGrade tr.h th{top:22px;height:26px;scroll-snap-align:start}
+#viGrade tr.h th{top:22px;height:26px;scroll-snap-align:start;scroll-snap-stop:always}
 #viGrade tr.h th b{color:#d93025;margin-left:1px}
-#viGrade th.fixa{z-index:5;scroll-snap-align:none}
+#viGrade th.fixa{z-index:5}
+#viGrade tr.h th.fixa{scroll-snap-align:none;scroll-snap-stop:normal}
 #viGrade td{height:26px;padding:0 7px;border-right:1px solid #eceef2;border-bottom:1px solid #eceef2;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;background:#fff;cursor:cell}
 #viGrade td.fixa{background:#fafbfc}
 #viGrade td.c2{box-shadow:inset -2px 0 0 #d6d9df}
 #viGrade tr.pend td.c0{box-shadow:inset 3px 0 0 #d93025}
-#viGrade td.falta{background:#fde2e1}
-#viGrade td.falta i{color:#d93025;font-style:normal;font-weight:700;font-size:10.5px}
+#viGrade td.falta{color:#d93025;font-weight:700}
+#viGrade td.falta i{color:#d93025;font-style:normal;font-weight:800;font-size:13px}
 #viGrade td.ro{color:var(--muted);cursor:default}
 #viGrade td.sit-p{color:#b45309;font-weight:600}
 #viGrade td.sit-ok{color:var(--green-ink);font-weight:600}
 #viGrade tr.selrow td{background:#e3f4e8}
-#viGrade tr.selrow td.falta{background:#f8cfcd}
 #viGrade tr.selrow td.c0{box-shadow:inset 3px 0 0 var(--green)}
 #viGrade td.sel{outline:2px solid var(--green);outline-offset:-2px;background:#fff}
 #viGrade td.editando{padding:0;outline:2px solid var(--green);outline-offset:-2px}
@@ -319,8 +318,8 @@ tr.clic{cursor:pointer}
 #t2Body tr[data-id]{cursor:pointer}
 #t2Body tr[data-id]:hover td{background:#f6faf7}
 #f2Body tr.pend td:first-child{box-shadow:inset 3px 0 0 #d93025}
-#f2Body td.cel-falta{color:#d93025;font-weight:700}
-.inp.inp-falta{border-color:#d93025;background:#fff4f4;box-shadow:0 0 0 1px #d93025 inset}
+#f2Body td.cel-falta{color:#d93025;font-weight:800}
+.inp.inp-falta{border-color:#d93025;box-shadow:0 0 0 1px #d93025 inset}
 .f2aviso{margin:0 24px 10px;padding:9px 13px;border-radius:9px;background:#fff4f4;border:1px solid #f3c2bf;color:#8a1c14;font-size:13px}
 .f2aviso b{color:#d93025}
 #vw-f2 > header{flex:0 0 auto}
@@ -865,8 +864,10 @@ code.cf{background:var(--side);border:1px solid var(--line);border-radius:6px;pa
    3.0 · 11/11/2026 · Grade dos itens: fonte menor, títulos sem quebra nem corte, linha selecionada realçada, rolagem lateral
                       de coluna inteira em coluna inteira
    3.1 · 11/11/2026 · Saem da grade e das planilhas o bloco Cadastro (Departamento/Seção/Categoria) e a coluna Situação
+   3.2 · 11/11/2026 · Pendência mostrada como "-" vermelho (sem fundo rosa) na grade, na tela do fornecedor e no Excel;
+                      Fiscal e Reforma Tributária com cores próprias; rolagem lateral de 1 em 1 coluna
    ============================================================ */
-const VERSAO = { num:'3.1', data:'11/11/2026' };
+const VERSAO = { num:'3.2', data:'11/11/2026' };
 
 /* Dados da tela "Sobre o sistema" — manter atualizado */
 const SOBRE = {
@@ -1722,8 +1723,8 @@ const NOME_PLANILHA = 'Elo_Formulario_Reforma';
 const LAYOUT_XLSX = [
   { titulo:'Fornecedor', cor:'D9D9D9', admin:true, cols:[['_cnpj','CNPJ fornecedor',1],['_razao','Razão social',0]] },
   { titulo:null, cor:'C0C0C0', cols:[['cod_interno','Cód. Interno',0],['cod_fabrica','Cód. Fábrica',1],['descricao','Descrição',1],['fci','FCI',0],['qtd_caract','Qtd. Carct.',0]] },
-  { titulo:'Fiscal', cor:'FFFF99', cols:[['ncm','NCM/SH',1],['origem','Origem',1],['cst_icms','CST',1],['cest','CEST',1],['aliq_ipi','IPI',1],['aliq_icms','ICMS',1],['mva','MVA',1]],
-    sub:{ titulo:'Reforma Tributária', cols:[['cst','CST IBS/CBS',1],['cclasstrib','cClassTrib IBS/CBS',1],['aliq_ibs_uf','% IBS UF',1],['aliq_ibs_mun','% IBS Mun.',1],
+  { titulo:'Fiscal', cor:'FFE0BD', cols:[['ncm','NCM/SH',1],['origem','Origem',1],['cst_icms','CST',1],['cest','CEST',1],['aliq_ipi','IPI',1],['aliq_icms','ICMS',1],['mva','MVA',1]],
+    sub:{ titulo:'Reforma Tributária', cor:'D4EFDA', cols:[['cst','CST IBS/CBS',1],['cclasstrib','cClassTrib IBS/CBS',1],['aliq_ibs_uf','% IBS UF',1],['aliq_ibs_mun','% IBS Mun.',1],
       ['aliq_cbs','% CBS',1],['pct_reducao','% Redução IBS/CBS',0],['cst_is','CST IS',0],['cclasstrib_is','cClassTrib IS',0],['aliq_is','% IS',0]] } },
   { titulo:'Unidade de Venda', cor:'99CCFF', cols:[['ean','GTIN13 ou EAN Tributável',1]] },
   { titulo:'Embalagem Master', cor:'99CCFF', cols:[['qtd_caixa','Qtd. Caixa',1],['ean14','EAN14',0]] },
@@ -1771,7 +1772,8 @@ async function exportarXlsx(itens, comAdmin, nomeArquivo){
     } else {
       b.cols.forEach(col => { ws.mergeCells(1, c, 3, c); ws.getCell(1, c).value = rotulo(col[1], col[2]); colunas.push([col[0], b.cor]); c++; });
     }
-    for (let r = 1; r <= 3; r++) for (let k = ini; k <= fim; k++) estilo(ws.getCell(r, k), b.cor);
+    const iniSub = b.sub ? ini + b.cols.length : Infinity;   // Reforma Tributária com cor própria
+    for (let r = 1; r <= 3; r++) for (let k = ini; k <= fim; k++) estilo(ws.getCell(r, k), r>1 && k>=iniSub ? b.sub.cor : b.cor);
   });
   ws.getRow(1).height = 18; ws.getRow(2).height = 30; ws.getRow(3).height = 30;
   /* larguras e formato de cada coluna */
@@ -1784,10 +1786,9 @@ async function exportarXlsx(itens, comAdmin, nomeArquivo){
   });
   /* dados */
   const OBRIG = new Set(blocos.flatMap(b => [...b.cols, ...(b.sub ? b.sub.cols : [])]).filter(c => c[2]).map(c => c[0]));
-  const vermelho = { type:'pattern', pattern:'solid', fgColor:{ argb:'FFFDE2E1' } };
   itens.forEach((i, n) => {
     const linha = ws.getRow(4 + n);
-    const pend = chavesFaltando(i);   // campos obrigatórios ainda pendentes: célula em vermelho claro
+    const pend = chavesFaltando(i);   // campos obrigatórios pendentes: "-" vermelho (na importação, "-" conta como vazio)
     colunas.forEach(([k], j) => {
       let v;
       if (k==='_cnpj') v = fmtCNPJ(i._cnpj||'');
@@ -1798,7 +1799,7 @@ async function exportarXlsx(itens, comAdmin, nomeArquivo){
       else if (NUM_ITEM.includes(k)) v = vazio(i[k]) ? null : Number(i[k]);
       else v = vazio(i[k]) ? null : String(i[k]);
       const cel = linha.getCell(j+1); cel.value = v; cel.border = borda; cel.font = { size:9, name:'Arial' };
-      if (OBRIG.has(k) && pend.has(k)) cel.fill = vermelho;
+      if (OBRIG.has(k) && pend.has(k)){ if (v===null) cel.value = '-'; cel.font = { size:9, name:'Arial', bold:true, color:{ argb:'FFD93025' } }; cel.alignment = { horizontal:'center' }; }
     });
   });
   const buf = await wb.xlsx.writeBuffer();
@@ -1895,8 +1896,8 @@ const VI_LOTE = 150;   // linhas desenhadas por vez (as próximas entram ao rola
 const VI_BLOCOS = [
   { t:'Identificação', cor:'#e6e6e6', fixo:true, cols:[['cod_interno','Cód. Interno',0,100,'ro'],['cod_fabrica','Cód. Fábrica',1,130],['descricao','Descrição',1,320]] },
   { t:'', cor:'#e6e6e6', cols:[['fci','FCI',0,150],['qtd_caract','Qtd. Carct.',0,84,'ro']] },
-  { t:'Fiscal', cor:'#fff6b3', cols:[['ncm','NCM/SH',1,96],['origem','Origem',1,72],['cst_icms','CST',1,56],['cest','CEST',1,82],['aliq_ipi','IPI',1,62],['aliq_icms','ICMS',1,62],['mva','MVA',1,62]] },
-  { t:'Reforma Tributária', cor:'#fff6b3', cols:[['cst','CST IBS/CBS',1,98],['cclasstrib','cClassTrib IBS/CBS',1,138],['aliq_ibs_uf','% IBS UF',1,74],['aliq_ibs_mun','% IBS Mun.',1,84],['aliq_cbs','% CBS',1,66],['pct_reducao','% Redução IBS/CBS',0,136],['cst_is','CST IS',0,64],['cclasstrib_is','cClassTrib IS',0,100],['aliq_is','% IS',0,56]] },
+  { t:'Fiscal', cor:'#ffe0bd', cols:[['ncm','NCM/SH',1,96],['origem','Origem',1,72],['cst_icms','CST',1,56],['cest','CEST',1,82],['aliq_ipi','IPI',1,62],['aliq_icms','ICMS',1,62],['mva','MVA',1,62]] },
+  { t:'Reforma Tributária', cor:'#d4efda', cols:[['cst','CST IBS/CBS',1,98],['cclasstrib','cClassTrib IBS/CBS',1,138],['aliq_ibs_uf','% IBS UF',1,74],['aliq_ibs_mun','% IBS Mun.',1,84],['aliq_cbs','% CBS',1,66],['pct_reducao','% Redução IBS/CBS',0,136],['cst_is','CST IS',0,64],['cclasstrib_is','cClassTrib IS',0,100],['aliq_is','% IS',0,56]] },
   { t:'Unidade de Venda', cor:'#cfe4ff', cols:[['ean','GTIN13 ou EAN Tributável',1,180]] },
   { t:'Embalagem Master', cor:'#cfe4ff', cols:[['qtd_caixa','Qtd. Caixa',1,82],['ean14','EAN14',0,130]] },
 
@@ -1916,7 +1917,7 @@ function viTexto(i, k){
 function viCelula(i, c, r, j, ch){
   const falta = ch.has(c.k), v = viTexto(i, c.k);
   const cls = ['c'+j, c.ro?'ro':'', falta?'falta':'', j<VI_FIXAS?'fixa':'', c.k==='_situacao'?(i._f.length?'sit-p':'sit-ok'):''].filter(Boolean).join(' ');
-  return `<td class="${cls}" data-r="${r}" data-j="${j}" title="${esc(String(v))}">${falta && vazio(v) ? '<i>falta</i>' : esc(String(v))}</td>`;
+  return `<td class="${cls}" data-r="${r}" data-j="${j}" title="${esc(String(v))}">${falta && vazio(v) ? '<i>-</i>' : esc(String(v))}</td>`;
 }
 function viLinha(i, r){
   const ch = chavesFaltando(i);
@@ -2083,6 +2084,25 @@ $('viBody').addEventListener('click', e => {
 });
 $('viBody').addEventListener('dblclick', e => { const td = e.target.closest('td[data-j]'); if (td) viAbrirEditor(+td.dataset.r, +td.dataset.j); });
 $('viWrap').addEventListener('scroll', () => { const w = $('viWrap'); if (w.scrollTop + w.clientHeight > w.scrollHeight - 400) viMais(); });
+/* rolagem lateral (Shift+roda ou touchpad): anda exatamente 1 coluna por movimento */
+function viIrColuna(passo){
+  const w = $('viWrap'), fix = parseFloat(w.style.scrollPaddingLeft) || 0;
+  const ths = [...$('viHead').rows[1].cells].slice(VI_FIXAS);
+  const base = $('viGrade').getBoundingClientRect().left;   // posição de cada coluna medida a partir do início da tabela
+  const lefts = ths.map(t => Math.round(t.getBoundingClientRect().left - base - fix));
+  let atual = lefts.findIndex(x => x >= w.scrollLeft - 2); if (atual < 0) atual = lefts.length - 1;
+  const alvo = Math.max(0, Math.min(lefts.length - 1, atual + passo));
+  w.scrollTo({ left: lefts[alvo], behavior:'smooth' });
+}
+let viRodaAcum = 0, viRodaTrava = 0;
+$('viWrap').addEventListener('wheel', e => {
+  const dx = Math.abs(e.deltaX) > Math.abs(e.deltaY) ? e.deltaX : (e.shiftKey ? e.deltaY : 0);
+  if (!dx) return;
+  e.preventDefault();
+  if (Date.now() < viRodaTrava) return;
+  viRodaAcum += dx;
+  if (Math.abs(viRodaAcum) >= 25){ viIrColuna(viRodaAcum > 0 ? 1 : -1); viRodaAcum = 0; viRodaTrava = Date.now() + 180; }
+}, { passive:false });
 document.addEventListener('keydown', e => {
   if ($('pg4').classList.contains('hide') || !VI_SEL || VI_EDIT || document.querySelector('.ov')) return;
   if (e.target.closest && e.target.closest('input,select,textarea')) return;
@@ -2371,11 +2391,11 @@ function renderF2(){
   if (pagF2 >= paginas) pagF2 = paginas-1;
   const fatia = lista.slice(pagF2*POR_F2, (pagF2+1)*POR_F2);
   $('f2Body').innerHTML = fatia.length ? fatia.map(i => { const fl = faltasItem(i), ch = chavesFaltando(i);
-    const cel = (k, val) => ch.has(k) ? `<td class="col-f2x mono cel-falta">${vazio(val)?'falta':esc(val)}</td>` : `<td class="col-f2x mono">${esc(val??'')}</td>`;
+    const cel = (k, val) => ch.has(k) ? `<td class="col-f2x mono cel-falta">${vazio(val)?'-':esc(val)}</td>` : `<td class="col-f2x mono">${esc(val??'')}</td>`;
     return `
     <tr class="clic${fl.length?' pend':''}" data-cod="${esc(i.codigo)}" title="Clique para editar">
       <td class="mono" style="color:var(--muted)">${esc(i.cod_interno||'')}</td>
-      ${ch.has('cod_fabrica') ? '<td class="mono cel-falta">falta</td>' : `<td class="mono">${esc(i.cod_fabrica||'')}</td>`}
+      ${ch.has('cod_fabrica') ? '<td class="mono cel-falta">-</td>' : `<td class="mono">${esc(i.cod_fabrica||'')}</td>`}
       <td title="${esc(i.descricao||'')}">${esc(i.descricao||'')}</td>
       ${cel('ncm', fmtNCM(i.ncm))}
       ${cel('cst', i.cst)}

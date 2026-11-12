@@ -287,23 +287,26 @@ tr.clic{cursor:pointer}
 #f2Body tr.pend td{background:#fff4f4}
 /* grade editável dos itens (painel) */
 .vi-card{flex:1;min-height:0;display:flex;flex-direction:column;background:#fff;border:1px solid var(--line);border-radius:14px;overflow:hidden}
-#viWrap{flex:1;min-height:0;overflow:auto}
-#viGrade{border-collapse:separate;border-spacing:0;table-layout:fixed;width:max-content;font-size:12.5px}
-#viGrade th{position:sticky;z-index:3;text-transform:none;letter-spacing:0;font-size:12px;font-weight:700;color:#1f2937;padding:5px 7px;border-right:1px solid #c9ccd3;border-bottom:1px solid #c9ccd3;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;text-align:center}
-#viGrade tr.g th{top:0;height:24px;letter-spacing:.02em}
-#viGrade tr.h th{top:24px;height:30px}
+#viWrap{flex:1;min-height:0;overflow:auto;scroll-snap-type:x mandatory}
+#viGrade{border-collapse:separate;border-spacing:0;table-layout:fixed;width:max-content;font-size:11.5px}
+#viGrade th{position:sticky;z-index:3;text-transform:none;letter-spacing:0;font-size:11px;font-weight:700;color:#1f2937;padding:4px 7px;border-right:1px solid #c9ccd3;border-bottom:1px solid #c9ccd3;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;text-align:center}
+#viGrade tr.g th{top:0;height:22px;letter-spacing:.02em}
+#viGrade tr.h th{top:22px;height:26px;scroll-snap-align:start}
 #viGrade tr.h th b{color:#d93025;margin-left:1px}
-#viGrade th.fixa{z-index:5}
-#viGrade td{height:30px;padding:0 7px;border-right:1px solid #eceef2;border-bottom:1px solid #eceef2;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;background:#fff;cursor:cell}
+#viGrade th.fixa{z-index:5;scroll-snap-align:none}
+#viGrade td{height:26px;padding:0 7px;border-right:1px solid #eceef2;border-bottom:1px solid #eceef2;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;background:#fff;cursor:cell}
 #viGrade td.fixa{background:#fafbfc}
 #viGrade td.c2{box-shadow:inset -2px 0 0 #d6d9df}
 #viGrade tr.pend td.c0{box-shadow:inset 3px 0 0 #d93025}
 #viGrade td.falta{background:#fde2e1}
-#viGrade td.falta i{color:#d93025;font-style:normal;font-weight:700;font-size:11.5px}
+#viGrade td.falta i{color:#d93025;font-style:normal;font-weight:700;font-size:10.5px}
 #viGrade td.ro{color:var(--muted);cursor:default}
 #viGrade td.sit-p{color:#b45309;font-weight:600}
 #viGrade td.sit-ok{color:var(--green-ink);font-weight:600}
-#viGrade td.sel{outline:2px solid var(--green);outline-offset:-2px}
+#viGrade tr.selrow td{background:#e3f4e8}
+#viGrade tr.selrow td.falta{background:#f8cfcd}
+#viGrade tr.selrow td.c0{box-shadow:inset 3px 0 0 var(--green)}
+#viGrade td.sel{outline:2px solid var(--green);outline-offset:-2px;background:#fff}
 #viGrade td.editando{padding:0;outline:2px solid var(--green);outline-offset:-2px}
 #viGrade .vi-ed{width:100%;height:100%;border:0;padding:0 6px;font:inherit;background:#f0fbf3;outline:none}
 .vi-dica{padding:7px 14px;border-top:1px solid var(--line);font-size:11.5px;color:var(--muted);background:#fafbfc}
@@ -857,8 +860,12 @@ code.cf{background:var(--side);border:1px solid var(--line);border-radius:6px;pa
                       resumo do que mais falta e filtro de pendências; abre sozinha depois de carregar os itens
    2.8 · 11/11/2026 · Itens do fornecedor (painel): grade tipo planilha com todas as colunas, rolagem contínua, cabeçalho e
                       3 colunas fixos, edição na célula com gravação imediata, teclado e colar do Excel
+   2.9 · 11/11/2026 · Colunas iguais à Nova_tabela_da_Kian (30 colunas): saem Zona Franca e % Conteúdo importação
+                      (que vinham da tabela original do banco) da grade, da planilha Excel e da tela do fornecedor
+   3.0 · 11/11/2026 · Grade dos itens: fonte menor, títulos sem quebra nem corte, linha selecionada realçada, rolagem lateral
+                      de coluna inteira em coluna inteira
    ============================================================ */
-const VERSAO = { num:'2.8', data:'11/11/2026' };
+const VERSAO = { num:'3.0', data:'11/11/2026' };
 
 /* Dados da tela "Sobre o sistema" — manter atualizado */
 const SOBRE = {
@@ -1572,7 +1579,6 @@ const CAMPOS_ITEM = [
   ['cst','CST IBS/CBS'], ['cclasstrib','cClassTrib IBS/CBS'], ['aliq_ibs_uf','% IBS UF'], ['aliq_ibs_mun','% IBS Mun.'],
   ['aliq_cbs','% CBS'], ['pct_reducao','% Redução IBS/CBS'], ['cst_is','CST IS'], ['cclasstrib_is','cClassTrib IS'], ['aliq_is','% IS'],
   ['ean','GTIN13 ou EAN Tributável'], ['qtd_caixa','Qtd. Caixa'], ['ean14','EAN14'],
-  ['pct_importacao','% Conteúdo importação'], ['zfm','Zona Franca (S/N)'],
   ['cod_departamento','Cód. Departamento',true], ['departamento','Departamento',true],
   ['cod_secao','Cód. Seção',true], ['secao','Seção',true],
   ['cod_categoria','Cód. Categoria',true], ['categoria','Categoria',true]
@@ -1724,7 +1730,6 @@ const LAYOUT_XLSX = [
   { titulo:'Unidade de Venda', cor:'99CCFF', cols:[['ean','GTIN13 ou EAN Tributável',1]] },
   { titulo:'Embalagem Master', cor:'99CCFF', cols:[['qtd_caixa','Qtd. Caixa',1],['ean14','EAN14',0]] },
   { titulo:'Cadastro', cor:'FFFF99', interno:true, cols:[['cod_departamento','Cód.',1],['departamento','Departamento',1],['cod_secao','Cód.',1],['secao','Seção',1],['cod_categoria','Cód.',1],['categoria','Categoria',1]] },
-  { titulo:'Complementar', cor:'CCFFCC', cols:[['pct_importacao','% Conteúdo importação',0],['zfm','Zona Franca (S/N)',0]] },
   { titulo:'Controle', cor:'D9D9D9', admin:true, cols:[['_situacao','Situação',0]] }
 ];
 let _excel = null;
@@ -1897,8 +1902,7 @@ const VI_BLOCOS = [
   { t:'Reforma Tributária', cor:'#fff6b3', cols:[['cst','CST IBS/CBS',1,98],['cclasstrib','cClassTrib IBS/CBS',1,138],['aliq_ibs_uf','% IBS UF',1,74],['aliq_ibs_mun','% IBS Mun.',1,84],['aliq_cbs','% CBS',1,66],['pct_reducao','% Redução IBS/CBS',0,136],['cst_is','CST IS',0,64],['cclasstrib_is','cClassTrib IS',0,100],['aliq_is','% IS',0,56]] },
   { t:'Unidade de Venda', cor:'#cfe4ff', cols:[['ean','GTIN13 ou EAN Tributável',1,180]] },
   { t:'Embalagem Master', cor:'#cfe4ff', cols:[['qtd_caixa','Qtd. Caixa',1,82],['ean14','EAN14',0,130]] },
-  { t:'Complementar', cor:'#dff5e3', cols:[['pct_importacao','% Conteúdo importação',0,160],['zfm','Zona Franca',0,90]] },
-  { t:'Cadastro', cor:'#fff6b3', cols:[['cod_departamento','Cód.',0,56],['departamento','Departamento',0,150],['cod_secao','Cód.',0,56],['secao','Seção',0,150],['cod_categoria','Cód.',0,56],['categoria','Categoria',0,150]] },
+  { t:'Cadastro', cor:'#fff6b3', cols:[['cod_departamento','Cód.',1,60],['departamento','Departamento',1,150],['cod_secao','Cód.',1,60],['secao','Seção',1,150],['cod_categoria','Cód.',1,60],['categoria','Categoria',1,150]] },
   { t:'', cor:'#e6e6e6', cols:[['_situacao','Situação',0,320,'ro']] }
 ];
 const VI_COLS = VI_BLOCOS.flatMap(b => b.cols.map(c => ({ k:c[0], rot:c[1], obrig:!!c[2], w:c[3], ro:c[4]==='ro', cor:b.cor })));
@@ -1922,8 +1926,16 @@ function viLinha(i, r){
   const ch = chavesFaltando(i);
   return `<tr data-r="${r}" class="${i._f.length?'pend':''}">${VI_COLS.map((c,j) => viCelula(i, c, r, j, ch)).join('')}</tr>`;
 }
+/* largura mínima de cada coluna = título inteiro numa linha só */
+function viAjustarLarguras(){
+  const ctx = document.createElement('canvas').getContext('2d');
+  ctx.font = `700 11px ${getComputedStyle(document.body).fontFamily}`;
+  VI_COLS.forEach(c => { c.w = Math.max(c.w0 ?? (c.w0 = c.w), Math.ceil(ctx.measureText(c.rot + (c.obrig?' *':'')).width) + 20); });
+}
 function viCabecalho(){
+  viAjustarLarguras();
   let esq = 0; const pos = VI_COLS.map((c,j) => { const p = esq; if (j<VI_FIXAS) esq += c.w; return p; });
+  $('viWrap').style.scrollPaddingLeft = esq + 'px';   // encaixe começa logo depois das colunas fixas
   const g = VI_BLOCOS.map(b => `<th colspan="${b.cols.length}" style="background:${b.cor}${b.fixo?';left:0;z-index:6;box-shadow:inset -2px 0 0 #c9ccd3':''}">${esc(b.t)}</th>`).join('');
   const h = VI_COLS.map((c,j) => `<th class="c${j}${j<VI_FIXAS?' fixa':''}" style="background:${c.cor};${j<VI_FIXAS?`left:${pos[j]}px;`:''}">${esc(c.rot)}${c.obrig?'<b>*</b>':''}</th>`).join('');
   const css = VI_COLS.map((c,j) => `#viGrade .c${j}{width:${c.w}px;min-width:${c.w}px;max-width:${c.w}px${j<VI_FIXAS?`;position:sticky;left:${pos[j]}px;z-index:2`:''}}`).join('');
@@ -1982,8 +1994,9 @@ function viSelecionar(r, j, rolar = true){
   if (r<0 || j<0 || j>=VI_COLS.length || r>=VI_LISTA.length) return;
   while (r >= VI_REND) viMais();
   $('viBody').querySelectorAll('td.sel').forEach(t => t.classList.remove('sel'));
+  $('viBody').querySelectorAll('tr.selrow').forEach(t => t.classList.remove('selrow'));
   VI_SEL = { r, j }; const td = viTd(r, j); if (!td) return;
-  td.classList.add('sel');
+  td.classList.add('sel'); td.parentElement.classList.add('selrow');
   if (rolar) td.scrollIntoView({ block:'nearest', inline:'nearest' });
 }
 
@@ -2410,14 +2423,12 @@ function editarItem(it){
       <label class="f ${vazio(i.cod_interno)?'span3':'span2'}">Descrição * <small id="qtdCar"></small><input class="inp" data-k="descricao" value="${v('descricao')}"></label>
       <label class="f span2">Origem *<select class="inp" data-k="origem"><option value="">Selecione…</option>${Object.entries(ORIGENS).map(([c,t])=>`<option value="${c}" ${String(i.origem)===c?'selected':''}>${t}</option>`).join('')}</select></label>
       <label class="f">FCI<input class="inp" data-k="fci" value="${v('fci')}" placeholder="XXXXXXXX-XXXX-XXXX-XXXX-XXXXXXXXXXXX"></label>
-      <label class="f">% Conteúdo importação<input class="inp" data-k="pct_importacao" value="${v('pct_importacao')}" inputmode="decimal"></label>
     </div>
     <div class="sec-t">Fiscal</div>
     <div class="grid g4">
       <label class="f">NCM/SH *<input class="inp" data-k="ncm" value="${esc(fmtNCM(i.ncm))}" inputmode="numeric" placeholder="0000.00.00"></label>
       <label class="f">CST *<input class="inp" data-k="cst_icms" value="${v('cst_icms')}" maxlength="3" inputmode="numeric" placeholder="00"></label>
       <label class="f">CEST *<input class="inp" data-k="cest" value="${v('cest')}" maxlength="9" inputmode="numeric" placeholder="0000000"></label>
-      <label class="chk" style="align-self:end;padding-bottom:9px"><input type="checkbox" data-k="zfm" ${i.zfm?'checked':''}>Fabricado na Zona Franca</label>
       <label class="f">% IPI *<input class="inp" data-k="aliq_ipi" value="${v('aliq_ipi')}" inputmode="decimal" placeholder="0"></label>
       <label class="f">% ICMS *<input class="inp" data-k="aliq_icms" value="${v('aliq_icms')}" inputmode="decimal" placeholder="0"></label>
       <label class="f">% MVA *<input class="inp" data-k="mva" value="${v('mva')}" inputmode="decimal" placeholder="0"></label>

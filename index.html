@@ -327,6 +327,15 @@ tr.clic{cursor:pointer}
 #viGrade tr.selrow td.c0{box-shadow:inset 3px 0 0 var(--green)}
 #viGrade td.sel{outline:2px solid var(--green);outline-offset:-2px;background:#fff}
 #viGrade td.editando{padding:0;outline:2px solid var(--green);outline-offset:-2px}
+body,input,select,textarea,button{font-variant-numeric:tabular-nums}   /* números alinhados em todo o sistema */
+#viGrade td.num .vi-ed{text-align:right}
+#viGrade td.ctr .vi-ed{text-align:center}
+.inp[data-k=aliq_ipi],.inp[data-k=aliq_icms],.inp[data-k=mva],.inp[data-k=aliq_ibs_uf],.inp[data-k=aliq_ibs_mun],.inp[data-k=aliq_cbs],
+.inp[data-k=pct_reducao],.inp[data-k=aliq_is],.inp[data-k=peso],.inp[data-k=qtd_caixa]{text-align:right}
+.vi-pop .lst.num label span{text-align:right}
+.vi-pop .lst.ctr label span{text-align:center}
+.vi-pop .lst label small{min-width:38px;text-align:right}
+.vi-pop .lst label.esp span{text-align:left!important}
 #viGrade tr.h th{padding-right:20px}
 #viGrade .vi-fb{position:absolute;right:3px;top:50%;transform:translateY(-50%);width:15px;height:16px;border:1px solid #b9bec7;border-radius:3px;background:#fff;color:#4b5563;font-size:9px;line-height:14px;text-align:center;cursor:pointer;padding:0}
 #viGrade .vi-fb:hover{border-color:var(--green);color:var(--green)}
@@ -877,8 +886,10 @@ code.cf{background:var(--side);border:1px solid var(--line);border-radius:6px;pa
                       rolagem contínua e de 1 em 1 coluna); salva sozinho pelo link; setas não trocam página na grade
    3.7 · 11/11/2026 · Filtro por coluna como no Excel (▼ no cabeçalho: valores, vazias, pesquisa, "só os sem informação"),
                       barra de filtros ativos; "Aplicar tributação integral" passa a salvar sozinho
+   3.8 · 11/11/2026 · Números alinhados em todo o sistema (algarismos de largura igual, fonte Inter): filtro, campos,
+                      editor da célula e modal do item (alíquotas, peso e qtd. à direita)
    ============================================================ */
-const VERSAO = { num:'3.7', data:'11/11/2026' };
+const VERSAO = { num:'3.8', data:'11/11/2026' };
 
 /* Dados da tela "Sobre o sistema" — manter atualizado */
 const SOBRE = {
@@ -2025,9 +2036,9 @@ function viAbrirFiltro(j, btn){
   pop.innerHTML = `<h4>${esc(c.rot)}</h4>
     ${nVaz ? `<button type="button" class="so">Mostrar só os sem informação (${n(nVaz)})</button>` : ''}
     <input class="inp" type="search" placeholder="Pesquisar valor">
-    <div class="lst">
-      <label><input type="checkbox" data-t="all"><span><b>(Selecionar tudo)</b></span></label>
-      ${nVaz ? `<label class="vz"><input type="checkbox" data-v=""${marcado('')?' checked':''}><span>(Vazias  -)</span><small>${n(nVaz)}</small></label>` : ''}
+    <div class="lst ${VI_COD.includes(c.k) ? 'cod' : VI_CENTRO.includes(c.k) ? 'ctr' : num ? 'num' : ''}">
+      <label class="esp"><input type="checkbox" data-t="all"><span><b>(Selecionar tudo)</b></span></label>
+      ${nVaz ? `<label class="vz esp"><input type="checkbox" data-v=""${marcado('')?' checked':''}><span>(Vazias  -)</span><small>${n(nVaz)}</small></label>` : ''}
       ${vals.slice(0,1000).map(v => `<label><input type="checkbox" data-v="${esc(v)}"${marcado(v)?' checked':''}><span title="${esc(v)}">${esc(v)}</span><small>${n(cont.get(v))}</small></label>`).join('')}
       ${vals.length>1000 ? `<div style="color:var(--muted);padding:4px 0">Mostrando 1.000 de ${n(vals.length)} valores; use a pesquisa.</div>` : ''}
     </div>

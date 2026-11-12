@@ -349,7 +349,7 @@ tr.clic{cursor:pointer}
 .f2card > .f-vil{position:absolute;top:16px;right:24px;padding:0}
 .f2card > .hd{padding-right:200px!important;padding-top:20px!important}
 @media(max-width:760px){.f2card > .f-vil{position:static;padding:14px 24px 0}.f2card > .hd{padding-right:24px!important}}
-#f2Wrap{flex:1;min-height:0;overflow:hidden}
+.f2grade{flex:1;min-height:0;display:flex;flex-direction:column;margin:0 24px}
 .f2card .hd{padding:20px 24px 6px;display:grid;gap:8px}
 .f2card .hd h3{margin:0;font-size:19px;font-weight:800;letter-spacing:-.015em}
 .f2card .hd p{margin:0;color:var(--ink-soft);font-size:13.5px;line-height:1.5}
@@ -644,9 +644,7 @@ code.cf{background:var(--side);border:1px solid var(--line);border-radius:6px;pa
   <div class="f2card" id="f2Card">
     <div class="hd" style="padding-top:0">
       <h3 id="f2Tit">Itens que vocês fornecem à Rede Vilarejo</h3>
-      <p>Informe, para cada item, os dados de cadastro e tributação que vão na nota fiscal (campos com * são obrigatórios). Para IBS/CBS, a maioria dos materiais de construção tem tributação integral
-      (<b>CST 000 · cClassTrib 000001</b>): use o botão <b>Aplicar tributação integral</b> e ajuste só as exceções.
-      Com muitos itens, baixe a planilha, preencha no Excel e importe de volta. Clique num item para editar.</p>
+      <p>Complete os dados de cada item (campos com * são obrigatórios; o que falta aparece com <b style="color:#d93025">-</b> vermelho). A maioria dos materiais de construção tem tributação integral (<b>CST 000 · cClassTrib 000001</b>): use <b>Aplicar tributação integral</b> e ajuste as exceções.</p>
     </div>
     <div class="tools">
       <input class="inp" id="f2fBusca" type="search" placeholder="Buscar código, descrição ou NCM">
@@ -657,29 +655,8 @@ code.cf{background:var(--side);border:1px solid var(--line);border-radius:6px;pa
       <button class="btn" id="f2Importar">Importar planilha</button>
       <button class="btn pri" id="f2Novo">+ Item</button>
     </div>
-    <div class="f2aviso hide" id="f2Aviso"></div>
-    <div class="f2cont"><span>Itens: <b id="f2cTot">0</b> un</span><span>Completos: <b id="f2cOk">0</b> un</span><span>Faltando: <b id="f2cFalta" class="falta">0</b> un</span></div>
-    <div class="tblbox">
-     <div id="f2Wrap">
-      <table>
-        <thead><tr>
-          <th style="width:100px">Cód. Vilarejo</th>
-          <th style="width:120px">Cód. Fábrica</th>
-          <th>Descrição</th>
-          <th class="col-f2x" style="width:105px">NCM</th>
-          <th class="col-f2x" style="width:70px">CST</th>
-          <th class="col-f2x" style="width:100px">cClassTrib</th>
-          <th class="col-f2x" style="width:70px">Origem</th>
-          <th style="width:240px">Situação</th>
-        </tr></thead>
-        <tbody id="f2Body"></tbody>
-      </table>
-     </div>
-      <div class="pager">
-        <span id="f2Info"></span>
-        <div class="nav"><button class="btn sm" id="f2Prev">◀</button><span id="f2Num">1 / 1</span><button class="btn sm" id="f2Next">▶</button></div>
-      </div>
-    </div>
+    <div class="f2cont"><span>Itens: <b id="f2cTot">0</b> un</span><span>Completos: <b id="f2cOk">0</b> un</span><span>Faltando: <b id="f2cFalta" class="falta">0</b> un</span><span id="f2Carga" style="color:var(--muted)"></span><span id="f2Info" style="color:var(--muted)"></span><span class="sp" style="flex:1"></span><span id="f2Salvo" class="vi-salvo"></span></div>
+    <div id="f2Grade" class="f2grade"></div>
     <div class="fnav" style="margin-top:14px">
       <span style="color:var(--ink-faint);font-size:12.5px;align-self:center">Campos com * são obrigatórios.</span>
       <div style="display:flex;gap:8px">
@@ -875,8 +852,10 @@ code.cf{background:var(--side);border:1px solid var(--line);border-radius:6px;pa
                       "Exportar planilha" baixa a planilha padrão em branco; "Baixar itens" baixa os itens cadastrados
    3.5 · 11/11/2026 · Importação de dados só pela planilha padrão (planilha do ERP é recusada); página enxuta com relatório:
                       itens cadastrados, completos, com informação faltando e dados que faltam
+   3.6 · 11/11/2026 · Link do fornecedor com a mesma grade do painel (colunas, cores, "-" vermelho, edição na célula,
+                      rolagem contínua e de 1 em 1 coluna); salva sozinho pelo link; setas não trocam página na grade
    ============================================================ */
-const VERSAO = { num:'3.5', data:'11/11/2026' };
+const VERSAO = { num:'3.6', data:'11/11/2026' };
 
 /* Dados da tela "Sobre o sistema" — manter atualizado */
 const SOBRE = {
@@ -1149,13 +1128,12 @@ $('pgPrev').onclick = ()=>{ pagina--; render(); };
 $('pgNext').onclick = ()=>{ pagina++; render(); };
 let rsz; window.addEventListener('resize', ()=>{ clearTimeout(rsz); rsz=setTimeout(()=>{
   if(!$('vw-painel').classList.contains('hide')){ PGATIVA==='1' ? render() : PGATIVA==='2' ? render2() : null; }
-  if(!$('vw-f2').classList.contains('hide')) renderF2(); },120); });
+  },120); });
 document.addEventListener('keydown', e => {
   if (document.querySelector('.ov') || e.target.matches('input,textarea,select')) return;
   let prev, next;
-  if (!$('vw-painel').classList.contains('hide')){ prev = $(PGATIVA==='1'?'pgPrev':'p2Prev'); next = $(PGATIVA==='1'?'pgNext':'p2Next'); }
-  else if (!$('vw-f2').classList.contains('hide')){ prev = $('f2Prev'); next = $('f2Next'); }
-  else return;
+  if (!$('vw-painel').classList.contains('hide') && (PGATIVA==='1' || PGATIVA==='2')){ prev = $(PGATIVA==='1'?'pgPrev':'p2Prev'); next = $(PGATIVA==='1'?'pgNext':'p2Next'); }
+  else return;   // na grade de itens as setas movem a célula selecionada
   if (e.key==='ArrowRight' && !next.disabled) next.click();
   if (e.key==='ArrowLeft' && !prev.disabled) prev.click();
 });
@@ -1900,6 +1878,8 @@ $('t2Body').addEventListener('click', async e => {
 
 /* ---------- Itens do fornecedor (painel da Vilarejo): grade tipo planilha, rolagem contínua, edição na célula ---------- */
 let VI_FORN = null, VI_ITENS = [], VI_LISTA = [], VI_REND = 0, VI_SEL = null, VI_EDIT = null;
+let VI_MODO = 'painel';   // 'painel' (equipe Vilarejo, grava direto) ou 'forn' (link do fornecedor, grava pelo link)
+const gradeVisivel = () => VI_MODO==='forn' ? !$('vw-f2').classList.contains('hide') : !$('pg4').classList.contains('hide');
 const VI_LOTE = 150;   // linhas desenhadas por vez (as próximas entram ao rolar)
 /* colunas na ordem do cadastro do ERP, nos mesmos blocos e cores da planilha Excel */
 const VI_BLOCOS = [
@@ -1957,7 +1937,7 @@ function viCabecalho(){
 }
 
 async function abrirItensForn(f){
-  VI_FORN = f; VI_SEL = null; viFecharEditor(false); $('viBusca').value = ''; $('viFiltro').value = '';
+  VI_MODO = 'painel'; VI_FORN = f; VI_SEL = null; viFecharEditor(false); $('viBusca').value = ''; $('viFiltro').value = '';
   $('viCrumb').textContent = f.razao_social; $('viTit').textContent = f.razao_social;
   $('viSub').textContent = `${fmtCNPJ(f.cnpj)} · clique na célula para editar; em vermelho, o que falta`;
   PGATIVA = '4'; ['1','2','3','4'].forEach(n => $('pg'+n).classList.toggle('hide', n!=='4'));
@@ -1978,18 +1958,19 @@ function resumoVI(){
   $('viCampos').innerHTML = top.length ? 'Mais faltam: ' + top.map(([c,n]) => `<b>${esc(c)}</b> (${n.toLocaleString('pt-BR')})`).join(' · ') : '';
 }
 function filtradosVI(){
-  const q = $('viBusca').value.trim().toLowerCase(), fl = $('viFiltro').value;
+  const forn = VI_MODO==='forn';
+  const q = $(forn?'f2fBusca':'viBusca').value.trim().toLowerCase(), fl = forn ? ({falta:'pend', ok:'ok'}[$('f2fSit').value] || '') : $('viFiltro').value;
   return VI_ITENS.filter(i => (!fl || (fl==='pend' ? i._f.length : !i._f.length)) &&
     (!q || [i.cod_interno, i.cod_fabrica, i.codigo, i.descricao].some(c => String(c??'').toLowerCase().includes(q)) || (dig(q) && dig(i.ncm).includes(dig(q)))));
 }
 function renderVI(){
-  if ($('pg4').classList.contains('hide')) return;
+  if (!gradeVisivel()) return;
   viFecharEditor(false);
   VI_LISTA = filtradosVI(); VI_REND = 0; VI_SEL = null;
   $('viBody').innerHTML = VI_LISTA.length ? '' : `<tr><td colspan="${VI_COLS.length}"><div class="empty">${VI_ITENS.length?'Nenhum item no filtro.':'Este fornecedor ainda não tem itens. Carregue em Importação de dados.'}</div></td></tr>`;
   $('viWrap').scrollTop = 0;
   viMais();
-  $('viInfo').textContent = `${VI_LISTA.length.toLocaleString('pt-BR')} item(ns)`;
+  $(VI_MODO==='forn'?'f2Info':'viInfo').textContent = `${VI_LISTA.length.toLocaleString('pt-BR')} item(ns) na lista`;
 }
 function viMais(){   // desenha o próximo lote de linhas
   if (VI_REND >= VI_LISTA.length) return;
@@ -2078,6 +2059,7 @@ function viGravar(mudancas){
   const linhas = Object.entries(porLinha);
   linhas.forEach(([r, upd]) => { const i = VI_LISTA[r]; Object.assign(i, upd); i._f = faltasItem(i); viRedesenharLinha(+r); });
   if (!linhas.length){ mudancas.forEach(m => viRedesenharLinha(m.r)); return; }
+  if (VI_MODO==='forn'){ resumoF2(); viAgendarSalvarForn(); return; }
   resumoVI();
   $('viSalvo').textContent = 'Salvando…'; $('viSalvo').className = 'vi-salvo s';
   VI_FILA = VI_FILA.then(async () => {
@@ -2091,6 +2073,19 @@ function viGravar(mudancas){
     else { $('viSalvo').textContent = '✓ Salvo'; $('viSalvo').className = 'vi-salvo ok'; }
   });
 }
+
+/* link do fornecedor: as edições são salvas pelo próprio link ~2 s depois da última alteração */
+let viTimerForn = null;
+function viAgendarSalvarForn(){
+  $('f2Salvo').textContent = 'Alterações não salvas…'; $('f2Salvo').className = 'vi-salvo s';
+  clearTimeout(viTimerForn);
+  viTimerForn = setTimeout(async () => {
+    $('f2Salvo').textContent = 'Salvando…';
+    const ok = await salvarF2(false);
+    $('f2Salvo').textContent = ok ? '✓ Salvo' : 'Erro ao salvar'; $('f2Salvo').className = 'vi-salvo ' + (ok?'ok':'e');
+  }, 2000);
+}
+window.addEventListener('beforeunload', e => { if (VI_MODO==='forn' && viTimerForn && $('f2Salvo').textContent!=='✓ Salvo'){ e.preventDefault(); e.returnValue=''; } });
 
 /* ---------- mouse, teclado e colar ---------- */
 $('viBody').addEventListener('click', e => {
@@ -2120,7 +2115,7 @@ $('viWrap').addEventListener('wheel', e => {
   if (Math.abs(viRodaAcum) >= 25){ viIrColuna(viRodaAcum > 0 ? 1 : -1); viRodaAcum = 0; viRodaTrava = Date.now() + 180; }
 }, { passive:false });
 document.addEventListener('keydown', e => {
-  if ($('pg4').classList.contains('hide') || !VI_SEL || VI_EDIT || document.querySelector('.ov')) return;
+  if (!gradeVisivel() || !VI_SEL || VI_EDIT || document.querySelector('.ov')) return;
   if (e.target.closest && e.target.closest('input,select,textarea')) return;
   const { r, j } = VI_SEL;
   const mov = { ArrowDown:[1,0], ArrowUp:[-1,0], ArrowRight:[0,1], ArrowLeft:[0,-1], Tab:[0, e.shiftKey?-1:1], Enter:[0,0] }[e.key];
@@ -2131,7 +2126,7 @@ document.addEventListener('keydown', e => {
 });
 /* colar do Excel: várias linhas e colunas a partir da célula selecionada */
 document.addEventListener('paste', e => {
-  if ($('pg4').classList.contains('hide') || !VI_SEL || VI_EDIT) return;
+  if (!gradeVisivel() || !VI_SEL || VI_EDIT) return;
   if (e.target.closest && e.target.closest('input,select,textarea')) return;
   const txt = (e.clipboardData || window.clipboardData).getData('text'); if (!txt) return;
   e.preventDefault();
@@ -2408,6 +2403,10 @@ async function iniciarFase2(){
   $('f2Tit').textContent = `Itens que a ${f.nome_fantasia||f.razao_social} fornece à Rede Vilarejo`;
   ITENS = (data.itens||[]).map(i => ({ ...i }));
   SNAP2 = JSON.stringify(ITENS); marcarAba('2');
+  /* a mesma grade do painel, levada para a tela do fornecedor */
+  VI_MODO = 'forn';
+  $('f2Grade').append($('viCss'), document.querySelector('.vi-card'));
+  viCabecalho();
   renderF2();
 }
 
@@ -2421,47 +2420,23 @@ function filtradosF2(){
   });
 }
 function renderF2(){
-  POR_F2 = window.innerWidth > 760 ? linhasQueCabem('f2Wrap') : 10;
-  /* itens com informação faltando aparecem primeiro */
-  const lista = filtradosF2().map((it,ix)=>({it,ix,f:faltasItem(it).length?0:1})).sort((a,b)=>a.f-b.f||a.ix-b.ix).map(x=>x.it);
-  const paginas = Math.max(1, Math.ceil(lista.length/POR_F2));
-  if (pagF2 >= paginas) pagF2 = paginas-1;
-  const fatia = lista.slice(pagF2*POR_F2, (pagF2+1)*POR_F2);
-  $('f2Body').innerHTML = fatia.length ? fatia.map(i => { const fl = faltasItem(i), ch = chavesFaltando(i);
-    const cel = (k, val) => ch.has(k) ? `<td class="col-f2x mono cel-falta">${vazio(val)?'-':esc(val)}</td>` : `<td class="col-f2x mono">${esc(val??'')}</td>`;
-    return `
-    <tr class="clic${fl.length?' pend':''}" data-cod="${esc(i.codigo)}" title="Clique para editar">
-      <td class="mono" style="color:var(--muted)">${esc(i.cod_interno||'')}</td>
-      ${ch.has('cod_fabrica') ? '<td class="mono cel-falta">-</td>' : `<td class="mono">${esc(i.cod_fabrica||'')}</td>`}
-      <td title="${esc(i.descricao||'')}">${esc(i.descricao||'')}</td>
-      ${cel('ncm', fmtNCM(i.ncm))}
-      ${cel('cst', i.cst)}
-      ${cel('cclasstrib', i.cclasstrib)}
-      ${cel('origem', vazio(i.origem)?'':String(i.origem))}
-      <td title="${fl.length?esc('Falta: '+fl.join(', ')):'Completo'}">${fl.length?`<span class="falta">Falta: ${esc(fl.join(', '))}</span>`:'<span class="okc">✓ Completo</span>'}</td>
-    </tr>`; }).join('') : `<tr><td colspan="8"><div class="empty">${ITENS.length?'Nenhum item no filtro.':'Nenhum item ainda. Use “+ Item” ou “Importar planilha”.'}</div></td></tr>`;
+  /* grade: itens com informação faltando primeiro */
+  ITENS.forEach(i => i._f = faltasItem(i));
+  VI_ITENS = ITENS.map((it,ix)=>({it,ix})).sort((a,b)=>(b.it._f.length>0)-(a.it._f.length>0)||a.ix-b.ix).map(x=>x.it);
+  renderVI();
+  resumoF2();
+}
+function resumoF2(){
   const ok = ITENS.filter(i => !faltasItem(i).length).length;
   $('f2cTot').textContent = ITENS.length.toLocaleString('pt-BR');
   $('f2cOk').textContent = ok.toLocaleString('pt-BR');
   $('f2cFalta').textContent = (ITENS.length-ok).toLocaleString('pt-BR');
   /* itens que a Vilarejo já carregou (ativos, já comercializados) */
   const carg = ITENS.filter(i => i.origem_carga==='vilarejo'), cargFalta = carg.filter(i => faltasItem(i).length).length;
-  $('f2Aviso').classList.toggle('hide', !carg.length);
-  if (carg.length) $('f2Aviso').innerHTML = cargFalta
-    ? `A Rede Vilarejo já carregou <b>${carg.length.toLocaleString('pt-BR')}</b> item(ns) que vocês nos vendem hoje. <b>${cargFalta.toLocaleString('pt-BR')}</b> estão com informação faltando: aparecem primeiro, <b>em vermelho</b>. Clique no item para completar, ou baixe a planilha, revise e importe de volta.`
-    : `A Rede Vilarejo já carregou <b>${carg.length.toLocaleString('pt-BR')}</b> item(ns) que vocês nos vendem hoje, e todos estão completos. Confira e clique em <b>Enviar itens</b>.`;
-  $('f2Info').textContent = `${lista.length} item(ns)`;
-  $('f2Num').textContent = `${pagF2+1} / ${paginas}`;
-  $('f2Prev').disabled = pagF2===0; $('f2Next').disabled = pagF2>=paginas-1;
+  $('f2Carga').innerHTML = carg.length ? `· <b>${carg.length.toLocaleString('pt-BR')}</b> carregados pela Rede Vilarejo${cargFalta?' (os incompletos aparecem primeiro)':''} ·` : '';
 }
-$('f2fBusca').addEventListener('input', ()=>{ pagF2=0; renderF2(); });
-$('f2fSit').addEventListener('change', ()=>{ pagF2=0; renderF2(); });
-$('f2Prev').onclick = ()=>{ pagF2--; renderF2(); };
-$('f2Next').onclick = ()=>{ pagF2++; renderF2(); };
-$('f2Body').addEventListener('click', e => {
-  const tr = e.target.closest('tr[data-cod]'); if (!tr) return;
-  const it = ITENS.find(i => String(i.codigo)===tr.dataset.cod); if (it) editarItem(it);
-});
+$('f2fBusca').addEventListener('input', renderF2);
+$('f2fSit').addEventListener('change', renderF2);
 $('f2Novo').onclick = () => editarItem(null);
 
 function editarItem(it){
@@ -2628,7 +2603,7 @@ $('f2Enviar').onclick = async () => {
   if (!ITENS.length) return toast('Inclua ao menos um item antes de enviar.');
   const falt = ITENS.filter(i => faltasItem(i).length);
   if (falt.length){
-    $('f2fSit').value = 'falta'; pagF2 = 0; renderF2();
+    $('f2fSit').value = 'falta'; renderF2();
     return toast(`${falt.length} item(ns) ainda com informação faltando. Mostrando só eles.`);
   }
   $('f2Enviar').disabled = true; const ok = await salvarF2(true); $('f2Enviar').disabled = false;

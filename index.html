@@ -674,13 +674,12 @@ code.cf{background:var(--side);border:1px solid var(--line);border-radius:6px;pa
   <div class="f2card" id="f2Card">
     <div class="hd" style="padding-top:0">
       <h3 id="f2Tit">Itens que vocês fornecem à Rede Vilarejo</h3>
-      <p>Complete os dados de cada item (campos com * são obrigatórios; o que falta aparece com <b style="color:#d93025">-</b> vermelho). A maioria dos materiais de construção tem tributação integral (<b>CST 000 · cClassTrib 000001</b>): use <b>Aplicar tributação integral</b> e ajuste as exceções.</p>
+      <p>Complete os dados de cada item (campos com * são obrigatórios; o que falta aparece com <b style="color:#d93025">-</b> vermelho).</p>
     </div>
     <div class="tools">
       <input class="inp" id="f2fBusca" type="search" placeholder="Buscar código, descrição ou NCM">
       <select class="inp" id="f2fSit"><option value="">Todos os itens</option><option value="falta">Faltando informação</option><option value="ok">Completos</option></select>
       <span class="sp"></span>
-      <button class="btn" id="f2Integral">Aplicar tributação integral</button>
       <button class="btn" id="f2Baixar">Baixar planilha</button>
       <button class="btn" id="f2Importar">Importar planilha</button>
       <button class="btn pri" id="f2Novo">+ Item</button>
@@ -888,8 +887,10 @@ code.cf{background:var(--side);border:1px solid var(--line);border-radius:6px;pa
                       barra de filtros ativos; "Aplicar tributação integral" passa a salvar sozinho
    3.8 · 11/11/2026 · Números alinhados em todo o sistema (algarismos de largura igual, fonte Inter): filtro, campos,
                       editor da célula e modal do item (alíquotas, peso e qtd. à direita)
+   3.9 · 11/11/2026 · Retirado "Aplicar tributação integral": a tributação é preenchida manualmente pelo fornecedor,
+                      item a item; item novo não vem mais com alíquotas preenchidas
    ============================================================ */
-const VERSAO = { num:'3.8', data:'11/11/2026' };
+const VERSAO = { num:'3.9', data:'11/11/2026' };
 
 /* Dados da tela "Sobre o sistema" — manter atualizado */
 const SOBRE = {
@@ -2556,7 +2557,7 @@ $('f2Novo').onclick = () => editarItem(null);
 
 function editarItem(it){
   const novo = !it;
-  const i = it ? { ...it } : { origem_carga:'fornecedor', aliq_ibs_uf:ALIQ_PADRAO.aliq_ibs_uf, aliq_ibs_mun:ALIQ_PADRAO.aliq_ibs_mun, aliq_cbs:ALIQ_PADRAO.aliq_cbs };
+  const i = it ? { ...it } : { origem_carga:'fornecedor' };
   const v = k => esc(NUM_ITEM.includes(k) ? numBR(i[k]) : (i[k]??''));
   const ov = modal(novo?'Novo item':`Item ${esc(i.cod_fabrica||i.cod_interno||i.codigo)}`, `
     <div class="sec-t">Produto</div>
@@ -2598,8 +2599,7 @@ function editarItem(it){
       <label class="f">Qtd. Caixa *<input class="inp" data-k="qtd_caixa" value="${v('qtd_caixa')}" inputmode="decimal"></label>
       <label class="f">EAN14<input class="inp" data-k="ean14" value="${v('ean14')}" maxlength="14" inputmode="numeric"></label>
     </div>
-    <p style="margin:0;color:var(--ink-faint);font-size:12.5px">Tributação integral: CST <b>000</b> e cClassTrib <b>000001</b>. Os 3 primeiros dígitos do cClassTrib devem ser iguais ao CST.
-      Alíquotas de ${ALIQ_PADRAO.ano} já preenchidas. Altere só se o item for exceção.</p>
+    <p style="margin:0;color:var(--ink-faint);font-size:12.5px">Tributação integral: CST <b>000</b> e cClassTrib <b>000001</b>. Os 3 primeiros dígitos do cClassTrib devem ser iguais ao CST.</p>
     <div class="msg" id="itMsg"></div>`,
     [ ...(!novo && i.origem_carga!=='vilarejo' ? [['Excluir item','', o => { if (!confirm('Excluir este item?')) return; ITENS = ITENS.filter(x => x!==it); o.remove(); renderF2(); }]] : []),
       ['Cancelar','',o=>o.remove()], ['Salvar item','pri', salvarIt] ], 'lg');
@@ -2634,27 +2634,6 @@ function editarItem(it){
   }
 }
 
-/* atalho: tributação integral para os itens sem CST */
-$('f2Integral').onclick = () => {
-  const alvo = ITENS.filter(i => vazio(i.cst));
-  if (!alvo.length) return toast('Todos os itens já têm CST informado.');
-  modal('Aplicar tributação integral', `
-    <p style="margin:0;line-height:1.55">Vai preencher <b>${alvo.length.toLocaleString('pt-BR')} item(ns)</b> que ainda estão sem CST com:<br>
-    CST <b>000</b> · cClassTrib <b>000001</b> · % IBS UF <b>${numBR(ALIQ_PADRAO.aliq_ibs_uf)}</b> · % IBS Mun. <b>${numBR(ALIQ_PADRAO.aliq_ibs_mun)}</b> · % CBS <b>${numBR(ALIQ_PADRAO.aliq_cbs)}</b> · sem redução.</p>
-    <label class="f">Origem para esses itens (opcional)<select class="inp" id="intOrig"><option value="">Manter como está</option>${Object.entries(ORIGENS).map(([c,t])=>`<option value="${c}">${t}</option>`).join('')}</select></label>
-    <p style="margin:0;color:var(--ink-faint);font-size:12.5px">Depois, abra os itens que forem exceção (redução, alíquota zero, Imposto Seletivo) e ajuste.</p>`,
-    [['Cancelar','',o=>o.remove()], ['Aplicar','pri', o => {
-      const orig = o.querySelector('#intOrig').value;
-      alvo.forEach(i => {
-        i.cst = '000'; i.cclasstrib = '000001';
-        if (vazio(i.aliq_ibs_uf)) i.aliq_ibs_uf = ALIQ_PADRAO.aliq_ibs_uf;
-        if (vazio(i.aliq_ibs_mun)) i.aliq_ibs_mun = ALIQ_PADRAO.aliq_ibs_mun;
-        if (vazio(i.aliq_cbs)) i.aliq_cbs = ALIQ_PADRAO.aliq_cbs;
-        if (orig!=='' && vazio(i.origem)) i.origem = +orig;
-      });
-      o.remove(); renderF2(); viAgendarSalvarForn(); toast(`${alvo.length} item(ns) preenchidos com tributação integral. Ajuste as exceções.`);
-    }]]);
-};
 
 $('f2Baixar').onclick = () => {
   const lista = ITENS;

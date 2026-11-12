@@ -864,8 +864,9 @@ code.cf{background:var(--side);border:1px solid var(--line);border-radius:6px;pa
                       (que vinham da tabela original do banco) da grade, da planilha Excel e da tela do fornecedor
    3.0 · 11/11/2026 · Grade dos itens: fonte menor, títulos sem quebra nem corte, linha selecionada realçada, rolagem lateral
                       de coluna inteira em coluna inteira
+   3.1 · 11/11/2026 · Saem da grade e das planilhas o bloco Cadastro (Departamento/Seção/Categoria) e a coluna Situação
    ============================================================ */
-const VERSAO = { num:'3.0', data:'11/11/2026' };
+const VERSAO = { num:'3.1', data:'11/11/2026' };
 
 /* Dados da tela "Sobre o sistema" — manter atualizado */
 const SOBRE = {
@@ -1579,9 +1580,6 @@ const CAMPOS_ITEM = [
   ['cst','CST IBS/CBS'], ['cclasstrib','cClassTrib IBS/CBS'], ['aliq_ibs_uf','% IBS UF'], ['aliq_ibs_mun','% IBS Mun.'],
   ['aliq_cbs','% CBS'], ['pct_reducao','% Redução IBS/CBS'], ['cst_is','CST IS'], ['cclasstrib_is','cClassTrib IS'], ['aliq_is','% IS'],
   ['ean','GTIN13 ou EAN Tributável'], ['qtd_caixa','Qtd. Caixa'], ['ean14','EAN14'],
-  ['cod_departamento','Cód. Departamento',true], ['departamento','Departamento',true],
-  ['cod_secao','Cód. Seção',true], ['secao','Seção',true],
-  ['cod_categoria','Cód. Categoria',true], ['categoria','Categoria',true]
 ];
 const CAMPOS_FORN = CAMPOS_ITEM.filter(c => !c[2]);
 /* exportados como texto (="...") para o Excel não cortar zeros nem virar notação científica */
@@ -1729,8 +1727,7 @@ const LAYOUT_XLSX = [
       ['aliq_cbs','% CBS',1],['pct_reducao','% Redução IBS/CBS',0],['cst_is','CST IS',0],['cclasstrib_is','cClassTrib IS',0],['aliq_is','% IS',0]] } },
   { titulo:'Unidade de Venda', cor:'99CCFF', cols:[['ean','GTIN13 ou EAN Tributável',1]] },
   { titulo:'Embalagem Master', cor:'99CCFF', cols:[['qtd_caixa','Qtd. Caixa',1],['ean14','EAN14',0]] },
-  { titulo:'Cadastro', cor:'FFFF99', interno:true, cols:[['cod_departamento','Cód.',1],['departamento','Departamento',1],['cod_secao','Cód.',1],['secao','Seção',1],['cod_categoria','Cód.',1],['categoria','Categoria',1]] },
-  { titulo:'Controle', cor:'D9D9D9', admin:true, cols:[['_situacao','Situação',0]] }
+
 ];
 let _excel = null;
 function carregarExcelJS(){
@@ -1902,8 +1899,7 @@ const VI_BLOCOS = [
   { t:'Reforma Tributária', cor:'#fff6b3', cols:[['cst','CST IBS/CBS',1,98],['cclasstrib','cClassTrib IBS/CBS',1,138],['aliq_ibs_uf','% IBS UF',1,74],['aliq_ibs_mun','% IBS Mun.',1,84],['aliq_cbs','% CBS',1,66],['pct_reducao','% Redução IBS/CBS',0,136],['cst_is','CST IS',0,64],['cclasstrib_is','cClassTrib IS',0,100],['aliq_is','% IS',0,56]] },
   { t:'Unidade de Venda', cor:'#cfe4ff', cols:[['ean','GTIN13 ou EAN Tributável',1,180]] },
   { t:'Embalagem Master', cor:'#cfe4ff', cols:[['qtd_caixa','Qtd. Caixa',1,82],['ean14','EAN14',0,130]] },
-  { t:'Cadastro', cor:'#fff6b3', cols:[['cod_departamento','Cód.',1,60],['departamento','Departamento',1,150],['cod_secao','Cód.',1,60],['secao','Seção',1,150],['cod_categoria','Cód.',1,60],['categoria','Categoria',1,150]] },
-  { t:'', cor:'#e6e6e6', cols:[['_situacao','Situação',0,320,'ro']] }
+
 ];
 const VI_COLS = VI_BLOCOS.flatMap(b => b.cols.map(c => ({ k:c[0], rot:c[1], obrig:!!c[2], w:c[3], ro:c[4]==='ro', cor:b.cor })));
 const VI_FIXAS = 3;   // Cód. Interno, Cód. Fábrica e Descrição ficam presas à esquerda

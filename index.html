@@ -327,6 +327,26 @@ tr.clic{cursor:pointer}
 #viGrade tr.selrow td.c0{box-shadow:inset 3px 0 0 var(--green)}
 #viGrade td.sel{outline:2px solid var(--green);outline-offset:-2px;background:#fff}
 #viGrade td.editando{padding:0;outline:2px solid var(--green);outline-offset:-2px}
+#viGrade tr.h th{padding-right:20px}
+#viGrade .vi-fb{position:absolute;right:3px;top:50%;transform:translateY(-50%);width:15px;height:16px;border:1px solid #b9bec7;border-radius:3px;background:#fff;color:#4b5563;font-size:9px;line-height:14px;text-align:center;cursor:pointer;padding:0}
+#viGrade .vi-fb:hover{border-color:var(--green);color:var(--green)}
+#viGrade .vi-fb.on{background:var(--green);border-color:var(--green);color:#fff}
+.vi-filt{display:none;align-items:center;gap:6px;flex-wrap:wrap;padding:6px 10px;border-bottom:1px solid var(--line);background:#f3faf5;font-size:12px}
+.vi-filt.on{display:flex}
+.vi-filt .chip{display:inline-flex;align-items:center;gap:4px;background:#fff;border:1px solid #b7dfc2;border-radius:99px;padding:2px 4px 2px 9px}
+.vi-filt .chip button,.vi-filt .lnk{border:0;background:none;cursor:pointer;color:var(--green-ink);font:inherit}
+.vi-filt .chip button{font-weight:800;color:#6b7280;padding:0 4px}
+.vi-filt .lnk{text-decoration:underline;font-weight:600}
+.vi-pop{position:fixed;z-index:9999;width:270px;background:#fff;border:1px solid #c9ccd3;border-radius:10px;box-shadow:0 10px 30px rgba(0,0,0,.18);padding:10px;font-size:12.5px;display:flex;flex-direction:column;gap:8px}
+.vi-pop h4{margin:0;font-size:12.5px}
+.vi-pop .so{width:100%;border:1px solid #f1b8b3;background:#fff5f4;color:#b42318;border-radius:7px;padding:6px;font:inherit;font-weight:700;cursor:pointer}
+.vi-pop .so:hover{background:#fde8e6}
+.vi-pop .lst{max-height:230px;overflow:auto;border:1px solid var(--line);border-radius:7px;padding:4px 6px}
+.vi-pop .lst label{display:flex;align-items:center;gap:6px;padding:2px 0;white-space:nowrap;cursor:pointer}
+.vi-pop .lst label span{overflow:hidden;text-overflow:ellipsis;flex:1}
+.vi-pop .lst label small{color:var(--muted)}
+.vi-pop .lst .vz span{color:#d93025;font-weight:700}
+.vi-pop .bts{display:flex;gap:6px;justify-content:flex-end}
 #viGrade .vi-ed{width:100%;height:100%;border:0;padding:0 6px;font:inherit;background:#f0fbf3;outline:none}
 .vi-dica{padding:7px 14px;border-top:1px solid var(--line);font-size:11.5px;color:var(--muted);background:#fafbfc}
 .vi-info{color:var(--muted);font-size:13px}
@@ -595,6 +615,7 @@ code.cf{background:var(--side);border:1px solid var(--line);border-radius:6px;pa
       </div>
       <style id="viCss"></style>
       <div class="vi-card">
+        <div class="vi-filt" id="viFilt"></div>
         <div id="viWrap">
           <table id="viGrade">
             <thead id="viHead"></thead>
@@ -854,8 +875,10 @@ code.cf{background:var(--side);border:1px solid var(--line);border-radius:6px;pa
                       itens cadastrados, completos, com informação faltando e dados que faltam
    3.6 · 11/11/2026 · Link do fornecedor com a mesma grade do painel (colunas, cores, "-" vermelho, edição na célula,
                       rolagem contínua e de 1 em 1 coluna); salva sozinho pelo link; setas não trocam página na grade
+   3.7 · 11/11/2026 · Filtro por coluna como no Excel (▼ no cabeçalho: valores, vazias, pesquisa, "só os sem informação"),
+                      barra de filtros ativos; "Aplicar tributação integral" passa a salvar sozinho
    ============================================================ */
-const VERSAO = { num:'3.6', data:'11/11/2026' };
+const VERSAO = { num:'3.7', data:'11/11/2026' };
 
 /* Dados da tela "Sobre o sistema" — manter atualizado */
 const SOBRE = {
@@ -1923,21 +1946,22 @@ function viLinha(i, r){
 function viAjustarLarguras(){
   const ctx = document.createElement('canvas').getContext('2d');
   ctx.font = `700 11px ${getComputedStyle(document.body).fontFamily}`;
-  VI_COLS.forEach(c => { c.w = Math.max(c.w0 ?? (c.w0 = c.w), Math.ceil(ctx.measureText(c.rot + (c.obrig?' *':'')).width) + 20); });
+  VI_COLS.forEach(c => { c.w = Math.max(c.w0 ?? (c.w0 = c.w), Math.ceil(ctx.measureText(c.rot + (c.obrig?' *':'')).width) + 34); });
 }
 function viCabecalho(){
   viAjustarLarguras();
   let esq = 0; const pos = VI_COLS.map((c,j) => { const p = esq; if (j<VI_FIXAS) esq += c.w; return p; });
   $('viWrap').style.scrollPaddingLeft = esq + 'px';   // encaixe começa logo depois das colunas fixas
   const g = VI_BLOCOS.map(b => `<th colspan="${b.cols.length}" style="background:${b.cor}${b.fixo?';left:0;z-index:6;box-shadow:inset -2px 0 0 #c9ccd3':''}">${esc(b.t)}</th>`).join('');
-  const h = VI_COLS.map((c,j) => `<th class="c${j}${j<VI_FIXAS?' fixa':''}" style="background:${c.cor};${j<VI_FIXAS?`left:${pos[j]}px;`:''}">${esc(c.rot)}${c.obrig?'<b>*</b>':''}</th>`).join('');
+  const h = VI_COLS.map((c,j) => `<th class="c${j}${j<VI_FIXAS?' fixa':''}" style="background:${c.cor};${j<VI_FIXAS?`left:${pos[j]}px;`:''}">${esc(c.rot)}${c.obrig?'<b>*</b>':''}<button type="button" class="vi-fb${VI_FILTROS[c.k]?' on':''}" data-j="${j}" title="Filtrar ${esc(c.rot)}">▼</button></th>`).join('');
   const css = VI_COLS.map((c,j) => `#viGrade .c${j}{width:${c.w}px;min-width:${c.w}px;max-width:${c.w}px${j<VI_FIXAS?`;position:sticky;left:${pos[j]}px;z-index:2`:''}}`).join('');
   $('viCss').textContent = css;
   $('viHead').innerHTML = `<tr class="g">${g}</tr><tr class="h">${h}</tr>`;
+  viBarraFiltros();
 }
 
 async function abrirItensForn(f){
-  VI_MODO = 'painel'; VI_FORN = f; VI_SEL = null; viFecharEditor(false); $('viBusca').value = ''; $('viFiltro').value = '';
+  VI_MODO = 'painel'; VI_FORN = f; VI_SEL = null; VI_FILTROS = {}; viPopFechar(); viFecharEditor(false); $('viBusca').value = ''; $('viFiltro').value = '';
   $('viCrumb').textContent = f.razao_social; $('viTit').textContent = f.razao_social;
   $('viSub').textContent = `${fmtCNPJ(f.cnpj)} · clique na célula para editar; em vermelho, o que falta`;
   PGATIVA = '4'; ['1','2','3','4'].forEach(n => $('pg'+n).classList.toggle('hide', n!=='4'));
@@ -1961,8 +1985,88 @@ function filtradosVI(){
   const forn = VI_MODO==='forn';
   const q = $(forn?'f2fBusca':'viBusca').value.trim().toLowerCase(), fl = forn ? ({falta:'pend', ok:'ok'}[$('f2fSit').value] || '') : $('viFiltro').value;
   return VI_ITENS.filter(i => (!fl || (fl==='pend' ? i._f.length : !i._f.length)) &&
-    (!q || [i.cod_interno, i.cod_fabrica, i.codigo, i.descricao].some(c => String(c??'').toLowerCase().includes(q)) || (dig(q) && dig(i.ncm).includes(dig(q)))));
+    (!q || [i.cod_interno, i.cod_fabrica, i.codigo, i.descricao].some(c => String(c??'').toLowerCase().includes(q)) || (dig(q) && dig(i.ncm).includes(dig(q)))) &&
+    viPassaFiltros(i));
 }
+
+/* ---------- filtro por coluna, como no Excel ---------- */
+let VI_FILTROS = {};   // chave da coluna -> Set com os valores aceitos ('' = vazias)
+const viValorFiltro = (i, k) => { const v = viTexto(i, k); return vazio(v) ? '' : String(v); };
+function viPassaFiltros(i, exceto){
+  for (const k in VI_FILTROS){ if (k!==exceto && !VI_FILTROS[k].has(viValorFiltro(i, k))) return false; }
+  return true;
+}
+function viBarraFiltros(){
+  const ks = Object.keys(VI_FILTROS), bar = $('viFilt');
+  bar.classList.toggle('on', ks.length>0);
+  bar.innerHTML = ks.length ? '<b>Filtros:</b> ' + ks.map(k => { const c = VI_COLS.find(x => x.k===k), f = VI_FILTROS[k];
+      const desc = f.size===1 && f.has('') ? 'sem informação' : f.size===1 ? `= ${[...f][0]}` : `${f.size} valores`;
+      return `<span class="chip">${esc(c.rot)}: ${esc(desc)}<button type="button" data-k="${k}" title="Tirar este filtro">×</button></span>`; }).join('')
+    + ' <button type="button" class="lnk" data-k="*">Limpar todos</button>' : '';
+  document.querySelectorAll('#viGrade .vi-fb').forEach(b => b.classList.toggle('on', !!VI_FILTROS[VI_COLS[+b.dataset.j].k]));
+}
+function viAplicarFiltros(){ viBarraFiltros(); renderVI(); }
+$('viFilt').addEventListener('click', e => { const b = e.target.closest('button[data-k]'); if (!b) return;
+  if (b.dataset.k==='*') VI_FILTROS = {}; else delete VI_FILTROS[b.dataset.k];
+  viAplicarFiltros(); });
+function viPopFechar(){ const p = document.querySelector('.vi-pop'); if (p) p.remove(); }
+function viAbrirFiltro(j, btn){
+  viPopFechar(); viFecharEditor(true);
+  const c = VI_COLS[j], atual = VI_FILTROS[c.k];
+  /* valores possíveis = itens que passam nos OUTROS filtros (como o Excel) */
+  const cont = new Map();
+  VI_ITENS.forEach(i => { if (viPassaFiltros(i, c.k)){ const v = viValorFiltro(i, c.k); cont.set(v, (cont.get(v)||0)+1); } });
+  const nVaz = cont.get('') || 0; cont.delete('');
+  const num = NUM_ITEM.includes(c.k) || c.k==='qtd_caract';
+  const vals = [...cont.keys()].sort((a,b) => num ? (parseFloat(a.replace(/\./g,'').replace(',','.'))||0)-(parseFloat(b.replace(/\./g,'').replace(',','.'))||0) : a.localeCompare(b,'pt-BR',{numeric:true}));
+  const marcado = v => !atual || atual.has(v);
+  const n = x => x.toLocaleString('pt-BR');
+  const pop = document.createElement('div'); pop.className = 'vi-pop';
+  pop.innerHTML = `<h4>${esc(c.rot)}</h4>
+    ${nVaz ? `<button type="button" class="so">Mostrar só os sem informação (${n(nVaz)})</button>` : ''}
+    <input class="inp" type="search" placeholder="Pesquisar valor">
+    <div class="lst">
+      <label><input type="checkbox" data-t="all"><span><b>(Selecionar tudo)</b></span></label>
+      ${nVaz ? `<label class="vz"><input type="checkbox" data-v=""${marcado('')?' checked':''}><span>(Vazias  -)</span><small>${n(nVaz)}</small></label>` : ''}
+      ${vals.slice(0,1000).map(v => `<label><input type="checkbox" data-v="${esc(v)}"${marcado(v)?' checked':''}><span title="${esc(v)}">${esc(v)}</span><small>${n(cont.get(v))}</small></label>`).join('')}
+      ${vals.length>1000 ? `<div style="color:var(--muted);padding:4px 0">Mostrando 1.000 de ${n(vals.length)} valores; use a pesquisa.</div>` : ''}
+    </div>
+    <div class="bts"><button type="button" class="btn sm" data-a="limpar">Limpar filtro</button><button type="button" class="btn sm" data-a="cancelar">Cancelar</button><button type="button" class="btn sm pri" data-a="ok">OK</button></div>`;
+  document.body.appendChild(pop);
+  const rb = btn.getBoundingClientRect();
+  pop.style.left = Math.max(8, Math.min(rb.right - pop.offsetWidth, innerWidth - pop.offsetWidth - 8)) + 'px';
+  const topo = rb.bottom + 4; pop.style.top = (topo + pop.offsetHeight > innerHeight - 8 ? Math.max(8, innerHeight - pop.offsetHeight - 8) : topo) + 'px';
+  const busca = pop.querySelector('input[type=search]'), tudo = pop.querySelector('[data-t=all]');
+  const caixas = () => [...pop.querySelectorAll('input[data-v]')];
+  const visiveis = () => caixas().filter(x => x.closest('label').style.display!=='none');
+  const atualizaTudo = () => { const v = visiveis(); tudo.checked = v.length>0 && v.every(x => x.checked); tudo.indeterminate = !tudo.checked && v.some(x => x.checked); };
+  atualizaTudo();
+  busca.addEventListener('input', () => { const q = busca.value.trim().toLowerCase();
+    caixas().forEach(x => { const l = x.closest('label'), t = x.dataset.v==='' ? '(vazias -)' : x.dataset.v.toLowerCase(); l.style.display = !q || t.includes(q) ? '' : 'none'; });
+    if (q) visiveis().forEach(x => x.checked = true), caixas().filter(x => x.closest('label').style.display==='none').forEach(x => x.checked = false);
+    atualizaTudo(); });
+  tudo.addEventListener('change', () => { visiveis().forEach(x => x.checked = tudo.checked); atualizaTudo(); });
+  pop.querySelector('.lst').addEventListener('change', e => { if (e.target.dataset.v!==undefined) atualizaTudo(); });
+  const aplicar = sel => { if (sel===null) delete VI_FILTROS[c.k]; else VI_FILTROS[c.k] = sel; viPopFechar(); viAplicarFiltros(); };
+  const ok = () => {
+    const todas = caixas(), marc = todas.filter(x => x.checked);
+    if (!marc.length) return toast('Marque pelo menos um valor.');
+    /* tudo marcado e nenhum valor escondido pelo limite de 1.000 = sem filtro */
+    aplicar(marc.length===todas.length && vals.length<=1000 ? null : new Set(marc.map(x => x.dataset.v)));
+  };
+  const so = pop.querySelector('.so'); if (so) so.onclick = () => aplicar(new Set(['']));
+  pop.querySelector('[data-a=ok]').onclick = ok;
+  pop.querySelector('[data-a=limpar]').onclick = () => aplicar(null);
+  pop.querySelector('[data-a=cancelar]').onclick = viPopFechar;
+  pop.addEventListener('keydown', e => { if (e.key==='Enter'){ e.preventDefault(); ok(); } if (e.key==='Escape') viPopFechar(); e.stopPropagation(); });
+  busca.focus();
+}
+$('viHead').addEventListener('click', e => { const b = e.target.closest('.vi-fb'); if (!b) return; e.stopPropagation();
+  if (document.querySelector('.vi-pop') && document.querySelector('.vi-pop').dataset.j===b.dataset.j) return viPopFechar();
+  viAbrirFiltro(+b.dataset.j, b); document.querySelector('.vi-pop').dataset.j = b.dataset.j; });
+document.addEventListener('mousedown', e => { const p = document.querySelector('.vi-pop'); if (p && !p.contains(e.target) && !e.target.closest('.vi-fb')) viPopFechar(); });
+$('viWrap').addEventListener('scroll', () => { const p = document.querySelector('.vi-pop'); if (p && $('viWrap').scrollLeft !== +(p.dataset.sl ?? $('viWrap').scrollLeft)) viPopFechar(); if (p) p.dataset.sl = $('viWrap').scrollLeft; });
+window.addEventListener('resize', viPopFechar);
 function renderVI(){
   if (!gradeVisivel()) return;
   viFecharEditor(false);
@@ -2537,7 +2641,7 @@ $('f2Integral').onclick = () => {
         if (vazio(i.aliq_cbs)) i.aliq_cbs = ALIQ_PADRAO.aliq_cbs;
         if (orig!=='' && vazio(i.origem)) i.origem = +orig;
       });
-      o.remove(); renderF2(); toast(`${alvo.length} item(ns) atualizados. Não esqueça de salvar.`);
+      o.remove(); renderF2(); viAgendarSalvarForn(); toast(`${alvo.length} item(ns) preenchidos com tributação integral. Ajuste as exceções.`);
     }]]);
 };
 

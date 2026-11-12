@@ -300,6 +300,12 @@ tr.clic{cursor:pointer}
 #viGrade tr.pend td.c0{box-shadow:inset 3px 0 0 #d93025}
 #viGrade td.falta{color:#d93025;font-weight:700}
 #viGrade td.falta i{color:#d93025;font-style:normal;font-weight:800;font-size:13px}
+#viGrade td em{color:#b8bdc6;font-style:normal;font-size:13px}
+#viGrade td.cod{font-family:ui-monospace,'Cascadia Mono',Consolas,'Courier New',monospace;font-size:11.5px;letter-spacing:0;text-align:left}
+#viGrade td.ctr{text-align:center;font-variant-numeric:tabular-nums}
+#viGrade td.num{text-align:right;font-variant-numeric:tabular-nums}
+#viGrade td.cod i,#viGrade td.cod em{font-family:inherit}
+#viGrade td.vaz{text-align:center}
 #viGrade td.ro{color:var(--muted);cursor:default}
 #viGrade td.sit-p{color:#b45309;font-weight:600}
 #viGrade td.sit-ok{color:var(--green-ink);font-weight:600}
@@ -866,8 +872,10 @@ code.cf{background:var(--side);border:1px solid var(--line);border-radius:6px;pa
    3.1 · 11/11/2026 · Saem da grade e das planilhas o bloco Cadastro (Departamento/Seção/Categoria) e a coluna Situação
    3.2 · 11/11/2026 · Pendência mostrada como "-" vermelho (sem fundo rosa) na grade, na tela do fornecedor e no Excel;
                       Fiscal e Reforma Tributária com cores próprias; rolagem lateral de 1 em 1 coluna
+   3.3 · 11/11/2026 · Grade: códigos em fonte de largura fixa e alinhados, números à direita, códigos curtos ao centro;
+                      todo campo vazio mostra "-" (vermelho se obrigatório, cinza se opcional)
    ============================================================ */
-const VERSAO = { num:'3.2', data:'11/11/2026' };
+const VERSAO = { num:'3.3', data:'11/11/2026' };
 
 /* Dados da tela "Sobre o sistema" — manter atualizado */
 const SOBRE = {
@@ -1911,13 +1919,20 @@ function viTexto(i, k){
   if (k==='qtd_caract') return vazio(i.descricao) ? '' : String(i.descricao).length;
   if (k==='ncm') return fmtNCM(i.ncm);
   if (k==='zfm') return i.zfm ? 'S' : 'N';
-  if (NUM_ITEM.includes(k)) return numBR(i[k]);
+  if (k==='qtd_caixa') return numBR(i[k]);
+  if (NUM_ITEM.includes(k)) return vazio(i[k]) ? '' : Number(i[k]).toLocaleString('pt-BR',{minimumFractionDigits:2,maximumFractionDigits:4});   // alíquotas: 2 casas, vírgulas alinhadas
   return i[k] ?? '';
 }
+/* alinhamento: códigos em fonte de largura fixa à esquerda, códigos curtos ao centro, números à direita */
+const VI_COD = ['cod_interno','cod_fabrica','ncm','cest','ean','ean14','fci','cclasstrib','cclasstrib_is'];
+const VI_CENTRO = ['origem','cst_icms','cst','cst_is','qtd_caract'];
 function viCelula(i, c, r, j, ch){
-  const falta = ch.has(c.k), v = viTexto(i, c.k);
-  const cls = ['c'+j, c.ro?'ro':'', falta?'falta':'', j<VI_FIXAS?'fixa':'', c.k==='_situacao'?(i._f.length?'sit-p':'sit-ok'):''].filter(Boolean).join(' ');
-  return `<td class="${cls}" data-r="${r}" data-j="${j}" title="${esc(String(v))}">${falta && vazio(v) ? '<i>-</i>' : esc(String(v))}</td>`;
+  const falta = ch.has(c.k), v = viTexto(i, c.k), vaz = vazio(v);
+  const tipo = VI_COD.includes(c.k) ? 'cod' : VI_CENTRO.includes(c.k) ? 'ctr' : NUM_ITEM.includes(c.k) ? 'num' : '';
+  const cls = ['c'+j, tipo, vaz?'vaz':'', c.ro?'ro':'', falta?'falta':'', j<VI_FIXAS?'fixa':''].filter(Boolean).join(' ');
+  /* vazio: "-" vermelho se obrigatório, "-" cinza se opcional */
+  const conteudo = vaz ? (falta ? '<i>-</i>' : '<em>-</em>') : esc(String(v));
+  return `<td class="${cls}" data-r="${r}" data-j="${j}" title="${esc(String(v))}">${conteudo}</td>`;
 }
 function viLinha(i, r){
   const ch = chavesFaltando(i);

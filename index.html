@@ -301,10 +301,9 @@ tr.clic{cursor:pointer}
 #viGrade td.falta{color:#d93025;font-weight:700}
 #viGrade td.falta i{color:#d93025;font-style:normal;font-weight:800;font-size:13px}
 #viGrade td em{color:#b8bdc6;font-style:normal;font-size:13px}
-#viGrade td.cod{font-family:ui-monospace,'Cascadia Mono',Consolas,'Courier New',monospace;font-size:11.5px;letter-spacing:0;text-align:left}
+#viGrade td.cod{font-variant-numeric:tabular-nums;text-align:left}   /* mesma fonte do sistema, números com largura igual */
 #viGrade td.ctr{text-align:center;font-variant-numeric:tabular-nums}
 #viGrade td.num{text-align:right;font-variant-numeric:tabular-nums}
-#viGrade td.cod i,#viGrade td.cod em{font-family:inherit}
 #viGrade td.vaz{text-align:center}
 #viGrade td.ro{color:var(--muted);cursor:default}
 #viGrade td.sit-p{color:#b45309;font-weight:600}
@@ -872,7 +871,7 @@ code.cf{background:var(--side);border:1px solid var(--line);border-radius:6px;pa
    3.1 · 11/11/2026 · Saem da grade e das planilhas o bloco Cadastro (Departamento/Seção/Categoria) e a coluna Situação
    3.2 · 11/11/2026 · Pendência mostrada como "-" vermelho (sem fundo rosa) na grade, na tela do fornecedor e no Excel;
                       Fiscal e Reforma Tributária com cores próprias; rolagem lateral de 1 em 1 coluna
-   3.3 · 11/11/2026 · Grade: códigos em fonte de largura fixa e alinhados, números à direita, códigos curtos ao centro;
+   3.3 · 11/11/2026 · Grade: códigos alinhados (números de largura igual, mesma fonte Inter), números à direita, códigos curtos ao centro;
                       todo campo vazio mostra "-" (vermelho se obrigatório, cinza se opcional)
    ============================================================ */
 const VERSAO = { num:'3.3', data:'11/11/2026' };
